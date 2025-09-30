@@ -8,16 +8,29 @@ import {
   Textarea,
   Alert,
 } from "flowbite-react";
+import { memo, useCallback, useRef, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
-import { MdEdit } from "react-icons/md";
 
-export default function Signup({}) {
+const Signup = memo(() => {
+  Signup.displayName = 'Signup';
+  // Memoize update functions to prevent re-renders
+  const updateFormData = useCallback((field, value) => {
+    setData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateBusinessAddress = useCallback((field, value) => {
+    setBusinessAddress(prev => ({ ...prev, [field]: value }));
+  }, []);
   const inputRefs = useRef([]);
   const router = useRouter();
   const [display, setDisplay] = useState("SignUp");
   const [otp, setOtp] = useState(new Array(6).fill(""));
-  const [loading, setLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({
+    categories: false,
+    location: false,
+    otp: false,
+    submit: false
+  });
   const [showResend, setShowResend] = useState(false);
   const [data, setData] = useState({
     name: "",
@@ -44,8 +57,8 @@ export default function Signup({}) {
     address: "",
     googleMaps: "",
   });
-  const updateAddress = async (tag) => {
-    setLoading(true);
+  const updateAddress = useMemo(() => async (tag) => {
+    setLoadingStates(prev => ({ ...prev, submit: true }));
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -66,31 +79,36 @@ export default function Signup({}) {
       .then((response) => response.json())
       .then((response) => {
         if (response.message === "success") {
-          setLoading(false);
+          setLoadingStates(prev => ({ ...prev, submit: false }));
           router.push("/");
         }
       })
       .catch((error) => {
-        setLoading(false);
+        setLoadingStates(prev => ({ ...prev, submit: false }));
         console.error("There was a problem with the fetch operation:", error);
       });
-  };
+  }, [businessAddress, router]);
 
-  const handleChange = (element, index) => {
+  const handleChange = useMemo(() => (element, index) => {
     if (/[^0-9]/.test(element.value)) return;
     const newOtp = [...otp];
     newOtp[index] = element.value;
     setOtp(newOtp);
+    // Combine OTP digits and update data state
+    const combinedOtp = newOtp.join('');
+    setData(prev => ({ ...prev, Otp: combinedOtp }));
     if (element.value !== "" && index < 5) {
       inputRefs.current[index + 1].focus();
     }
-  };
-  const handleKeyDown = (event, index) => {
+  }, [otp])
+  const handleKeyDown = useCallback((event, index) => {
     if (event.key === "Backspace" && otp[index] === "" && index > 0) {
       inputRefs.current[index - 1].focus();
     }
-  };
-  const SendOTP = () => {
+  }, [otp, inputRefs]);
+
+  const SendOTP = useCallback(() => {
+    setLoadingStates(prev => ({ ...prev, otp: true }));
     setData({
       ...data,
       loading: true,
@@ -120,8 +138,8 @@ export default function Signup({}) {
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
       });
-  };
-  const handleSubmit = () => {
+  }, [data]);
+  const handleSubmit = useCallback(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor`, {
       method: "POST",
       headers: {
@@ -158,12 +176,14 @@ export default function Signup({}) {
         }
       })
       .catch((error) => {
-        alert(error.response.message);
+        setData(prev => ({ ...prev, loading: false }));
+        const errorMessage = error.response?.message || error.message || 'An error occurred';
+        alert(errorMessage);
         console.error("There was a problem with the fetch operation:", error);
       });
-  };
+  }, [data]);
   const fetchLocationData = () => {
-    setLoading(true);
+    setLoadingStates(prev => ({ ...prev, location: true }));
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/location`, {
       method: "GET",
       headers: {
@@ -173,7 +193,7 @@ export default function Signup({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
+        setLoadingStates(prev => ({ ...prev, location: false }));
         let tempList = response;
         let states = tempList.filter((i) => i.locationType === "State");
         let cities = tempList.filter((i) => i.locationType === "City");
@@ -208,392 +228,349 @@ export default function Signup({}) {
         console.error("There was a problem with the fetch operation:", error);
       });
   };
-  const fetchVendorCategories = () => {
-    setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-category`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setLoading(false);
-        setVendorCategories(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+  const fetchVendorCategories = async () => {
+    try {
+      setData(prev => ({ ...prev, loading: true }));
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/vendor-category`;
+      console.log('Fetching vendor categories from:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const text = await response.text();
+      console.log('Raw response:', text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
+        console.log('Response was:', text);
+        throw new Error('Invalid JSON response');
+      }
+
+      console.log('Parsed vendor categories:', data);
+
+      if (!Array.isArray(data)) {
+        console.error('Expected array but got:', typeof data);
+        throw new Error('Invalid response format - expected array');
+      }
+
+      setVendorCategories(data.map(category => ({
+        ...category,
+        // Ensure we have both title and name properties
+        title: category.title || category.name,
+        name: category.name || category.title
+      })));
+    } catch (error) {
+      console.error("Error fetching vendor categories:", error);
+      console.error("Stack trace:", error.stack);
+      setVendorCategories([]);
+    } finally {
+      setData(prev => ({ ...prev, loading: false }));
+    }
   };
   useEffect(() => {
     fetchVendorCategories();
     fetchLocationData();
   }, []);
-  useEffect(() => {
-    setData({ ...data, Otp: otp.join("") });
-  }, [otp]);
+  // Memoize change handlers
+  const handleNameChange = useCallback((e) => setData(prev => ({ ...prev, name: e.target.value })), []);
+  const handlePhoneChange = useCallback((e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 10) {
+      setData(prev => ({ ...prev, phone: value }));
+    }
+  }, []);
+  const handleEmailChange = useCallback((e) => setData(prev => ({ ...prev, email: e.target.value })), []);
+  const handleGenderChange = useCallback((e) => setData(prev => ({ ...prev, gender: e.target.value })), []);
+  const handleCategoryChange = useCallback((e) => setData(prev => ({ ...prev, category: e.target.value })), []);
+  const handleDobChange = useCallback((e) => setData(prev => ({ ...prev, dob: e.target.value })), []);
+
+  const handleStateChange = useCallback((e) => {
+    setBusinessAddress(prev => ({
+      ...prev,
+      state: e.target.value,
+      city: "",
+      area: "",
+    }));
+  }, []);
+
+  const handleCityChange = useCallback((e) => {
+    setBusinessAddress(prev => ({
+      ...prev,
+      city: e.target.value,
+      area: "",
+    }));
+  }, []);
+
+  const handleAreaChange = useCallback((e) => {
+    setBusinessAddress(prev => ({
+      ...prev,
+      area: e.target.value,
+    }));
+  }, []);
+
+  const addressView = useMemo(() => {
+    return (
+      <>
+        <h1 className="mt-8 mb-4 text-2xl font-medium">Business Address</h1>
+        <Alert color="info">
+          <span className="font-medium">Note: </span>We are currently operational
+          in Bangalore, will get to other cities soon 🙂
+        </Alert>
+        <Select
+          value={businessAddress.state}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              state: e.target.value,
+              city: "",
+              area: "",
+            });
+          }}
+          disabled={data.loading}
+        >
+          <option value={""}>Select State</option>
+          {locationData.map((item, index) => (
+            <option value={item.title} key={index}>
+              {item.title}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={businessAddress.city}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              city: e.target.value,
+              area: "",
+            });
+          }}
+          disabled={data.loading}
+        >
+          <option value={""}>Select City</option>
+          {locationData
+            ?.find((i) => i.title === businessAddress.state)
+            ?.cities?.map((item, index) => (
+              <option value={item.title} key={index}>
+                {item.title}
+              </option>
+            ))}
+        </Select>
+        <Select
+          value={businessAddress.area}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              area: e.target.value,
+            });
+          }}
+          disabled={data.loading}
+        >
+          <option value={""}>Select Area</option>
+          {locationData
+            ?.find((i) => i.title === businessAddress.state)
+            ?.cities?.find((i) => i.title === businessAddress.city)
+            ?.areas?.map((item, index) => (
+              <option value={item.title} key={index}>
+                {item.title}
+              </option>
+            ))}
+        </Select>
+        <Textarea
+          placeholder="Address"
+          rows={3}
+          value={businessAddress.address}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              address: e.target.value,
+            });
+          }}
+        />
+        <TextInput
+          placeholder="Google Maps"
+          value={businessAddress.googleMaps}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              googleMaps: e.target.value,
+            });
+          }}
+        />
+        <TextInput
+          placeholder="Pincode"
+          value={businessAddress.pincode}
+          onChange={(e) => {
+            setBusinessAddress({
+              ...businessAddress,
+              pincode: e.target.value,
+            });
+          }}
+        />
+        <Button
+          className="text-white bg-rose-900 enabled:hover:bg-900 self-center rounded-full"
+          disabled={
+            loadingStates.submit ||
+            !businessAddress.state ||
+            !businessAddress.city ||
+            !businessAddress.area ||
+            !businessAddress.address ||
+            !businessAddress.googleMaps ||
+            !businessAddress.pincode
+          }
+          onClick={() => {
+            updateAddress();
+          }}
+        >
+          Submit
+        </Button>
+      </>
+    );
+  }, [businessAddress, locationData, data.loading, loadingStates.submit, updateAddress]);
+
+  const otpView = useMemo(() => {
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl font-medium">Enter OTP</h1>
+        <div className="flex justify-between gap-2">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              type="text"
+              maxLength="1"
+              value={digit}
+              onChange={(e) => handleChange(e.target, index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              ref={(ref) => (inputRefs.current[index] = ref)}
+              className="w-12 h-12 text-center border rounded"
+            />
+          ))}
+        </div>
+        {showResend && (
+          <Button onClick={SendOTP} disabled={data.loading}>
+            Resend OTP
+          </Button>
+        )}
+      </div>
+    );
+  }, [otp, showResend, data.loading, SendOTP, handleChange, handleKeyDown]);
+
+  const signUpView = useMemo(() => {
+    const handlePhoneChange = (e) => {
+      const value = e.target.value.replace(/\D/g, '');
+      if (value.length <= 10) {
+        setData(prev => ({ ...prev, phone: value }));
+      }
+    };
+    return (
+      <>
+        <h1 className="text-2xl font-medium">Sign Up</h1>
+        <div className="flex flex-col gap-4">
+          <TextInput
+            placeholder="Name"
+            value={data.name}
+            onChange={handleNameChange}
+            color={data.name.length >= 3 ? 'gray' : 'failure'}
+            helperText={data.name.length >= 3 ? '' : 'Name must be at least 3 characters'}
+          />
+          <TextInput
+            placeholder="Phone (10 digits)"
+            value={data.phone}
+            onChange={handlePhoneChange}
+            color={data.phone.length === 10 ? 'gray' : 'failure'}
+            helperText={data.phone.length === 10 ? '' : 'Phone number must be 10 digits'}
+          />
+          <TextInput
+            placeholder="Email"
+            type="email"
+            value={data.email}
+            onChange={handleEmailChange}
+            color={/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) ? 'gray' : 'failure'}
+            helperText={/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) ? '' : 'Please enter a valid email'}
+          />
+          <Select
+            value={data.gender}
+            onChange={handleGenderChange}
+          >
+            <option value="">Select Gender</option>
+            <option value='Male'>Male</option>
+            <option value='Female'>Female</option>
+            <option value='Other'>Other</option>
+          </Select>
+          <TextInput
+            type="date"
+            value={data.dob}
+            onChange={handleDobChange}
+          />
+          <Select
+            value={data.category}
+            onChange={handleCategoryChange}
+            color={data.category ? 'gray' : 'failure'}
+            helperText={data.loading ? 'Loading categories...' : vendorCategories.length === 0 ? 'No categories found' : ''}
+          >
+            <option value="">Select Category</option>
+            {Array.isArray(vendorCategories) && vendorCategories.length > 0 ? (
+              vendorCategories.map((category) => {
+                const displayName = category.title || category.name;
+                const value = category._id;
+                console.log(`Rendering category: ${displayName} (${value})`);
+                return (
+                  <option key={value} value={value}>
+                    {displayName || 'Unnamed Category'}
+                  </option>
+                );
+              })
+            ) : (
+              <option value="" disabled>
+                {data.loading ? 'Loading categories...' : 'No categories available'}
+              </option>
+            )}
+          </Select>
+          <Button
+            onClick={() => {
+              if (data.loading) return;
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+                alert('Please enter a valid email address');
+                return;
+              }
+              if (data.phone.length !== 10) {
+                alert('Please enter a valid 10-digit phone number');
+                return;
+              }
+              if (data.name.length < 3) {
+                alert('Name must be at least 3 characters');
+                return;
+              }
+              SendOTP();
+            }}
+            disabled={!data.phone || !data.email || !data.name || data.loading}
+          >
+            Send OTP
+          </Button>
+        </div>
+      </>
+    );
+  }, [data, vendorCategories, SendOTP, handleNameChange, handleEmailChange, handleGenderChange, handleCategoryChange, handleDobChange]);
+
   return (
     <>
       <div className="bg-white text-black flex flex-col p-8 gap-6 h-screen w-screen overflow-scroll">
-        {display === "SignUp" && (
-          <>
-            <h1 className="mt-8 mb-4 text-2xl font-medium uppercase text-center">
-              Vendor Sign up
-            </h1>
-            <div>
-              <TextInput
-                placeholder="Contact Name"
-                type="text"
-                value={data.name}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    name: e.target.value,
-                  })
-                }
-                name="Contact Name"
-              />
-              <Label
-                value="This should be your name and not Business Name"
-                className="text-sm text-gray-500"
-              />
-            </div>
-            <TextInput
-              placeholder="Mobile No."
-              type="text"
-              value={data.phone}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  phone: e.target.value,
-                })
-              }
-              name="Mobile No."
-            />
-            <TextInput
-              placeholder="Email-Id"
-              type="text"
-              value={data.email}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  email: e.target.value,
-                })
-              }
-              name="Email-Id"
-            />
-            <div>
-              <Label value="Date of Birth" />
-              <TextInput
-                placeholder="Date of Birth"
-                type="date"
-                value={data.dob}
-                onChange={(e) =>
-                  setData({
-                    ...data,
-                    dob: e.target.value,
-                  })
-                }
-                name="Date of Birth"
-              />
-            </div>
-            <Select
-              value={data.gender}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  gender: e.target.value,
-                })
-              }
-            >
-              <option value={""}>Select Gender</option>
-              <option value={"Male"}>Male</option>
-              <option value={"Female"}>Female</option>
-              <option value={"Other"}>Other</option>
-            </Select>
-            <Select
-              value={data.category}
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  category: e.target.value,
-                })
-              }
-            >
-              <option value="">Select Category</option>
-              {vendorCategories.map((item, index) => (
-                <option value={item.title} key={index}>
-                  {item.title}
-                </option>
-              ))}
-            </Select>
-            {data?.category === "Makeup and Hair styling" && (
-              <div className="flex flex-col gap-2">
-                <Label value="Services you offer" />
-                <Label
-                  htmlFor="service-makeup"
-                  className="flex flex-row justify-between items-center px-2.5 py-2 rounded-lg border border-black"
-                >
-                  <p>Makeup</p>{" "}
-                  <Checkbox
-                    id="service-makeup"
-                    name="service-makeup"
-                    checked={
-                      data.servicesOffered.includes("MUA") &&
-                      !data.servicesOffered.includes("Hairstylist")
-                    }
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        servicesOffered: e.target.checked
-                          ? ["MUA"]
-                          : data.servicesOffered.filter((i) => i !== "MUA"),
-                      })
-                    }
-                  />
-                </Label>
-                <Label
-                  htmlFor="service-hairstyling"
-                  className="flex flex-row justify-between items-center px-2.5 py-2 rounded-lg border border-black"
-                >
-                  <p>Hairstyling</p>
-                  <Checkbox
-                    id="service-hairstyling"
-                    name="service-hairstyling"
-                    checked={
-                      data.servicesOffered.includes("Hairstylist") &&
-                      !data.servicesOffered.includes("MUA")
-                    }
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        servicesOffered: e.target.checked
-                          ? ["Hairstylist"]
-                          : data.servicesOffered.filter(
-                              (i) => i !== "Hairstylist"
-                            ),
-                      })
-                    }
-                  />
-                </Label>
-                <Label
-                  htmlFor="service-both"
-                  className="flex flex-row justify-between items-center px-2.5 py-2 rounded-lg border border-black"
-                >
-                  <p>Both</p>
-                  <Checkbox
-                    id="service-both"
-                    name="service-both"
-                    checked={
-                      data.servicesOffered.includes("Hairstylist") &&
-                      data.servicesOffered.includes("MUA")
-                    }
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        servicesOffered: e.target.checked
-                          ? ["Hairstylist", "MUA"]
-                          : data.servicesOffered.filter(
-                              (i) => i !== "Hairstylist" && i !== "MUA"
-                            ),
-                      })
-                    }
-                  />
-                </Label>
-              </div>
-            )}
-            <Button
-              className="text-white bg-rose-900 enabled:hover:bg-900 self-center rounded-full"
-              disabled={
-                !data.phone ||
-                !data.email ||
-                !data.name ||
-                !processMobileNumber(data.phone)
-              }
-              onClick={() => {
-                SendOTP();
-              }}
-            >
-              SIGN UP
-            </Button>
-          </>
-        )}
-        {display === "OTP" && (
-          <>
-            <h1 className="mt-8 mb-4 text-2xl font-medium uppercase text-center">
-              Vendor Sign up
-            </h1>
-            <div className="flex flex-col gap-2">
-              <Label value="Verify with otp" />
-              <div className="flex justify-between">
-                {otp.map((data, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    maxLength="1"
-                    value={data}
-                    onChange={(e) => handleChange(e.target, index)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    ref={(el) => (inputRefs.current[index] = el)}
-                    className="w-12 h-12 text-lg text-center border border-gray-900 rounded-lg"
-                  />
-                ))}
-              </div>
-              <Label>
-                <p>Otp is sent on this mobile number</p>
-                <p>{processMobileNumber(data.phone)}</p>
-
-                <p
-                  className="underline flex items-center"
-                  onClick={() => {
-                    setOtp(new Array(6).fill(""));
-                    setDisplay("SignUp");
-                  }}
-                >
-                  Edit mobile no?
-                  <MdEdit className="ml-1" />
-                  {showResend && (
-                    <p
-                      className="ml-auto underline flex items-center"
-                      onClick={() => {
-                        setOtp(new Array(6).fill(""));
-                        setShowResend(false);
-                        SendOTP();
-                      }}
-                    >
-                      Resend OTP
-                    </p>
-                  )}
-                </p>
-              </Label>
-            </div>
-            <Button
-              className="text-white bg-rose-900 enabled:hover:bg-900 self-center rounded-full"
-              disabled={loading || data.Otp.length !== 6}
-              onClick={() => {
-                handleSubmit();
-              }}
-            >
-              Next
-            </Button>
-          </>
-        )}
-        {display === "Address" && (
-          <>
-            <h1 className="mt-8 mb-4 text-2xl font-medium">Business Address</h1>
-            <Alert color="info">
-              <span className="font-medium">Note: </span>We are currently
-              operational in Bangalore, will get to other cities soon 🙂
-            </Alert>
-            <Select
-              value={businessAddress.state}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  state: e.target.value,
-                  city: "",
-                  area: "",
-                });
-              }}
-              disabled={loading}
-            >
-              <option value={""}>Select State</option>
-              {locationData.map((item, index) => (
-                <option value={item.title} key={index}>
-                  {item.title}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={businessAddress.city}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  city: e.target.value,
-                  area: "",
-                });
-              }}
-              disabled={loading}
-            >
-              <option value={""}>Select City</option>
-              {locationData
-                ?.find((i) => i.title === businessAddress.state)
-                ?.cities?.map((item, index) => (
-                  <option value={item.title} key={index}>
-                    {item.title}
-                  </option>
-                ))}
-            </Select>
-            <Select
-              value={businessAddress.area}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  area: e.target.value,
-                });
-              }}
-              disabled={loading}
-            >
-              <option value={""}>Select Area</option>
-              {locationData
-                ?.find((i) => i.title === businessAddress.state)
-                ?.cities?.find((i) => i.title === businessAddress.city)
-                ?.areas?.map((item, index) => (
-                  <option value={item.title} key={index}>
-                    {item.title}
-                  </option>
-                ))}
-            </Select>
-            <Textarea
-              placeholder="Address"
-              rows={3}
-              value={businessAddress.address}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  address: e.target.value,
-                });
-              }}
-            />
-            <TextInput
-              placeholder="Google Maps"
-              value={businessAddress.googleMaps}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  googleMaps: e.target.value,
-                });
-              }}
-            />
-            <TextInput
-              placeholder="Pincode"
-              value={businessAddress.pincode}
-              onChange={(e) => {
-                setBusinessAddress({
-                  ...businessAddress,
-                  pincode: e.target.value,
-                });
-              }}
-            />
-            <Button
-              className="text-white bg-rose-900 enabled:hover:bg-900 self-center rounded-full"
-              disabled={
-                !businessAddress.state ||
-                !businessAddress.city ||
-                !businessAddress.area ||
-                !businessAddress.address ||
-                !businessAddress.googleMaps ||
-                !businessAddress.pincode
-              }
-              onClick={() => {
-                updateAddress();
-              }}
-            >
-              Submit
-            </Button>
-          </>
-        )}
+        {display === "SignUp" && signUpView}
+        {display === "OTP" && otpView}
+        {display === "Address" && addressView}
       </div>
     </>
   );
-}
+});
+
+export default Signup;

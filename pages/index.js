@@ -305,7 +305,7 @@ export default function Home({ user }) {
               </svg>
               <span className="font-medium">Profile & Payment Complete!</span>
             </div>
-            <p className="text-sm mt-1">You're all set to start receiving bookings</p>
+            <p className="text-sm mt-1">You&apos;re all set to start receiving bookings</p>
           </div>
         )}
         
@@ -384,7 +384,7 @@ export default function Home({ user }) {
         ) : !loading ? (
           <div className="rounded-lg shadow-lg bg-gray-100 text-gray-600 w-full p-6 flex flex-col items-center justify-center">
             <p className="text-sm">No upcoming events</p>
-            <p className="text-xs mt-1">You don't have any confirmed bookings yet</p>
+            <p className="text-xs mt-1">You don&apos;t have any confirmed bookings yet</p>
           </div>
         ) : (
           <div className="rounded-lg shadow-lg bg-gray-100 w-full p-6 flex flex-col items-center justify-center">

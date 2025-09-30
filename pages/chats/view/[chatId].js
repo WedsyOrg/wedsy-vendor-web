@@ -1054,7 +1054,7 @@ export default function Home({}) {
           {/* Debug: Current content state */}
           {process.env.NODE_ENV === 'development' && (
             <div className="text-xs text-gray-500">
-              Content: "{content}" | Length: {content.length}
+              Content: &quot;{content}&quot; | Length: {content.length}
             </div>
           )}
           <input
