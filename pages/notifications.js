@@ -294,7 +294,7 @@ export default function Notifications({}) {
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             <p className="text-lg font-medium">No notifications</p>
-            <p className="text-sm mt-1">You're all caught up!</p>
+            <p className="text-sm mt-1">You&apos;re all caught up!</p>
           </div>
         ) : (
           notifications.map((notification, index) => (

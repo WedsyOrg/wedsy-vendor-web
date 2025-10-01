@@ -291,7 +291,7 @@ export default function Home({}) {
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Pending Bids</p>
-                  <p className="text-sm text-gray-500">You don't have any pending bidding requests at the moment.</p>
+                  <p className="text-sm text-gray-500">You don&apos;t have any pending bidding requests at the moment.</p>
                 </div>
               </div>
             );
@@ -302,7 +302,7 @@ export default function Home({}) {
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Accepted Bids</p>
-                  <p className="text-sm text-gray-500">You don't have any accepted bids at the moment.</p>
+                  <p className="text-sm text-gray-500">You don&apos;t have any accepted bids at the moment.</p>
                 </div>
               </div>
             );
@@ -442,7 +442,7 @@ export default function Home({}) {
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Pending Packages</p>
-                  <p className="text-sm text-gray-500">You don't have any pending package requests at the moment.</p>
+                  <p className="text-sm text-gray-500">You don&apos;t have any pending package requests at the moment.</p>
                 </div>
               </div>
             );
@@ -453,7 +453,7 @@ export default function Home({}) {
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Accepted Packages</p>
-                  <p className="text-sm text-gray-500">You don't have any accepted packages at the moment.</p>
+                  <p className="text-sm text-gray-500">You don&apos;t have any accepted packages at the moment.</p>
                 </div>
               </div>
             );

@@ -397,7 +397,7 @@ export default function Home({}) {
         <>
           <div className="bg-white px-8 py-6">
             <p className="text-sm font-bold text-[#2B3F6C] mb-2 text-center">Your Quote has been sent successfully!</p>
-            <p className="text-xs text-black mb-6 text-center">You'll be notified when customer accepts the bid!</p>
+            <p className="text-xs text-black mb-6 text-center">You&apos;ll be notified when customer accepts the bid!</p>
             
             
             
