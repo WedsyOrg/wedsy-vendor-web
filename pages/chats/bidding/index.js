@@ -349,21 +349,29 @@ export default function Home({}) {
                 <div className={`flex items-center gap-2 text-sm ${isDeclined ? 'text-gray-400' : 'text-black'}`}>
                   <MdPersonOutline className={`flex-shrink-0 ${isDeclined ? 'text-gray-400' : 'text-custom-dark-blue'}`} size={16} />
                   <span>
-                    {item?.bidding?.events?.reduce(
-                      (eventAccumulator, event) => {
-                        const eventTotal = event.peoples.reduce(
-                          (peopleAccumulator, person) => {
-                            return (
-                              peopleAccumulator +
-                              (parseInt(person.noOfPeople) || 0)
-                            );
-                          },
-                          0
-                        );
-                        return eventAccumulator + eventTotal;
-                      },
-                      0
-                    )}
+                    {(() => {
+                      const total = (item?.bidding?.events || []).reduce(
+                        (eventAccumulator, event) => {
+                          const eventTotal = (event.peoples || []).reduce(
+                            (peopleAccumulator, person) => {
+                              const count = parseInt(person?.noOfPeople, 10);
+                              if (Number.isNaN(count)) {
+                                return peopleAccumulator;
+                              }
+                              return peopleAccumulator + Math.max(count, 0);
+                            },
+                            0
+                          );
+                          // If count is still zero but preferred look is specified, treat as 1
+                          const derivedTotal = eventTotal === 0
+                            ? (event.peoples || []).reduce((acc, person) => acc + (person?.preferredLook?.trim() ? 1 : 0), 0)
+                            : eventTotal;
+                          return eventAccumulator + derivedTotal;
+                        },
+                        0
+                      );
+                      return total > 0 ? total : "Not specified";
+                    })()}
                   </span>
                 </div>
                 <div className={`text-sm ${isDeclined ? 'text-gray-400' : 'text-black'}`}>
