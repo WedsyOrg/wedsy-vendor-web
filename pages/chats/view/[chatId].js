@@ -1050,7 +1050,17 @@ export default function Home({}) {
             </div>
           )}
         </div>
+<<<<<<< HEAD
         <div className="p-3 flex items-center gap-3 bg-white sticky bottom-0 border-t border-gray-200">
+=======
+        <div className="p-2 flex items-center gap-2 bg-white sticky bottom-0">
+          {/* Debug: Current content state */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-500">
+              Content: &quot;{content}&quot; | Length: {content.length}
+            </div>
+          )}
+>>>>>>> origin/main
           <input
             id="messageInput"
             type="text"
