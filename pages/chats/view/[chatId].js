@@ -1369,20 +1369,18 @@ function ChatMessage({ chat }) {
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-3 text-sm font-medium text-[#1C2B5A] underline shadow-md">
-          View details
-          {/* --PendingWork-- */}
-        </div>
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-4 shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">
-          Offer received
+        <div className="ml-auto max-w-[85%] flex flex-col items-end gap-2">
+          <div className="rounded-3xl rounded-br-sm bg-[#1C2B5A] text-white px-5 py-3 shadow-md">
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Offer price
+            </p>
+            <p className="text-2xl font-bold">
+              ₹{parseInt(chat?.content).toLocaleString('en-IN')}
+            </p>
+          </div>
+          <p className="text-xs text-gray-500 px-2">
+            Vendor is not responsible for any
           </p>
-          <p className="text-2xl font-semibold text-[#1C2B5A]">
-            {toPriceString(parseInt(chat?.content))}
-          </p>
-        </div>
-        <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#E8EEF9] px-4 py-2 text-center text-sm font-medium text-[#1C2B5A] shadow">
-          Here’s your custom offer
         </div>
       </>
     );
