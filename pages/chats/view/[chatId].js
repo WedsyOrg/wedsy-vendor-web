@@ -22,7 +22,7 @@ import { toPriceString } from "@/utils/text";
 import { RxDashboard } from "react-icons/rx";
 import { FiEdit3 } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
-import { BsPaperclip, BsImage, BsMic } from "react-icons/bs";
+import { BsImage } from "react-icons/bs";
 
 function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
   const inputRef = useRef(null);
@@ -1732,18 +1732,12 @@ export default function Home({}) {
             >
               ₹
             </button>
-            <div className="flex items-center gap-4">
-              <button type="button">
-                <BsPaperclip size={18} />
-              </button>
-              <button type="button">
-                <BsImage size={20} />
-              </button>
-              <button type="button">
-                <BsMic size={18} />
-              </button>
-            </div>
-            <button type="button" className="text-sm font-semibold">
+             <div className="flex items-center gap-4">
+               <button type="button">
+                 <BsImage size={20} />
+               </button>
+             </div>
+             <button type="button" className="text-sm font-semibold">
               Aa
             </button>
           </div>
