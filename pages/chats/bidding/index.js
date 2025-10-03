@@ -24,10 +24,12 @@ export default function Home({}) {
   const [personalPackageCount, setPersonalPackageCount] = useState(0);
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [decliningBidId, setDecliningBidId] = useState(null);
+  const [selectedSource, setSelectedSource] = useState("Wedsy");
 
   const fetchPendingCounts = () => {
     // Fetch bidding pending count
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=Bidding&stats=Pending`, {
+    const source = selectedSource === "Wedsy" ? "Bidding" : "Personal-Package";
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}&stats=Pending`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +81,8 @@ export default function Home({}) {
 
   const fetchBidding = () => {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=Bidding`, {
+    const source = selectedSource === "Wedsy" ? "Bidding" : "Personal-Package";
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -187,7 +190,12 @@ export default function Home({}) {
   };
   useEffect(() => {
     fetchPendingCounts();
+  }, [selectedSource]);
+
+  useEffect(() => {
+    fetchPendingCounts();
   }, []);
+
 
   useEffect(() => {
     if (primaryTab === "Bidding") {
@@ -244,7 +252,35 @@ export default function Home({}) {
         </div>
       </div>
       
-      {/* Secondary Tabs - Pending and Accepted */}
+      {/* Wedsy and Vendor Tabs - Rounded Pills */}
+      <div className="flex flex-row items-center gap-4 mb-4 px-6 pt-2">
+        <div
+          className={`font-semibold text-sm py-3 px-6 text-center flex-grow rounded-full relative shadow-md transition-all duration-200 whitespace-nowrap ${
+            selectedSource === "Wedsy" 
+              ? "text-white bg-custom-dark-blue shadow-lg" 
+              : "text-custom-dark-blue bg-white border border-custom-dark-blue shadow-sm hover:shadow-md"
+          }`}
+          onClick={() => {
+            setSelectedSource("Wedsy");
+          }}
+        >
+          Wedsy Package
+        </div>
+        <div
+          className={`font-semibold text-sm py-3 px-6 text-center flex-grow rounded-full relative shadow-md transition-all duration-200 whitespace-nowrap ${
+            selectedSource === "Vendor" 
+              ? "text-white bg-custom-dark-blue shadow-lg" 
+              : "text-custom-dark-blue bg-white border border-custom-dark-blue shadow-sm hover:shadow-md"
+          }`}
+          onClick={() => {
+            setSelectedSource("Vendor");
+          }}
+        >
+          Vendor Package
+        </div>
+      </div>
+      
+      {/* Pending and Accepted Tabs - Rectangular Full Width */}
       <div className="flex flex-row items-center mb-4">
         <div
           className={`font-semibold text-lg py-2 text-center flex-grow ${

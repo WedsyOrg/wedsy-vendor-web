@@ -18,10 +18,12 @@ export default function Home({}) {
   const [display, setDisplay] = useState("Pending");
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
+  const [selectedSource, setSelectedSource] = useState("Wedsy");
   const router = useRouter();
   const fetchWedsyPackageBooking = () => {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=Wedsy-Package`, {
+    const source = selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package";
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -108,7 +110,12 @@ export default function Home({}) {
   };
   useEffect(() => {
     fetchWedsyPackageBooking();
+  }, [selectedSource]);
+
+  useEffect(() => {
+    fetchWedsyPackageBooking();
   }, []);
+
   return (
     <>
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
@@ -117,10 +124,42 @@ export default function Home({}) {
           Packages
         </p>
       </div>
-      <div className="flex flex-row items-center mb-4 border-b">
+      
+      {/* Wedsy and Vendor Tabs - Rounded Pills */}
+      <div className="flex flex-row items-center gap-4 mb-4 px-6 pt-2">
+        <div
+          className={`font-semibold text-sm py-3 px-6 text-center flex-grow rounded-full relative shadow-md transition-all duration-200 whitespace-nowrap ${
+            selectedSource === "Wedsy" 
+              ? "text-white bg-custom-dark-blue shadow-lg" 
+              : "text-custom-dark-blue bg-white border border-custom-dark-blue shadow-sm hover:shadow-md"
+          }`}
+          onClick={() => {
+            setSelectedSource("Wedsy");
+          }}
+        >
+          Wedsy Package
+        </div>
+        <div
+          className={`font-semibold text-sm py-3 px-6 text-center flex-grow rounded-full relative shadow-md transition-all duration-200 whitespace-nowrap ${
+            selectedSource === "Vendor" 
+              ? "text-white bg-custom-dark-blue shadow-lg" 
+              : "text-custom-dark-blue bg-white border border-custom-dark-blue shadow-sm hover:shadow-md"
+          }`}
+          onClick={() => {
+            setSelectedSource("Vendor");
+          }}
+        >
+          Vendor Package
+        </div>
+      </div>
+      
+      {/* Pending and Accepted Tabs - Rectangular Full Width */}
+      <div className="flex flex-row items-center mb-4">
         <div
           className={`font-semibold text-lg py-2 text-center flex-grow ${
-            display === "Pending" && "text-white bg-custom-dark-blue"
+            display === "Pending" 
+              ? "text-white bg-black" 
+              : "text-gray-600 bg-white"
           }`}
           onClick={() => {
             setDisplay("Pending");
@@ -130,7 +169,9 @@ export default function Home({}) {
         </div>
         <div
           className={`font-semibold text-lg py-2 text-center flex-grow ${
-            display === "Accepted" && "text-white bg-custom-dark-blue"
+            display === "Accepted" 
+              ? "text-white bg-black" 
+              : "text-gray-600 bg-white"
           }`}
           onClick={() => {
             setDisplay("Accepted");
