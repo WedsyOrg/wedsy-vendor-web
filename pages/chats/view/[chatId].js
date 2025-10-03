@@ -918,7 +918,7 @@ function ChatMessage({ chat }) {
           </p>
         </div>
         <div className="bg-gray-200 text-center py-2 text-sm sm:text-base">
-          Here's your custom offer
+          Here&apos;s your custom offer
         </div>
       </>
     );
