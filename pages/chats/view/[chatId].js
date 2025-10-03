@@ -332,32 +332,32 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
   }, [chat, newPrice]);
   return (
     <>
-      <div className="bg-[#2B3F6C] text-white flex flex-row items-center p-4">
-        <div className="text-xs text-left flex-1">
+      <div className="bg-[#2B3F6C] text-white flex flex-row items-center p-3 sm:p-4">
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
               Best offer
           <br />
-          <span className="text-base font-medium">
+          <span className="text-xs sm:text-base font-medium whitespace-nowrap">
             {bidding?.bids && bidding.bids.length > 0 
               ? toPriceString(Math.min(...bidding.bids.map(bid => bid.bid).filter(bid => bid > 0)))
               : "NULL"
             }
           </span>
         </div>
-        <div className="w-px h-8 bg-white mx-2"></div>
-        <div className="text-xs text-left px-2 flex-1">
+        <div className="w-px h-8 bg-white mx-1 sm:mx-2"></div>
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
               Your offer
           <br />
-          <span className="text-base font-medium">
+          <span className="text-xs sm:text-base font-medium whitespace-nowrap">
             {toPriceString(parseInt(chat?.content))}
           </span>
         </div>
-        <div className="w-px h-8 bg-white mx-2"></div>
-        <div className="text-xs text-left pr-2 flex-1">
+        <div className="w-px h-8 bg-white mx-1 sm:mx-2"></div>
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
           Edit
           <br /> requirement
     </div>
         <MdEdit
-          className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 m-1 rounded-md cursor-pointer"
+          className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 rounded-md cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
             console.log("🔴 EDIT BUTTON CLICKED!");
@@ -405,32 +405,32 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
         />
         {expandRequirements ? (
           <MdOutlineKeyboardArrowUp
-            className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 m-1 rounded-md"
+            className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 rounded-md"
               onClick={() => {
               setExpandRequirements(false);
               setEditRequirements(false);
             }}
-            size={24}
+            size={20}
           />
         ) : (
           <MdOutlineKeyboardArrowDown
-            className="flex-shrink-0 border border-white bg-white text-[#2B3F6C] p-1 m-1 rounded-md"
+            className="flex-shrink-0 border border-white bg-white text-[#2B3F6C] p-1 rounded-md"
             onClick={() => {
               // Just expand to view mode, not edit mode
               setExpandRequirements(true);
               setEditRequirements(false);
             }}
-            size={24}
+            size={20}
           />
       )}
       </div>
       {expandRequirements && !editRequirements && (
-        <div className="bg-[#E7EFFF] p-4">
-          <div className="flex flex-row gap-2 mb-2">
+        <div className="bg-[#E7EFFF] p-3 sm:p-4">
+          <div className="flex flex-row gap-2 mb-2 overflow-x-auto hide-scrollbar">
             {((chat?.contentType === "BiddingBid" ? bidding?.events : chat?.other?.events) || []).map((item, index) => (
               <div
               key={index}
-                className={`cursor-pointer px-6 py-1 font-medium rounded-full text-sm ${
+                className={`cursor-pointer px-4 sm:px-6 py-1 font-medium rounded-full text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                 selectedEvent === index
                   ? "bg-[#2B3F6C] text-white"
                   : "bg-white text-[#2B3F6C]"
@@ -447,12 +447,12 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
           ?.filter((_, index) => index === selectedEvent)
             ?.map((item, index) => (
               <>
-                <div className="flex flex-row gap-4 items-top text-sm mt-6 mb-4 font-medium">
-                  <p className="my-0 py-0 flex flex-row items-center gap-1">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start text-xs sm:text-sm mt-4 sm:mt-6 mb-4 font-medium">
+                  <p className="my-0 py-0 flex flex-row items-center gap-1 flex-1 min-w-0">
                     <MdOutlineLocationOn className="flex-shrink-0 text-base" />{" "}
-                    {item?.location}
+                    <span className="break-words">{item?.location}</span>
                   </p>
-                  <p className="text-right flex-shrink-0">
+                  <p className="text-left sm:text-right flex-shrink-0">
                     {new Date(item?.date)?.toLocaleDateString("en-GB", {
                       day: "2-digit",
                         month: "short",
@@ -463,7 +463,7 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                 {item?.peoples?.map((rec, recIndex) => (
                   <>
                     <div
-                      className="flex flex-row gap-4 items-top text-sm font-medium"
+                      className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start text-xs sm:text-sm font-medium"
                       key={`recIndex+`}
                     >
                       <p className="my-0 py-0 flex flex-row items-center gap-1">
@@ -474,29 +474,29 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                       <p className="">{rec.preferredLook}</p>
                     </div>
                     <div
-                      className="flex flex-row gap-4 items-top text-sm font-medium mb-2"
+                      className="flex flex-row gap-2 sm:gap-4 items-top text-xs sm:text-sm font-medium mb-2"
                       key={`recIndex-`}
                     >
                       <p className="my-0 py-0 flex flex-row items-center gap-1">
                         <RxDashboard className="flex-shrink-0 text-base" />{" "}
-                        {rec?.addOns}
+                        <span className="break-words">{rec?.addOns}</span>
                       </p>
                     </div>
                   </>
                 ))}
                 {item?.notes?.length > 0 && (
                   <>
-                    <p className="text-xs text-[#2B3F6C] font-medium mt-6">
+                    <p className="text-xs text-[#2B3F6C] font-medium mt-4 sm:mt-6">
                       NOTES
                     </p>
-                    <div className="border rounded-lg text-xs p-2 bg-white">
+                    <div className="border rounded-lg text-xs p-2 bg-white break-words">
                       {item?.notes?.join("\n")}
                     </div>
                   </>
                 )}
               </>
             ))}
-          <div className="py-2 flex flex-row gap-4 justify-center items-center mt-4">
+          <div className="py-2 flex flex-row gap-3 sm:gap-4 justify-center items-center mt-4">
             {((chat?.contentType === "BiddingBid" ? bidding?.events : chat?.other?.events) || []).map((_, index) => (
               <div
                 key={index}
@@ -519,12 +519,12 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
             </div>
       )}
       {expandRequirements && editRequirements && events && events.length > 0 && (
-        <div className="bg-[#E7EFFF] p-4">
-          <div className="flex flex-row gap-2 mb-4">
+        <div className="bg-[#E7EFFF] p-3 sm:p-4">
+          <div className="flex flex-row gap-2 mb-4 overflow-x-auto hide-scrollbar">
             {events?.map((item, index) => (
                   <button
                     key={index}
-                className={`px-6 py-2 font-medium rounded-full text-sm ${
+                className={`px-4 sm:px-6 py-2 font-medium rounded-full text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   eventIndex === index
                         ? "bg-[#2B3F6C] text-white"
                     : "bg-white text-[#2B3F6C] border border-[#2B3F6C]"
@@ -555,7 +555,7 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                 ]);
                 setEventIndex(events.length);
               }}
-              className="px-6 py-2 rounded-full font-medium text-sm bg-gray-700 text-white border-2"
+              className="px-4 sm:px-6 py-2 rounded-full font-medium text-xs sm:text-sm bg-gray-700 text-white border-2 whitespace-nowrap flex-shrink-0"
             >
               + Add
                 </button>
@@ -565,14 +565,14 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                   setEvents(events.filter((_, i) => i !== eventIndex));
                   setEventIndex(0);
                 }}
-                className="p-2 rounded-lg bg-white border text-[#2B3F6C] hover:bg-red-50"
+                className="p-1.5 sm:p-2 rounded-lg bg-white border text-[#2B3F6C] hover:bg-red-50 flex-shrink-0"
                 >
-                  <MdDelete size={24} />
+                  <MdDelete size={20} className="sm:w-6 sm:h-6" />
                 </button>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
                   <div>
               <Label value="Event Name" />
               <TextInput
@@ -696,7 +696,7 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                 ];
                 setEvents(updated);
               }}
-              className="w-full py-2 px-4 rounded-lg font-medium bg-[#2B3F6C] text-white"
+              className="w-full py-2 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm bg-[#2B3F6C] text-white"
             >
               + Add more people
             </button>
@@ -725,17 +725,18 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                 updated[eventIndex].notes = [...(updated[eventIndex].notes || []), ""];
                 setEvents(updated);
             }}
-              className="w-full py-2 px-4 rounded-lg font-medium bg-[#2B3F6C] text-white"
+              className="w-full py-2 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm bg-[#2B3F6C] text-white"
           >
               + Add Notes
           </button>
 
             <div>
-              <Label value="Enter new Price" />
+              <Label value="Enter new Price" className="text-xs sm:text-sm" />
               <TextInput
                 icon={MdCurrencyRupee}
                 value={newPrice || ""}
                 onChange={(e) => setNewPrice(e.target.value)}
+                className="text-sm sm:text-base"
               />
           </div>
 
@@ -745,7 +746,7 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
                 console.log("Sending updated price:", newPrice);
                 CreateBiddingOffer(true); // Pass true for isEditMode
               }}
-              className="w-full bg-[#2B3F6C] text-white rounded-lg px-16 py-2 font-medium"
+              className="w-full bg-[#2B3F6C] text-white rounded-lg px-8 sm:px-16 py-2 sm:py-3 font-medium text-sm sm:text-base"
             >
               Update & Send
             </button>
@@ -828,13 +829,13 @@ function ChatMessage({ chat }) {
   if (chat?.contentType === "Text") {
     if (chat?.sender?.role === "user") {
       return (
-        <div className="p-2 bg-[#f5f5f5] rounded-xl rounded-bl-none shadow self-start px-6">
+        <div className="p-2 bg-[#f5f5f5] rounded-xl rounded-bl-none shadow self-start px-4 sm:px-6 max-w-[85%] sm:max-w-[70%] text-sm sm:text-base">
           {chat?.content}
         </div>
       );
     } else if (chat?.sender?.role === "vendor") {
       return (
-        <div className="p-2 bg-[#2B3F6C] text-white rounded-xl rounded-br-none shadow self-end px-6">
+        <div className="p-2 bg-[#2B3F6C] text-white rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-[70%] text-sm sm:text-base">
           {chat?.content}
         </div>
       );
@@ -843,21 +844,23 @@ function ChatMessage({ chat }) {
     return (
       <>
         {order?._id && order?.amount?.due === 0 && (
-          <div className="bg-[#2C7300] text-white text-center py-2">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="p-2 bg-[#F5F5F5] shadow self-end px-6 underline cursor-pointer">
-          View details
-          {/* --PendingWork-- */}
-        </div>
-        <div className="p-2 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-6">
-          Package price
-          <p className="text-2xl font-semibold">
+        {order?._id && (
+          <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
+            View details
+            {/* --PendingWork-- */}
+          </div>
+        )}
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Package price</p>
+          <p className="text-xl sm:text-2xl font-semibold">
             {toPriceString(order?.amount?.total)}
           </p>
         </div>
-        <div className="bg-[#2C7300] text-white text-center py-2">
+        <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
           Package request accepted
         </div>
       </>
@@ -866,22 +869,22 @@ function ChatMessage({ chat }) {
     return (
       <>
         {chat?.other?.rejected && (
-          <div className="bg-gray-600 text-white text-center py-2">
+          <div className="bg-gray-600 text-white text-center py-2 text-sm sm:text-base">
             Offer Declined
           </div>
         )}
         {chat?.other?.accepted && chat?.other?.order && (
-          <div className="bg-[#2C7300] text-white text-center py-2">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="p-2 bg-[#F5F5F5] shadow self-end px-6 underline cursor-pointer">
+        <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
           View details
           {/* --PendingWork-- */}
         </div>
-        <div className="p-2 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-6">
-          Offer received
-          <p className="text-2xl font-semibold">
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Offer received</p>
+          <p className="text-xl sm:text-2xl font-semibold">
             {toPriceString(
               bidding?.bids?.find(
                 (item) => item?._id === chat?.other?.biddingBid
@@ -895,26 +898,26 @@ function ChatMessage({ chat }) {
     return (
       <>
         {chat?.other?.rejected && (
-          <div className="bg-gray-600 text-white text-center py-2">
+          <div className="bg-gray-600 text-white text-center py-2 text-sm sm:text-base">
             Offer Declined
           </div>
         )}
         {chat?.other?.accepted && chat?.other?.order && (
-          <div className="bg-[#2C7300] text-white text-center py-2">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="p-2 bg-[#F5F5F5] shadow self-end px-6 underline cursor-pointer">
+        <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
           View details
           {/* --PendingWork-- */}
-          </div>
-        <div className="p-2 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-6">
-          Offer received
-          <p className="text-2xl font-semibold">
+        </div>
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Offer received</p>
+          <p className="text-xl sm:text-2xl font-semibold">
             {toPriceString(parseInt(chat?.content))}
           </p>
         </div>
-        <div className="bg-gray-200 text-center py-2">
+        <div className="bg-gray-200 text-center py-2 text-sm sm:text-base">
           Here's your custom offer
         </div>
       </>
@@ -1091,10 +1094,10 @@ export default function Home({}) {
         theme="light"
       />
       <div className="flex flex-col h-full">
-        <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
+        <div className="sticky top-0 w-full flex flex-row items-center gap-2 sm:gap-3 px-3 sm:px-6 border-b py-3 shadow-lg bg-white z-10">
           <BackIcon />
           <Avatar size="sm" rounded img={chat?.user?.profilePhoto} />
-          <p className="grow text-lg font-semibold text-custom-dark-blue">
+          <p className="grow text-base sm:text-lg font-semibold text-custom-dark-blue truncate">
             {chat?.user?.name}
           </p>
         </div>
@@ -1123,17 +1126,17 @@ export default function Home({}) {
             </div>
         <div className="bg-white sticky bottom-0">
           {showMakeOffer && displayRequirements?._id && (
-            <div className="p-4 border-t">
-              <div className="bg-[#2B3F6C] rounded-3xl p-4">
-                <label className="block text-white text-xs font-semibold mb-2">
+            <div className="p-3 sm:p-4 border-t">
+              <div className="bg-[#2B3F6C] rounded-3xl p-3 sm:p-4">
+                <label className="block text-white text-xs sm:text-sm font-semibold mb-2">
                   Make offer
                 </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-4 py-3">
-                    <span className="text-[#2B3F6C] text-lg font-semibold">₹</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 sm:px-4 py-2 sm:py-3">
+                    <span className="text-[#2B3F6C] text-base sm:text-lg font-semibold">₹</span>
                     <input
                       type="number"
-                      className="flex-1 border-0 bg-transparent text-[#2B3F6C] text-lg font-semibold focus:outline-none focus:ring-0"
+                      className="flex-1 border-0 bg-transparent text-[#2B3F6C] text-base sm:text-lg font-semibold focus:outline-none focus:ring-0 min-w-0"
                       value={newPrice ?? ""}
                       onChange={(e) => setNewPrice(e.target.value)}
                       placeholder="Enter amount"
@@ -1193,12 +1196,12 @@ export default function Home({}) {
               </div>
             </div>
           )}
-          <div className="p-2">
+          <div className="p-2 sm:p-3">
           <input
             id="messageInput"
             type="text"
             placeholder="Send message here..."
-              className="flex-1 rounded-full px-4 py-2 focus:outline-0 focus:ring-0 focus:ring-offset-0 bg-[#F2F2F2] w-full mb-2"
+              className="flex-1 rounded-full px-3 sm:px-4 py-2 text-sm sm:text-base focus:outline-0 focus:ring-0 focus:ring-offset-0 bg-[#F2F2F2] w-full mb-2"
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
@@ -1210,23 +1213,23 @@ export default function Home({}) {
               }
             }}
           />
-            <div className="flex items-center justify-between px-2">
+            <div className="flex items-center justify-between px-1 sm:px-2">
           <button
               type="button"
-                className="p-2 text-gray-600 hover:text-gray-800"
+                className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800"
                 onClick={() => setShowMakeOffer(!showMakeOffer)}
               >
-                <BiRupee size={24} />
+                <BiRupee size={22} className="sm:w-6 sm:h-6" />
           </button>
-              <button type="button" className="p-2 text-sm font-semibold text-gray-600 hover:text-gray-800">
+              <button type="button" className="p-1.5 sm:p-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-gray-800">
               Aa
             </button>
             <button
-                className="ml-auto inline-flex items-center justify-center rounded-full bg-[#2B3F6C] text-white h-10 w-10 disabled:bg-[#A9B4D3]"
+                className="ml-auto inline-flex items-center justify-center rounded-full bg-[#2B3F6C] text-white h-9 w-9 sm:h-10 sm:w-10 disabled:bg-[#A9B4D3]"
                 disabled={loading || !content.trim()}
                 onClick={CreateChatMessage}
               >
-                <VscSend size={20} />
+                <VscSend size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
