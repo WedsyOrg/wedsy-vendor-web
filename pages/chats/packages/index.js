@@ -20,10 +20,16 @@ export default function Home({}) {
   const [list, setList] = useState([]);
   const [selectedSource, setSelectedSource] = useState("Wedsy");
   const router = useRouter();
-  const fetchWedsyPackageBooking = () => {
+
+
+  const fetchWedsyPackageBooking = async () => {
     setLoading(true);
     const source = selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package";
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`, {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`;
+    
+    console.log("Fetching packages for source:", source);
+    
+    fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -31,37 +37,56 @@ export default function Home({}) {
       },
     })
       .then((response) => {
+        console.log("API Response Status:", response.status);
+        console.log("API Response Headers:", response.headers);
         if (!response.ok) {
-          router.push("/login");
-          return;
+          if (response.status === 401) {
+            console.log("Unauthorized - redirecting to login");
+            router.push("/login");
+            return;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
         } else {
           return response.json();
         }
       })
       .then((response) => {
+        console.log("API Response Data:", response);
+        console.log("Response type:", typeof response);
+        console.log("Is array:", Array.isArray(response));
+        console.log("Response length:", response?.length);
+        
         if (response) {
           setLoading(false);
-          setList(response);
+          setList(Array.isArray(response) ? response : []);
+        } else {
+          setLoading(false);
+          setList([]);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
+        setList([]);
       });
   };
   const AcceptWedsyPackageBooking = (_id) => {
     setLoading(true);
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/accept-wedsy-package-booking`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    )
+    console.log("Accepting package booking with ID:", _id);
+    const acceptUrl = `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/accept-wedsy-package-booking`;
+    console.log("Accept URL:", acceptUrl);
+    
+    fetch(acceptUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
       .then((response) => {
+        console.log("Accept Response Status:", response.status);
         if (!response.ok) {
+          console.log("Accept failed - redirecting to login");
           router.push("/login");
           return;
         } else {
@@ -69,29 +94,34 @@ export default function Home({}) {
         }
       })
       .then((response) => {
+        console.log("Accept Response Data:", response);
         if (response) {
           setLoading(false);
           fetchWedsyPackageBooking();
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        console.error("There was a problem with the accept operation:", error);
+        setLoading(false);
       });
   };
   const RejectWedsyPackageBooking = (_id) => {
     setLoading(true);
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-wedsy-package-booking`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    )
+    console.log("Rejecting package booking with ID:", _id);
+    const rejectUrl = `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-wedsy-package-booking`;
+    console.log("Reject URL:", rejectUrl);
+    
+    fetch(rejectUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
       .then((response) => {
+        console.log("Reject Response Status:", response.status);
         if (!response.ok) {
+          console.log("Reject failed - redirecting to login");
           router.push("/login");
           return;
         } else {
@@ -99,13 +129,15 @@ export default function Home({}) {
         }
       })
       .then((response) => {
+        console.log("Reject Response Data:", response);
         if (response) {
           setLoading(false);
           fetchWedsyPackageBooking();
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        console.error("There was a problem with the reject operation:", error);
+        setLoading(false);
       });
   };
   useEffect(() => {
@@ -153,6 +185,7 @@ export default function Home({}) {
         </div>
       </div>
       
+      
       {/* Pending and Accepted Tabs - Rectangular Full Width */}
       <div className="flex flex-row items-center mb-4">
         <div
@@ -180,107 +213,106 @@ export default function Home({}) {
           Accepted
         </div>
       </div>
-      <div className="flex flex-col gap-4">
-        {list
-          .filter((item) =>
-            display === "Pending"
-              ? item?.status?.accepted === false &&
-                item?.status?.rejected === false
-              : display === "Accepted"
+      <div className="flex flex-col gap-2 px-4">
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-500">Loading packages...</div>
+          </div>
+            ) : list.filter((item) => {
+              const isPending = display === "Pending" 
+                ? item?.status?.accepted === false && item?.status?.rejected === false
+                : false;
+              const isAccepted = display === "Accepted" 
+                ? item?.status?.accepted === true
+                : false;
+              return isPending || isAccepted;
+            }).length === 0 ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-500">No {display.toLowerCase()} packages found</div>
+          </div>
+        ) : list
+          .filter((item) => {
+            const isPending = display === "Pending" 
+              ? item?.status?.accepted === false && item?.status?.rejected === false
+              : false;
+            const isAccepted = display === "Accepted" 
               ? item?.status?.accepted === true
-              : false
-          )
+              : false;
+            return isPending || isAccepted;
+          })
           .map((item, index) => (
-            <>
-              <div className="flex flex-col gap-1 px-4 pb-4 border-b-2 relative">
-                <div className="grid grid-cols-5 gap-2">
-                  <div className=" col-span-3">
-                    <div className="text-lg font-semibold">
-                      {item?.order?.user?.name}
-                    </div>
-                    <p className="text-sm my-0 py-0 flex flex-row items-center gap-1 font-semibold">
-                      {item?.wedsyPackageBooking?.wedsyPackages
-                        ?.map((i) => i?.package?.name)
-                        .join(", ")}
-                    </p>
+            <div key={item._id} className="bg-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div className="text-lg font-bold text-gray-800">
+                  {item?.order?.user?.name}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {new Date(item?.wedsyPackageBooking?.date)?.toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-end">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <MdOutlineLocationOn className="text-gray-500 text-sm" />
+                    <span className="text-sm text-gray-600">
+                      {item?.wedsyPackageBooking?.address?.formatted_address?.split(',')[0] || 'Location not specified'}
+                    </span>
                   </div>
-                  <div className=" col-span-2 row-span-2 text-right">
-                    <div className="text-sm font-semibold">
-                      {new Date(
-                        item?.wedsyPackageBooking?.date
-                      )?.toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}{" "}
-                      {`${item?.wedsyPackageBooking?.time} ${
-                        +item?.wedsyPackageBooking?.time.split(":")[0] < 12
-                          ? "AM"
-                          : "PM"
-                      }`}
-                    </div>
-                    <p className="text-right text-xl font-semibold">
-                      {toPriceString(item?.order?.amount?.total)}
-                    </p>
-                    <p
-                      className="text-right text-gray-500 text-sm underline"
-                      onClick={() => {
-                        router.push(
-                          `/chats/packages/${item?.wedsyPackageBooking?._id}`
-                        );
-                      }}
-                    >
-                      view details
-                    </p>
-                  </div>
-                  <div className="col-span-3">
-                    <p className="my-0 py-0 flex flex-row items-center gap-1">
-                      <MdOutlineLocationOn className="flex-shrink-0" />{" "}
-                      <span className="text-xs">
-                        {item?.wedsyPackageBooking?.address?.formatted_address}
-                      </span>
-                    </p>
-                    <p className="my-0 py-0 flex flex-row items-center gap-1">
-                      <MdPersonOutline />{" "}
+                  
+                  <div className="flex items-center gap-1 mb-1">
+                    <MdPersonOutline className="text-gray-500 text-sm" />
+                    <span className="text-sm text-gray-600">
                       {item?.wedsyPackageBooking?.wedsyPackages?.reduce(
                         (acc, rec) => acc + rec.quantity,
                         0
                       )}
-                    </p>
+                    </span>
                   </div>
-                  {display === "Pending" && (
-                    <div className="uppercase flex flex-row w-full justify-end items-center text-xs absolute bottom-0 right-0">
-                      <span
+                  
+                  <div className="text-sm text-gray-600">
+                    {item?.wedsyPackageBooking?.wedsyPackages
+                      ?.map((i) => i?.package?.name)
+                      .join(", ")}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  {display === "Pending" ? (
+                    <div className="flex gap-1">
+                      <button
                         onClick={() => {
                           if (!loading) {
-                            RejectWedsyPackageBooking(
-                              item?.wedsyPackageBooking?._id
-                            );
+                            RejectWedsyPackageBooking(item._id);
                           }
                         }}
-                        className="border border-custom-dark-blue text-custom-dark-blue py-2 px-6"
-                        size={24}
+                        className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs flex items-center gap-1"
                       >
-                        Cancel
-                      </span>
-                      <span
+                        <MdClear className="text-xs" />
+                      </button>
+                      <button
                         onClick={() => {
                           if (!loading) {
-                            AcceptWedsyPackageBooking(
-                              item?.wedsyPackageBooking?._id
-                            );
+                            AcceptWedsyPackageBooking(item._id);
                           }
                         }}
-                        className="border border-custom-dark-blue bg-custom-dark-blue text-white py-2 px-6"
-                        size={24}
+                        className="bg-custom-dark-blue text-white px-2 py-1 rounded text-xs flex items-center gap-1"
                       >
-                        Accept
-                      </span>
+                        <MdCheck className="text-xs" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-500 text-white px-3 py-1 rounded text-sm font-medium">
+                      Accepted
                     </div>
                   )}
                 </div>
               </div>
-            </>
+            </div>
           ))}
       </div>
     </>
