@@ -12,7 +12,6 @@ import {
   MdOutlineLocationOn,
   MdPersonOutline,
   MdSearch,
-  MdVisibility,
 } from "react-icons/md";
 import { useRouter } from "next/router";
 import { Avatar, Label, Select, TextInput } from "flowbite-react";
@@ -20,11 +19,12 @@ import { formatMessageTime } from "@/utils/chat";
 import { VscSend } from "react-icons/vsc";
 import { toPriceString } from "@/utils/text";
 import { RxDashboard } from "react-icons/rx";
-import { FiEdit3 } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
-import { BsPaperclip, BsImage, BsMic } from "react-icons/bs";
+import { IoArrowUpCircle } from "react-icons/io5";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
+function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }) {
   const inputRef = useRef(null);
   const [googleInstance, setGoogleInstance] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -35,10 +35,16 @@ function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
   const [events, setEvents] = useState(null);
   const [newPrice, setNewPrice] = useState(null);
   const [eventIndex, setEventIndex] = useState(0);
-  const [eventsCount, setEventsCount] = useState("1");
   const [preferredLook, setPreferredLook] = useState([]);
   const [makeupStyle, setMakeupStyle] = useState([]);
   const [addOns, setAddOns] = useState([]);
+  
+  // Debug: Log chat data when component mounts or updates
+  useEffect(() => {
+    console.log("🔵 BiddingRequirement component - chat prop:", chat);
+    console.log("🔵 chat.contentType:", chat?.contentType);
+    console.log("🔵 chat.other:", chat?.other);
+  }, [chat]);
   const extractAddressComponents = (components) => {
     const result = {
       city: "",
@@ -193,7 +199,17 @@ function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
       });
   };
   const fetchBidding = () => {
+    console.log("fetchBidding called");
+    console.log("chat?.other?.bidding:", chat?.other?.bidding);
+    
+    if (!chat?.other?.bidding) {
+      console.log("No bidding ID available, skipping fetch");
+      return;
+    }
+    
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
+    console.log("Fetching bidding from:", `${apiUrl}/bidding/${chat?.other?.bidding}`);
+    
     fetch(`${apiUrl}/bidding/${chat?.other?.bidding}`, {
       method: "GET",
       headers: {
@@ -203,18 +219,36 @@ function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        console.log("Bidding response:", response);
-        console.log("Bidding events:", response?.events);
+        console.log("✅ Bidding response received:", response);
+        console.log("✅ Bidding events:", response?.events);
         setBidding(response);
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        console.error("❌ Error fetching bidding:", error);
       });
   };
-  const CreateBiddingOffer = () => {
-  const priceToSend = (newPrice ?? chat?.content ?? "").toString().trim();
-    if (!priceToSend) {
+  const CreateBiddingOffer = (isEditMode = false) => {
+    // Validate price
+    if (!newPrice || newPrice <= 0) {
+      toast.error("Please enter a valid price.");
       return;
+    }
+
+    // Check if vendor has already made an offer (only for new offers, not edits)
+    if (!isEditMode && hasVendorOffer) {
+      toast.warning("You have already made an offer. You can only make one offer per chat.");
+      return;
+    }
+
+    // Validate events data when editing
+    if (isEditMode && events) {
+      const hasInvalidEvent = events.some(event => 
+        !event.eventName || !event.date || !event.location
+      );
+      if (hasInvalidEvent) {
+        toast.error("Please fill in all required fields (Event Name, Date, Location).");
+        return;
+      }
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
@@ -225,30 +259,37 @@ function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
         authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({
-        content: priceToSend,
+        content: newPrice,
         contentType: "BiddingOffer",
         other: {
           bidding: chat?.other?.bidding,
           biddingBid: chat.other?.biddingBid,
-          events,
+          events: events || chat?.other?.events,
         },
       }),
     })
       .then((response) => response.json())
       .then((response) => {
+        console.log("Offer sent successfully:", response);
+        toast.success(isEditMode ? "Offer updated successfully!" : "Offer sent successfully!");
+        // Immediately set the flag to prevent duplicate submissions
+        if (!isEditMode) {
+          setHasVendorOffer(true);
+        }
         fetchChatMessages();
         setEvents(null);
         setSelectedEvent(0);
         setEventIndex(0);
-        setNewPrice(null);
         setEditRequirements(false);
         setExpandRequirements(false);
+        setNewPrice(null);
         if (onClose) {
           onClose();
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        toast.error("Failed to send offer. Please try again.");
       });
   };
   useEffect(() => {
@@ -261,422 +302,240 @@ function BiddingRequirement({ chat, fetchChatMessages, onClose }) {
       fetchPreferredLook();
     }
   }, [chat]);
+
+  // Initialize events when entering edit mode
+  useEffect(() => {
+    if (editRequirements && !events) {
+      const initialEvents = chat?.contentType === "BiddingBid"
+        ? bidding?.events
+        : chat?.other?.events;
+      
+      console.log("useEffect trying to initialize events");
+      console.log("editRequirements:", editRequirements);
+      console.log("events:", events);
+      console.log("initialEvents:", initialEvents);
+      
+      if (initialEvents && initialEvents.length > 0) {
+        console.log("Setting events from useEffect");
+        setEvents(JSON.parse(JSON.stringify(initialEvents))); // Deep clone
+      } else {
+        console.log("No initialEvents available yet");
+      }
+    }
+  }, [editRequirements, chat, bidding, events]);
+
+  // Initialize newPrice from chat content
   useEffect(() => {
     if ((newPrice === null || newPrice === undefined) && chat?.content) {
       setNewPrice(chat?.content);
     }
   }, [chat, newPrice]);
-
   return (
-    <div 
-      className="bg-[#2B3F6C] border border-[#2B3F6C] px-4 py-3 flex items-center gap-3 max-w-full"
-      style={{
-        borderTopLeftRadius: '25px',
-        borderTopRightRadius: '25px',
-        borderBottomRightRadius: '25px',
-        borderBottomLeftRadius: '0px'
-      }}
-    >
-      <div className="flex-1 min-w-0">
-        <label className="block text-white text-xs font-semibold mb-1.5">
-          Make offer
-        </label>
-        <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
-          <span className="text-sm font-semibold text-[#2B3F6C]">₹</span>
-          <input
-            type="number"
-            className="w-full border-0 bg-transparent text-sm font-semibold text-[#2B3F6C] focus:outline-none"
-            value={newPrice ?? ""}
-            onChange={(e) => setNewPrice(e.target.value)}
-            placeholder="Enter amount"
-          />
+    <>
+      <div className="bg-[#2B3F6C] text-white flex flex-row items-center p-3 sm:p-4">
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
+              Best offer
+          <br />
+          <span className="text-xs sm:text-base font-medium whitespace-nowrap">
+            {bidding?.bids && bidding.bids.length > 0 
+              ? toPriceString(Math.min(...bidding.bids.map(bid => bid.bid).filter(bid => bid > 0)))
+              : "NULL"
+            }
+          </span>
         </div>
+        <div className="w-px h-8 bg-white mx-1 sm:mx-2"></div>
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
+              Your offer
+          <br />
+          <span className="text-xs sm:text-base font-medium whitespace-nowrap">
+            {toPriceString(parseInt(chat?.content))}
+          </span>
         </div>
-      <button
-            onClick={() => {
-          CreateBiddingOffer();
-          if (onClose) {
-            onClose();
-          }
-        }}
-        className="flex items-center justify-center w-10 h-10 flex-shrink-0 rounded-full border-2 border-white text-white hover:bg-white hover:text-[#2B3F6C] transition"
-      >
-        <span className="text-xl font-bold leading-none">↑</span>
-      </button>
+        <div className="w-px h-8 bg-white mx-1 sm:mx-2"></div>
+        <div className="text-[10px] sm:text-xs text-left flex-1 min-w-0 px-1">
+          Edit
+          <br /> requirement
     </div>
-  );
-}
-
-function EditRequirementsPanel({ chat, onClose, fetchChatMessages, onSaved }) {
-  const inputRef = useRef(null);
-  const [bidding, setBidding] = useState(null);
-  const [selectedEvent, setSelectedEvent] = useState(0);
-  const [fetchingBidding, setFetchingBidding] = useState(false);
-  const [events, setEvents] = useState(null);
-  const [eventIndex, setEventIndex] = useState(0);
-  const [eventsCount, setEventsCount] = useState("1");
-  const [newPrice, setNewPrice] = useState(null);
-  const [preferredLook, setPreferredLook] = useState([]);
-  const [makeupStyle, setMakeupStyle] = useState([]);
-  const [addOns, setAddOns] = useState([]);
-  const [expandRequirements, setExpandRequirements] = useState(false);
-
-  function fetchBidding() {
-    if (fetchingBidding) return;
-    
-    const biddingId = chat?.other?.bidding;
-    console.log("EditRequirementsPanel fetchBidding - bidding ID:", biddingId);
-    console.log("EditRequirementsPanel chat object:", chat);
-    
-    if (!biddingId) {
-      console.error("EditRequirementsPanel: No bidding ID found in chat.other.bidding");
-      setFetchingBidding(false);
-      return;
-    }
-    
-    setFetchingBidding(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/bidding/${biddingId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        console.log("EditRequirementsPanel: Bidding data received:", response);
-        setBidding(response);
-        setFetchingBidding(false);
-      })
-      .catch((error) => {
-        console.error("EditRequirementsPanel fetch error:", error);
-        setFetchingBidding(false);
-      });
-  }
-
-  const fetchPreferredLook = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-preferred-look`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setPreferredLook(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  const fetchMakeupStyle = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-makeup-style`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setMakeupStyle(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  const fetchAddOns = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-add-ons`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setAddOns(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  const SaveRequirements = async () => {
-    if (!events || events.length === 0) {
-      console.error("SaveRequirements: No events to save");
-      return;
-    }
-
-    console.log("====== SAVING REQUIREMENTS ======");
-    console.log("Events:", events);
-    console.log("Chat ID:", chat?.chat);
-    console.log("Bidding ID:", chat?.other?.bidding);
-    console.log("=================================");
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    
-    // Create a new BiddingOffer message with updated events (same price as current offer)
-    const priceToSend = (newPrice ?? chat?.content ?? "").toString().trim();
-    
-    try {
-      const response = await fetch(`${apiUrl}/chat/${chat?.chat}/content`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          content: priceToSend || chat?.content,
-          contentType: "BiddingOffer",
-          other: {
-            bidding: chat?.other?.bidding,
-            biddingBid: chat?.other?.biddingBid,
-            events: events,
-          },
-        }),
-      });
-
-      console.log("Save response status:", response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("✓ Saved successfully! New message:", data);
-      
-      // Update parent state with the new message
-      if (onSaved) {
-        onSaved(data);
-      }
-      
-      // Refresh chat messages to show the updated offer
-      if (fetchChatMessages) {
-        console.log("Refreshing chat messages...");
-        await fetchChatMessages(false);
-      }
-      
-      onClose();
-    } catch (error) {
-      console.error("❌ Error saving requirements:", error);
-    }
-  };
-
-  const CreateBiddingOffer = () => {
-    const priceToSend = (newPrice ?? chat?.content ?? "").toString().trim();
-    if (!priceToSend) {
-      return;
-    }
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/chat/${chat?.chat}/content`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        content: priceToSend,
-        contentType: "BiddingOffer",
-        other: {
-          bidding: chat?.other?.bidding,
-          biddingBid: chat.other?.biddingBid,
-          events,
-        },
-      }),
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        fetchChatMessages();
-        setEvents(null);
-        setSelectedEvent(0);
-              setEventIndex(0);
-        setNewPrice(null);
-              setExpandRequirements(false);
-        onClose();
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  useEffect(() => {
-    if (!chat?._id) return;
-    
-    // Always fetch when chat ID changes
-    fetchBidding();
-    fetchPreferredLook();
-    fetchMakeupStyle();
-    fetchAddOns();
-  }, [chat?._id]);
-
-  // Force re-initialization whenever chat prop changes
-  useEffect(() => {
-    setEvents(null); // Clear first
-    setEventIndex(0);
-    setSelectedEvent(0);
-  }, [chat?._id]); // Trigger on chat message ID change
-
-  useEffect(() => {
-    // Prioritize chat.other.events (latest offer message) over bidding.events (may be stale)
-    const newEvents = chat?.other?.events || bidding?.events;
-    if (newEvents) {
-      console.log("Updating events in EditRequirementsPanel:");
-      console.log("  Chat ID:", chat?._id);
-      console.log("  Events:", newEvents);
-      // Deep clone to avoid reference issues
-      setEvents(JSON.parse(JSON.stringify(newEvents)));
-    }
-  }, [bidding, chat]);
-
-  useEffect(() => {
-    if ((newPrice === null || newPrice === undefined) && chat?.content) {
+        <MdEdit
+          className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 rounded-md cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log("🔴 EDIT BUTTON CLICKED!");
+            
+            // Try to get events from multiple sources
+            let eventsData = null;
+            
+            if (chat?.contentType === "BiddingBid" && bidding?.events) {
+              eventsData = bidding?.events;
+            } else if (chat?.other?.events) {
+              eventsData = chat?.other?.events;
+            } else if (bidding?.events) {
+              // Fallback to bidding events
+              eventsData = bidding?.events;
+            }
+            
+            console.log("=== Edit button clicked ===");
+            console.log("chat:", chat);
+            console.log("chat?.contentType:", chat?.contentType);
+            console.log("bidding:", bidding);
+            console.log("bidding?.events:", bidding?.events);
+            console.log("chat?.other?.events:", chat?.other?.events);
+            console.log("eventsData to set:", eventsData);
+            console.log("expandRequirements BEFORE:", expandRequirements);
+            console.log("editRequirements BEFORE:", editRequirements);
+            console.log("=========================");
+            
+            // Always set edit mode to true and expand
+            setExpandRequirements(true);
+            setEditRequirements(true);
+            
+            console.log("setExpandRequirements(true) called");
+            console.log("setEditRequirements(true) called");
+            
+            if (eventsData && eventsData.length > 0) {
+              setEvents(JSON.parse(JSON.stringify(eventsData))); // Deep clone
       setNewPrice(chat?.content);
-    }
-  }, [chat, newPrice]);
-
-  return (
-    <div 
-      className="flex flex-1 flex-col overflow-hidden bg-[#E7EFFF]" 
-      style={{ 
-        width: '100%',
-        maxWidth: '394px',
-        filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))'
-      }}
-    >
-      {/* Header section with Best offer, Your offer, Edit requirement */}
-      <div className="relative bg-white px-4 py-3 border-b border-gray-200 flex-shrink-0">
-        {/* Close button */}
-        <button
-          onClick={async () => {
-            // Auto-save before closing
-            if (events && events.length > 0) {
-              await SaveRequirements();
+              setEventIndex(0);
             } else {
-              onClose();
+              // Show alert but keep edit mode active so debug message shows
+              console.log("No event data found!");
             }
           }}
-          className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#1A1F2C] text-white transition hover:bg-[#2B3F6C] z-10"
-        >
-          <span className="text-sm font-bold">×</span>
-        </button>
-        <div className="flex items-center justify-between">
-          {/* Best offer */}
-          <div className="flex-1">
-            <div 
-              className="text-[#2B3F6C] font-semibold" 
-              style={{ 
-                fontFamily: 'Montserrat', 
-                fontSize: '10px', 
-                lineHeight: '140%' 
-              }}
-            >
-              Best offer
+          size={24}
+        />
+        {expandRequirements ? (
+          <MdOutlineKeyboardArrowUp
+            className="flex-shrink-0 border border-[#2B3F6C] text-[#2B3F6C] bg-white p-1 rounded-md"
+              onClick={() => {
+              setExpandRequirements(false);
+              setEditRequirements(false);
+            }}
+            size={20}
+          />
+        ) : (
+          <MdOutlineKeyboardArrowDown
+            className="flex-shrink-0 border border-white bg-white text-[#2B3F6C] p-1 rounded-md"
+            onClick={() => {
+              // Just expand to view mode, not edit mode
+              setExpandRequirements(true);
+              setEditRequirements(false);
+            }}
+            size={20}
+          />
+      )}
       </div>
-            <div 
-              className="text-[#2B3F6C] font-medium" 
-              style={{ 
-                fontFamily: 'Montserrat', 
-                fontSize: '14px', 
-                lineHeight: '140%' 
+      {expandRequirements && !editRequirements && (
+        <div className="bg-[#E7EFFF] p-3 sm:p-4">
+          <div className="flex flex-row gap-2 mb-2 overflow-x-auto hide-scrollbar">
+            {((chat?.contentType === "BiddingBid" ? bidding?.events : chat?.other?.events) || []).map((item, index) => (
+              <div
+              key={index}
+                className={`cursor-pointer px-4 sm:px-6 py-1 font-medium rounded-full text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                selectedEvent === index
+                  ? "bg-[#2B3F6C] text-white"
+                  : "bg-white text-[#2B3F6C]"
+              }`}
+              onClick={() => {
+                setSelectedEvent(index);
               }}
             >
-              ₹ 8000
+                {item.eventName || `Day ${index + 1}`}
               </div>
+          ))}
           </div>
-
-          {/* Vertical divider */}
-          <div className="h-12 w-px bg-[#2B3F6C] mx-4"></div>
-
-          {/* Your offer */}
-          <div className="flex-1">
-            <div 
-              className="text-[#2B3F6C] font-semibold" 
-              style={{ 
-                fontFamily: 'Montserrat', 
-                fontSize: '10px', 
-                lineHeight: '140%' 
-              }}
-            >
-              Your offer
+          {((chat?.contentType === "BiddingBid" ? bidding?.events : chat?.other?.events) || [])
+          ?.filter((_, index) => index === selectedEvent)
+            ?.map((item, index) => (
+              <>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start text-xs sm:text-sm mt-4 sm:mt-6 mb-4 font-medium">
+                  <p className="my-0 py-0 flex flex-row items-center gap-1 flex-1 min-w-0">
+                    <MdOutlineLocationOn className="flex-shrink-0 text-base" />{" "}
+                    <span className="break-words">{item?.location}</span>
+                  </p>
+                  <p className="text-left sm:text-right flex-shrink-0">
+                    {new Date(item?.date)?.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                    })}
+                  </p>
+              </div>
+                {item?.peoples?.map((rec, recIndex) => (
+                  <>
+                    <div
+                      className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start text-xs sm:text-sm font-medium"
+                      key={`recIndex+`}
+                    >
+                      <p className="my-0 py-0 flex flex-row items-center gap-1">
+                        <MdPersonOutline className="flex-shrink-0 text-base" />{" "}
+                        {rec?.noOfPeople}
+                      </p>
+                      <p className="">{rec.makeupStyle}</p>
+                      <p className="">{rec.preferredLook}</p>
                     </div>
                     <div
-              className="text-[#2B3F6C] font-medium" 
-              style={{ 
-                fontFamily: 'Montserrat', 
-                fontSize: '14px', 
-                lineHeight: '140%' 
-              }}
-            >
-              ₹ 8000
+                      className="flex flex-row gap-2 sm:gap-4 items-top text-xs sm:text-sm font-medium mb-2"
+                      key={`recIndex-`}
+                    >
+                      <p className="my-0 py-0 flex flex-row items-center gap-1">
+                        <RxDashboard className="flex-shrink-0 text-base" />{" "}
+                        <span className="break-words">{rec?.addOns}</span>
+                      </p>
                     </div>
+                  </>
+                ))}
+                {item?.notes?.length > 0 && (
+                  <>
+                    <p className="text-xs text-[#2B3F6C] font-medium mt-4 sm:mt-6">
+                      NOTES
+                    </p>
+                    <div className="border rounded-lg text-xs p-2 bg-white break-words">
+                      {item?.notes?.join("\n")}
                     </div>
-
-          {/* Vertical divider */}
-          <div className="h-12 w-px bg-[#2B3F6C] mx-4"></div>
-
-          {/* Edit requirement button */}
-          <div className="flex items-center gap-2">
-            <div>
-              <div 
-                className="text-[#2B3F6C] font-semibold" 
-                style={{ 
-                  fontFamily: 'Montserrat', 
-                  fontSize: '10px', 
-                  lineHeight: '12px' 
-                }}
-              >
-                Edit requirement
+                  </>
+                )}
+              </>
+            ))}
+          <div className="py-2 flex flex-row gap-3 sm:gap-4 justify-center items-center mt-4">
+            {((chat?.contentType === "BiddingBid" ? bidding?.events : chat?.other?.events) || []).map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 w-2 border border-black rounded-full ${
+                  selectedEvent === index ? "bg-black" : "bg-white"
+                }`}
+              />
+            ))}
           </div>
         </div>
-            <div className="flex items-center gap-1">
-              <button className="flex items-center justify-center w-7 h-7 bg-[#2B3F6C] rounded-md">
-                <MdEdit className="text-white" size={16} />
-              </button>
-              <button 
-                onClick={onClose}
-                className="flex items-center justify-center w-7 h-7 border border-[#2B3F6C] rounded-md"
-              >
-                <span className="text-[#2B3F6C] text-lg leading-none">↑</span>
-              </button>
+      )}
+      {expandRequirements && editRequirements && !events && (
+        <div className="bg-[#E7EFFF] p-4 text-center">
+          <p className="text-sm text-red-600">Debug: No events state available</p>
+          <p className="text-xs text-gray-600">expandRequirements: {expandRequirements.toString()}</p>
+          <p className="text-xs text-gray-600">editRequirements: {editRequirements.toString()}</p>
+          <p className="text-xs text-gray-600">events: {JSON.stringify(events)}</p>
+          <p className="text-xs text-gray-600">chat.other.events: {JSON.stringify(chat?.other?.events)}</p>
+          <p className="text-xs text-gray-600">bidding.events: {JSON.stringify(bidding?.events)}</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 pt-2 space-y-4">
-        {/* Event tabs */}
-        {events && events.length > 0 ? (
-          <>
-            <div className="flex flex-row gap-3 items-center">
-              <div className="flex flex-row gap-3 flex-wrap flex-1">
-                {events.map((item, index) => (
+      )}
+      {expandRequirements && editRequirements && events && events.length > 0 && (
+        <div className="bg-[#E7EFFF] p-3 sm:p-4">
+          <div className="flex flex-row gap-2 mb-4 overflow-x-auto hide-scrollbar">
+            {events?.map((item, index) => (
                   <button
                     key={index}
-                    className={`px-6 py-2.5 font-semibold text-sm transition rounded-full ${
+                className={`px-4 sm:px-6 py-2 font-medium rounded-full text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   eventIndex === index
                         ? "bg-[#2B3F6C] text-white"
-                        : "bg-transparent text-[#2B3F6C] border-0"
+                    : "bg-white text-[#2B3F6C] border border-[#2B3F6C]"
                 }`}
-                onClick={() => {
-                  setEventIndex(index);
-                }}
+                onClick={() => setEventIndex(index)}
               >
                     {item?.eventName || `Day ${index + 1}`}
                   </button>
             ))}
                 <button
               onClick={() => {
-                let tempCount = parseInt(eventsCount);
-                tempCount++;
                 setEvents([
                   ...events,
                   {
@@ -686,536 +545,215 @@ function EditRequirementsPanel({ chat, onClose, fetchChatMessages, onSaved }) {
                     location: "",
                     address: {},
                     notes: [],
-                    peoples: [
-                      {
+                    peoples: [{
                         noOfPeople: "",
                         makeupStyle: "",
                         preferredLook: "",
                         addOns: "",
-                      },
-                    ],
+                    }],
                   },
                 ]);
-                setEventIndex(tempCount - 1);
-                setEventsCount(String(tempCount));
+                setEventIndex(events.length);
               }}
-                  className="px-6 py-2.5 font-semibold text-sm bg-[#5A6B7D] text-white rounded-full transition hover:bg-[#4A5B6D]"
+              className="px-4 sm:px-6 py-2 rounded-full font-medium text-xs sm:text-sm bg-gray-700 text-white border-2 whitespace-nowrap flex-shrink-0"
             >
               + Add
                 </button>
-            </div>
             {events.length > 1 && (
                 <button
                 onClick={() => {
-                  let tempCount = parseInt(eventsCount);
-                  tempCount--;
+                  setEvents(events.filter((_, i) => i !== eventIndex));
                   setEventIndex(0);
-                  setEventsCount(String(tempCount));
-                  setEvents(
-                    events.filter((_, recIndex) => recIndex !== eventIndex)
-                  );
                 }}
-                  className="text-red-600 hover:text-red-700"
+                className="p-1.5 sm:p-2 rounded-lg bg-white border text-[#2B3F6C] hover:bg-red-50 flex-shrink-0"
                 >
-                  <MdDelete size={24} />
+                  <MdDelete size={20} className="sm:w-6 sm:h-6" />
                 </button>
             )}
           </div>
 
-            {/* Event form */}
-            {events
-              ?.filter((_, index) => index === eventIndex)
-              ?.map((item, idx) => (
-                <div key={idx} className="space-y-3">
+          <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#1A1F2C]">
-                      Event Name
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-center text-[#1A1F2C] focus:outline-none"
-                      value={item?.eventName || ""}
+              <Label value="Event Name" />
+              <TextInput
+                value={events[eventIndex]?.eventName || ""}
                 onChange={(e) => {
-                  setEvents(
-                    events?.map((rec, recIndex) =>
-                      recIndex === eventIndex
-                        ? { ...rec, eventName: e.target.value }
-                        : rec
-                    )
-                  );
+                  const updated = [...events];
+                  updated[eventIndex] = { ...updated[eventIndex], eventName: e.target.value };
+                  setEvents(updated);
                 }}
               />
             </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
             <div>
-                      <label className="mb-1 block text-xs font-semibold text-[#1A1F2C]">
-                        Date
-                      </label>
-                      <input
+                <Label value="Date" />
+                <TextInput
                 type="date"
-                        className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-center text-[#1A1F2C] focus:outline-none"
-                        value={item?.date || ""}
+                  value={events[eventIndex]?.date || ""}
                 onChange={(e) => {
-                  setEvents(
-                    events?.map((rec, recIndex) =>
-                      recIndex === eventIndex
-                        ? { ...rec, date: e.target.value }
-                        : rec
-                    )
-                  );
+                    const updated = [...events];
+                    updated[eventIndex] = { ...updated[eventIndex], date: e.target.value };
+                    setEvents(updated);
                 }}
               />
             </div>
             <div>
-                      <label className="mb-1 block text-xs font-semibold text-[#1A1F2C]">
-                        Time
-                      </label>
-                      <input
+                <Label value="Time" />
+                <TextInput
                 type="time"
-                        className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-center text-[#1A1F2C] focus:outline-none"
-                        value={item?.time || ""}
+                  value={events[eventIndex]?.time || ""}
                 onChange={(e) => {
-                  setEvents(
-                    events?.map((rec, recIndex) =>
-                      recIndex === eventIndex
-                        ? { ...rec, time: e.target.value }
-                        : rec
-                    )
-                  );
+                    const updated = [...events];
+                    updated[eventIndex] = { ...updated[eventIndex], time: e.target.value };
+                    setEvents(updated);
                 }}
               />
             </div>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#1A1F2C]">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-center text-[#1A1F2C] focus:outline-none"
-                      value={item?.location || ""}
+              <Label value="Location" />
+              <TextInput
+                ref={inputRef}
+                value={events[eventIndex]?.location || ""}
                 onChange={(e) => {
-                  setEvents(
-                    events?.map((rec, recIndex) =>
-                      recIndex === eventIndex
-                        ? { ...rec, location: e.target.value }
-                        : rec
-                    )
-                  );
+                  const updated = [...events];
+                  updated[eventIndex] = { ...updated[eventIndex], location: e.target.value };
+                  setEvents(updated);
                 }}
               />
             </div>
 
-                  {/* People fields */}
-                  {item?.peoples?.map((person, personIdx) => (
-                    <div key={personIdx} className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+            {events[eventIndex]?.peoples?.map((person, personIdx) => (
+              <div key={personIdx} className="grid grid-cols-2 gap-4 p-4 bg-white rounded-lg">
               <div>
-                          <div className="flex items-center gap-3 rounded-lg border-0 bg-white px-4 py-3.5">
-                            <MdPersonOutline className="text-[#1A1F2C]" size={20} />
-                            <input
-                              type="number"
-                              className="w-full border-0 bg-transparent text-sm text-[#1A1F2C] focus:outline-none"
-                              placeholder="No. of people"
+                  <TextInput
+                    icon={MdPersonOutline}
+                    placeholder="Number of people"
                               value={person?.noOfPeople || ""}
                   onChange={(e) => {
-                    setEvents((prev) => {
-                      const updated = [...prev];
-                      updated[eventIndex] = {
-                        ...updated[eventIndex],
-                                    peoples: updated[eventIndex]?.peoples.map((p, i) =>
-                                      i === personIdx
-                                        ? { ...p, noOfPeople: e.target.value }
-                                        : p
-                        ),
-                      };
-                      return updated;
-                    });
-                  }}
-                />
-                          </div>
+                      const updated = [...events];
+                      updated[eventIndex].peoples[personIdx].noOfPeople = e.target.value;
+                      setEvents(updated);
+                    }}
+                  />
               </div>
               <div>
-                          <select
-                            className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-[#1A1F2C] focus:outline-none"
+                  <Select
                             value={person?.makeupStyle || ""}
                   onChange={(e) => {
-                    setEvents((prev) => {
-                      const updated = [...prev];
-                      updated[eventIndex] = {
-                        ...updated[eventIndex],
-                                  peoples: updated[eventIndex]?.peoples.map((p, i) =>
-                                    i === personIdx
-                                      ? { ...p, makeupStyle: e.target.value }
-                                      : p
-                        ),
-                      };
-                      return updated;
-                    });
-                  }}
-                >
-                            <option value="">Makeup Style</option>
-                  {makeupStyle?.map((r, i) => (
-                    <option value={r?.title} key={i}>
-                                {r?.title}
-                    </option>
-                  ))}
-                          </select>
+                      const updated = [...events];
+                      updated[eventIndex].peoples[personIdx].makeupStyle = e.target.value;
+                      setEvents(updated);
+                    }}
+                  >
+                    <option value="">Select Makeup Style</option>
+                    {makeupStyle?.map((style, i) => (
+                      <option key={i} value={style?.title}>{style?.title}</option>
+                    ))}
+                  </Select>
               </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
               <div>
-                          <select
-                            className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-[#1A1F2C] focus:outline-none"
+                  <Select
                             value={person?.preferredLook || ""}
                   onChange={(e) => {
-                    setEvents((prev) => {
-                      const updated = [...prev];
-                      updated[eventIndex] = {
-                        ...updated[eventIndex],
-                                  peoples: updated[eventIndex]?.peoples.map((p, i) =>
-                                    i === personIdx
-                                      ? { ...p, preferredLook: e.target.value }
-                                      : p
-                        ),
-                      };
-                      return updated;
-                    });
-                  }}
-                >
-                            <option value="">Preferred Look</option>
-                  {preferredLook?.map((r, i) => (
-                    <option value={r?.title} key={i}>
-                                {r?.title}
-                    </option>
-                  ))}
-                          </select>
+                      const updated = [...events];
+                      updated[eventIndex].peoples[personIdx].preferredLook = e.target.value;
+                      setEvents(updated);
+                    }}
+                  >
+                    <option value="">Select Preferred Look</option>
+                    {preferredLook?.map((look, i) => (
+                      <option key={i} value={look?.title}>{look?.title}</option>
+                    ))}
+                  </Select>
               </div>
               <div>
-                          <select
-                            className="w-full rounded-lg border-0 bg-white px-4 py-3.5 text-sm text-[#1A1F2C] focus:outline-none"
+                  <Select
                             value={person?.addOns || ""}
                   onChange={(e) => {
-                    setEvents((prev) => {
-                      const updated = [...prev];
-                      updated[eventIndex] = {
-                        ...updated[eventIndex],
-                                  peoples: updated[eventIndex]?.peoples.map((p, i) =>
-                                    i === personIdx
-                                      ? { ...p, addOns: e.target.value }
-                                      : p
-                        ),
-                      };
-                      return updated;
-                    });
-                  }}
-                >
-                            <option value="">Add ons</option>
-                  {addOns?.map((r, i) => (
-                    <option value={r?.title} key={i}>
-                                {r?.title}
-                    </option>
-                  ))}
-                          </select>
-              </div>
+                      const updated = [...events];
+                      updated[eventIndex].peoples[personIdx].addOns = e.target.value;
+                      setEvents(updated);
+                    }}
+                  >
+                    <option value="">Select Add-ons</option>
+                    {addOns?.map((addon, i) => (
+                      <option key={i} value={addon?.title}>{addon?.title}</option>
+                    ))}
+                  </Select>
             </div>
               </div>
                   ))}
 
-                  {/* Add more people button */}
             <button
               onClick={() => {
-                      console.log("Adding more people to event", eventIndex);
-                setEvents((prev) => {
-                  const updated = [...prev];
-                  updated[eventIndex] = {
-                    ...updated[eventIndex],
-                    peoples: [
-                            ...(updated[eventIndex]?.peoples || []),
-                      {
-                        noOfPeople: "",
-                        makeupStyle: "",
-                        preferredLook: "",
-                        addOns: "",
-                      },
-                    ],
-                  };
-                        console.log("Updated events after adding people:", updated);
-                  return updated;
-                });
+                const updated = [...events];
+                updated[eventIndex].peoples = [
+                  ...updated[eventIndex].peoples,
+                  { noOfPeople: "", makeupStyle: "", preferredLook: "", addOns: "" },
+                ];
+                setEvents(updated);
               }}
-                    className="w-full py-3.5 px-4 rounded-lg font-semibold text-sm bg-[#2B3F6C] text-white transition hover:bg-[#1f2f4f]"
+              className="w-full py-2 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm bg-[#2B3F6C] text-white"
             >
               + Add more people
             </button>
-                </div>
-              ))}
-          </>
-        ) : (
-          <div className="text-center text-[#667085] py-8">
-            Loading requirements...
+
+            {events[eventIndex]?.notes?.length > 0 && (
+              <div>
+                <Label value="Notes" />
+                {events[eventIndex]?.notes?.map((note, noteIdx) => (
+                  <TextInput
+                    key={noteIdx}
+                    className="mb-2"
+                    value={note}
+                    onChange={(e) => {
+                      const updated = [...events];
+                      updated[eventIndex].notes[noteIdx] = e.target.value;
+                      setEvents(updated);
+                    }}
+                  />
+                ))}
           </div>
         )}
-      </div>
       
-      {/* Save button */}
-      {events && events.length > 0 && (
-        <div className="border-t border-gray-200 bg-white px-4 py-4 flex-shrink-0">
             <button
               onClick={() => {
-              SaveRequirements();
+                const updated = [...events];
+                updated[eventIndex].notes = [...(updated[eventIndex].notes || []), ""];
+                setEvents(updated);
             }}
-            className="w-full rounded-lg bg-[#2B3F6C] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1f2f4f]"
+              className="w-full py-2 px-3 sm:px-4 rounded-lg font-medium text-xs sm:text-sm bg-[#2B3F6C] text-white"
           >
-            Save Changes
+              + Add Notes
           </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
-function RequirementsViewPanel({ chat, onClose }) {
-  const [bidding, setBidding] = useState(null);
-  const [selectedEvent, setSelectedEvent] = useState(0);
-  const [fetchingBidding, setFetchingBidding] = useState(false);
-  const [events, setEvents] = useState(null);
-  const [eventsCount, setEventsCount] = useState("1");
-  const [preferredLook, setPreferredLook] = useState([]);
-  const [makeupStyle, setMakeupStyle] = useState([]);
-  const [addOns, setAddOns] = useState([]);
-
-  function fetchBidding() {
-    if (fetchingBidding) return;
-    
-    const biddingId = chat?.other?.bidding;
-    console.log("RequirementsViewPanel fetchBidding - bidding ID:", biddingId);
-    
-    if (!biddingId) {
-      console.error("RequirementsViewPanel: No bidding ID found");
-      setFetchingBidding(false);
-      return;
-    }
-    
-    setFetchingBidding(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/bidding/${biddingId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        console.log("RequirementsViewPanel: Bidding data received:", response);
-        setBidding(response);
-        setFetchingBidding(false);
-      })
-      .catch((error) => {
-        console.error("RequirementsViewPanel fetch error:", error);
-        setFetchingBidding(false);
-      });
-  }
-
-  const fetchPreferredLook = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-preferred-look`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setPreferredLook(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  const fetchMakeupStyle = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-makeup-style`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setMakeupStyle(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  const fetchAddOns = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
-    fetch(`${apiUrl}/vendor-add-ons`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setAddOns(response);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  };
-
-  useEffect(() => {
-    if (!chat?._id) return;
-    
-    fetchBidding();
-    fetchPreferredLook();
-    fetchMakeupStyle();
-    fetchAddOns();
-  }, [chat?._id]);
-
-  // Force re-initialization whenever chat prop changes
-  useEffect(() => {
-    console.log("RequirementsViewPanel: Chat ID changed, clearing state");
-    setEvents(null); // Clear first
-    setSelectedEvent(0);
-  }, [chat?._id]); // Trigger on chat message ID change
-
-  useEffect(() => {
-    // Prioritize chat.other.events (latest offer message) over bidding.events (may be stale)
-    const newEvents = chat?.other?.events || bidding?.events;
-    if (newEvents) {
-      console.log("===== RequirementsViewPanel Data Update =====");
-      console.log("Chat message ID:", chat?._id);
-      console.log("Events data:", newEvents);
-      console.log("First event date:", newEvents?.[0]?.date);
-      console.log("===========================================");
-      setEvents(JSON.parse(JSON.stringify(newEvents)));
-    }
-  }, [bidding, chat]);
-
-  // Always use fresh data: chat.other.events (priority) or bidding.events or state
-  const displayEvents = chat?.other?.events || bidding?.events || events;
-
-  return (
-    <div 
-      className="flex flex-1 flex-col overflow-hidden bg-[#E7EFFF]" 
-      style={{ 
-        width: '100%',
-        maxWidth: '394px',
-        filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))'
-      }}
-    >
-      {/* Header with close button */}
-      <div className="flex justify-end p-4 pb-0 flex-shrink-0">
-        <button
-          onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1A1F2C] text-white transition hover:bg-[#2B3F6C]"
-        >
-          <span className="text-lg font-bold">×</span>
-            </button>
-          </div>
-
-      <div className="flex-1 overflow-y-auto p-4 pt-2 space-y-4">
-        {/* Event tabs */}
-        <div className="flex flex-row gap-2 flex-wrap">
-          {(displayEvents || []).map((item, index) => (
-            <button
-              key={index}
-              className={`cursor-pointer px-6 py-2 font-semibold rounded-full text-sm transition ${
-                selectedEvent === index
-                  ? "bg-[#2B3F6C] text-white"
-                  : "bg-white text-[#2B3F6C]"
-              }`}
-              onClick={() => {
-                setSelectedEvent(index);
-              }}
-            >
-              {item?.eventName || `Day ${index + 1}`}
-            </button>
-          ))}
-        </div>
-
-        {/* Event details - Read Only */}
-        {(displayEvents || [])
-          ?.filter((_, index) => index === selectedEvent)
-          ?.map((item, eventIdx) => (
-            <div key={eventIdx} className="space-y-4">
-              {/* Location and Date */}
-              <div className="flex items-center justify-between text-[#1A1F2C]">
-                <div className="flex items-center gap-2">
-                  <MdOutlineLocationOn size={20} />
-                  <span className="text-sm font-medium">{item?.location}</span>
-                </div>
-                <span className="text-sm font-medium">
-                  {item?.date
-                    ? new Date(item?.date).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : ""}
-                </span>
-              </div>
-
-              {/* People information */}
-              {item?.peoples?.map((person, personIdx) => (
-                <div key={personIdx} className="space-y-3">
-                  <div className="flex items-center gap-4 text-[#1A1F2C]">
-                    <div className="flex items-center gap-2">
-                      <MdPersonOutline size={20} />
-                      <span className="text-sm font-medium">{person?.noOfPeople}</span>
-                    </div>
-                    <span className="text-sm font-medium">{person?.makeupStyle}</span>
-                    <span className="text-sm font-medium">{person?.preferredLook}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[#1A1F2C]">
-                    <RxDashboard size={20} />
-                    <span className="text-sm font-medium">{person?.addOns}</span>
-                  </div>
-                </div>
-              ))}
-
-              {/* Notes */}
-              {item?.notes && item?.notes?.length > 0 && (
-                <div className="mt-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1A1F2C]">
-                    Notes
-                  </p>
-                  <div className="rounded-lg border border-[#D1D5DB] bg-white p-4">
-                    <p className="text-sm text-[#1A1F2C]">{item?.notes?.join("\n")}</p>
-          </div>
-        </div>
-      )}
-            </div>
-          ))}
-
-        {/* Pagination dots */}
-        {(displayEvents || []).length > 1 && (
-          <div className="flex justify-center gap-2 pt-4">
-            {(displayEvents || []).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedEvent(index)}
-                className={`h-2 w-2 rounded-full transition ${
-                  selectedEvent === index ? "bg-[#2B3F6C]" : "bg-[#2B3F6C] opacity-30"
-                }`}
+            <div>
+              <Label value="Enter new Price" className="text-xs sm:text-sm" />
+              <TextInput
+                icon={MdCurrencyRupee}
+                value={newPrice || ""}
+                onChange={(e) => setNewPrice(e.target.value)}
+                className="text-sm sm:text-base"
               />
-            ))}
           </div>
-        )}
-      </div>
-    </div>
+
+            <button
+              onClick={() => {
+                console.log("Sending updated events:", events);
+                console.log("Sending updated price:", newPrice);
+                CreateBiddingOffer(true); // Pass true for isEditMode
+              }}
+              className="w-full bg-[#2B3F6C] text-white rounded-lg px-8 sm:px-16 py-2 sm:py-3 font-medium text-sm sm:text-base"
+            >
+              Update & Send
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1224,7 +762,6 @@ function ChatMessage({ chat }) {
   const [bidding, setBidding] = useState(null);
   const [fetchingOrder, setFetchingOrder] = useState(false);
   const [fetchingBidding, setFetchingBidding] = useState(false);
-  const isVendorMessage = chat?.sender?.role === "vendor";
   
   // console.log("ChatMessage rendering with chat:", chat);
   
@@ -1290,37 +827,40 @@ function ChatMessage({ chat }) {
   }, [chat]);
 
   if (chat?.contentType === "Text") {
-    const bubbleClasses = isVendorMessage
-      ? "ml-auto rounded-3xl rounded-br-sm bg-[#1C2B5A] text-white"
-      : "mr-auto rounded-3xl rounded-bl-sm bg-white text-[#1A1F2C]";
+    if (chat?.sender?.role === "user") {
       return (
-      <div
-        className={`max-w-[80%] px-5 py-3 text-sm leading-relaxed shadow-md transition-all ${bubbleClasses}`}
-      >
+        <div className="p-2 bg-[#f5f5f5] rounded-xl rounded-bl-none shadow self-start px-4 sm:px-6 max-w-[85%] sm:max-w-[70%] text-sm sm:text-base">
           {chat?.content}
         </div>
       );
+    } else if (chat?.sender?.role === "vendor") {
+      return (
+        <div className="p-2 bg-[#2B3F6C] text-white rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-[70%] text-sm sm:text-base">
+          {chat?.content}
+        </div>
+      );
+    }
   } else if (chat?.contentType === "PersonalPackageAccepted") {
     return (
       <>
         {order?._id && order?.amount?.due === 0 && (
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#1C2B5A] px-4 py-3 text-center text-sm font-medium text-white shadow">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-3 text-sm font-medium text-[#1C2B5A] underline shadow-md">
-          View details
-          {/* --PendingWork-- */}
-        </div>
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-4 shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">
-          Package price
-          </p>
-          <p className="text-2xl font-semibold text-[#1C2B5A]">
+        {order?._id && (
+          <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
+            View details
+            {/* --PendingWork-- */}
+          </div>
+        )}
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Package price</p>
+          <p className="text-xl sm:text-2xl font-semibold">
             {toPriceString(order?.amount?.total)}
           </p>
         </div>
-        <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#E8EEF9] px-4 py-2 text-center text-sm font-medium text-[#1C2B5A] shadow">
+        <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
           Package request accepted
         </div>
       </>
@@ -1329,24 +869,22 @@ function ChatMessage({ chat }) {
     return (
       <>
         {chat?.other?.rejected && (
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#1F2937] px-4 py-2 text-center text-sm font-medium text-white shadow">
+          <div className="bg-gray-600 text-white text-center py-2 text-sm sm:text-base">
             Offer Declined
           </div>
         )}
         {chat?.other?.accepted && chat?.other?.order && (
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#1C2B5A] px-4 py-2 text-center text-sm font-medium text-white shadow">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-3 text-sm font-medium text-[#1C2B5A] underline shadow-md">
+        <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
           View details
           {/* --PendingWork-- */}
         </div>
-        <div className="mr-auto max-w-[85%] rounded-3xl rounded-bl-sm bg-white px-5 py-4 shadow-md">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">
-          Offer received
-          </p>
-          <p className="text-2xl font-semibold text-[#1C2B5A]">
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Offer received</p>
+          <p className="text-xl sm:text-2xl font-semibold">
             {toPriceString(
               bidding?.bids?.find(
                 (item) => item?._id === chat?.other?.biddingBid
@@ -1360,27 +898,27 @@ function ChatMessage({ chat }) {
     return (
       <>
         {chat?.other?.rejected && (
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#1F2937] px-4 py-2 text-center text-sm font-medium text-white shadow">
+          <div className="bg-gray-600 text-white text-center py-2 text-sm sm:text-base">
             Offer Declined
           </div>
         )}
         {chat?.other?.accepted && chat?.other?.order && (
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-[#1C2B5A] px-4 py-2 text-center text-sm font-medium text-white shadow">
+          <div className="bg-[#2C7300] text-white text-center py-2 text-sm sm:text-base">
             Congratulations! Booking confirmed ✅
           </div>
         )}
-        <div className="ml-auto max-w-[85%] flex flex-col items-end gap-2">
-          <div className="rounded-3xl rounded-br-sm bg-[#1C2B5A] text-white px-5 py-3 shadow-md">
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              Offer price
-            </p>
-            <p className="text-2xl font-bold">
-              ₹{parseInt(chat?.content).toLocaleString('en-IN')}
-            </p>
-          </div>
-          <p className="text-xs text-gray-500 px-2">
-            Vendor is not responsible for any
+        <div className="p-2 bg-white shadow self-end px-4 underline cursor-pointer text-[#2B3F6C] text-sm font-medium my-1">
+          View details
+          {/* --PendingWork-- */}
+        </div>
+        <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
+          <p className="text-xs sm:text-sm mb-1">Offer received</p>
+          <p className="text-xl sm:text-2xl font-semibold">
+            {toPriceString(parseInt(chat?.content))}
           </p>
+        </div>
+        <div className="bg-gray-200 text-center py-2 text-sm sm:text-base">
+          Here&apos;s your custom offer
         </div>
       </>
     );
@@ -1393,10 +931,10 @@ export default function Home({}) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [offerContext, setOfferContext] = useState(null);
-  const [showOfferComposer, setShowOfferComposer] = useState(false);
-  const [showRequirementsView, setShowRequirementsView] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [displayRequirements, setDisplayRequirements] = useState(null);
+  const [hasVendorOffer, setHasVendorOffer] = useState(false);
+  const [showMakeOffer, setShowMakeOffer] = useState(false);
+  const [newPrice, setNewPrice] = useState(null);
   const router = useRouter();
   const { chatId } = router.query;
   const activeControllerRef = useRef(null);
@@ -1404,7 +942,7 @@ export default function Home({}) {
   const lastFetchTimeRef = useRef(0);
 
   const fetchChatMessages = (showSpinner = true) => {
-    if (!chatId) return Promise.resolve();
+    if (!chatId) return;
     
     if (showSpinner) setLoading(true);
 
@@ -1412,7 +950,7 @@ export default function Home({}) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
     console.log("fetchChatMessages - API URL:", apiUrl);
     
-    return fetch(`${apiUrl}/chat/${encodeURIComponent(chatId)}`, {
+    fetch(`${apiUrl}/chat/${encodeURIComponent(chatId)}`, {
       method: "GET",
       cache: "no-store",
       headers: {
@@ -1432,49 +970,45 @@ export default function Home({}) {
         
         if (response && (response.messages || response._id)) {
           setChat(response);
-          let latestOffer = null;
-          let latestBid = null;
-          console.log("Searching for latest BiddingOffer/BiddingBid from", response?.messages?.length, "messages");
+          let display = null;
+          let vendorOfferExists = false;
           
-          // Find the LATEST offer/bid by checking createdAt timestamp
-          let latestOfferTime = null;
-          let latestBidTime = null;
+          // Get current vendor ID from chat participants
+          const currentVendorId = response?.participants?.find(p => p?.role === "vendor")?._id;
+          console.log("Current vendor ID:", currentVendorId);
           
-          for (let i = 0; i < (response?.messages?.length || 0); i++) {
+          for (let i = (response?.messages?.length || 0) - 1; i >= 0; i--) {
             let temp = response?.messages[i];
-            const type = temp?.contentType;
-            const createdAt = new Date(temp?.createdAt).getTime();
             
-            if (type === "BiddingOffer") {
-              if (!latestOfferTime || createdAt > latestOfferTime) {
-                latestOffer = temp;
-                latestOfferTime = createdAt;
+            // Check if vendor has already made an offer
+            if (temp?.contentType === "BiddingOffer") {
+              console.log("Found BiddingOffer at index", i, ":", temp);
+              console.log("Sender:", temp?.sender);
+              console.log("Sender ID:", temp?.sender?._id);
+              console.log("Sender role:", temp?.sender?.role);
+              
+              // Check if this offer is from the current vendor
+              if (
+                temp?.sender?.role === "vendor" ||
+                temp?.sender?._id === currentVendorId ||
+                temp?.sender?._id?.toString() === currentVendorId?.toString()
+              ) {
+                console.log("This is a vendor offer!");
+                vendorOfferExists = true;
               }
             }
-            if (type === "BiddingBid") {
-              if (!latestBidTime || createdAt > latestBidTime) {
-                latestBid = temp;
-                latestBidTime = createdAt;
-              }
+            
+            if (
+              temp?.contentType === "BiddingBid" ||
+              temp?.contentType === "BiddingOffer"
+            ) {
+              display = temp;
+              break;
             }
           }
-          
-          // Use the most recent one based on timestamp
-          let display;
-          if (latestOffer && latestBid) {
-            display = latestOfferTime > latestBidTime ? latestOffer : latestBid;
-          } else {
-            display = latestOffer || latestBid;
-          }
-          
-          console.log("Setting offerContext:", {
-            id: display?._id,
-            type: display?.contentType,
-            createdAt: display?.createdAt,
-            firstEventDate: display?.other?.events?.[0]?.date,
-            eventsCount: display?.other?.events?.length
-          });
-          setOfferContext(display);
+          console.log("Final vendorOfferExists:", vendorOfferExists);
+          setDisplayRequirements(display);
+          setHasVendorOffer(vendorOfferExists);
         }
         setLoading(false);
         // Mark as read in background (no spinner)
@@ -1485,7 +1019,6 @@ export default function Home({}) {
             authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }).catch(() => {});
-        return response;
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -1527,16 +1060,6 @@ export default function Home({}) {
       fetchChatMessages();
     }
   }, [chatId]);
-  
-  useEffect(() => {
-    console.log("***** offerContext CHANGED *****");
-    console.log("New offerContext ID:", offerContext?._id);
-    console.log("New offerContext content:", offerContext?.content);
-    console.log("New offerContext events:", offerContext?.other?.events);
-    console.log("First event date:", offerContext?.other?.events?.[0]?.date);
-    console.log("********************************");
-  }, [offerContext]);
-  
   console.log("chatId: last", chatId);
   
   // useEffect(() => {
@@ -1558,137 +1081,127 @@ export default function Home({}) {
 
   return (
     <>
-      <div className="flex h-full flex-col bg-[#E9ECF7]">
-        <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-[#E5E7EB] bg-white px-5 py-4 shadow-sm">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      <div className="flex flex-col h-full">
+        <div className="sticky top-0 w-full flex flex-row items-center gap-2 sm:gap-3 px-3 sm:px-6 border-b py-3 shadow-lg bg-white z-10">
           <BackIcon />
           <Avatar size="sm" rounded img={chat?.user?.profilePhoto} />
-          <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">
-              Client
-            </p>
-            <p className="text-lg font-semibold text-[#1C2B5A]">
-              {chat?.user?.name || "--"}
+          <p className="grow text-base sm:text-lg font-semibold text-custom-dark-blue truncate">
+            {chat?.user?.name}
           </p>
         </div>
-        </header>
-        {offerContext && (
-          <div className="sticky top-[72px] z-10 flex items-center gap-2 border-b border-[#E5E7EB] bg-[#2B3F6C] px-3 py-1.5 text-white shadow">
-            <div className="flex-1 text-center">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
-                Best offer
-              </p>
-              <p className="text-xs font-semibold">
-                {offerContext?.other?.bestOffer
-                  ? toPriceString(offerContext.other.bestOffer)
-                  : "₹ 8,000"}
-              </p>
-            </div>
-            <div className="h-6 w-px bg-white/30" />
-            <div className="flex-1 text-center">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
-                Your offer
-              </p>
-              <p className="text-xs font-semibold">
-                {offerContext?.content
-                  ? toPriceString(parseInt(offerContext.content, 10))
-                  : "₹ 8,000"}
-              </p>
-            </div>
-            <div className="h-6 w-px bg-white/30" />
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="flex flex-col items-center justify-center gap-0.5 px-1.5 text-center transition hover:opacity-80"
-                onClick={() => {
-                  console.log("Switching to View mode with offerContext:", offerContext);
-                  setIsEditMode(false);
-                  setShowRequirementsView(true);
-                }}
-              >
-                <MdOutlineKeyboardArrowDown size={16} />
-                <span className="text-[8px] font-semibold uppercase tracking-wider">
-                  View
-                </span>
-              </button>
-              <button
-                type="button"
-                className="flex flex-col items-center justify-center gap-0.5 px-1.5 text-center transition hover:opacity-80"
-                onClick={() => {
-                  console.log("Switching to Edit mode with offerContext:", offerContext);
-                  setIsEditMode(true);
-                  setShowRequirementsView(true);
-                }}
-              >
-                <MdEdit size={14} />
-                <span className="text-[8px] font-semibold uppercase tracking-wider">
-                  Edit
-                </span>
-              </button>
-            </div>
-          </div>
-        )}
-        {showRequirementsView && offerContext && (
-          <>
-            {isEditMode ? (
-              <EditRequirementsPanel 
-                key={offerContext?._id}
-                chat={offerContext}
-                onClose={() => {
-                  setShowRequirementsView(false);
-                  setIsEditMode(false);
-                }}
+        {displayRequirements?._id && (
+          <BiddingRequirement
+            chat={displayRequirements}
             fetchChatMessages={fetchChatMessages}
-                onSaved={(newMsg) => {
-                  // Set the latest offer context immediately to the new message from server
-                  console.log("onSaved: setting offerContext to new message", newMsg?._id);
-                  setOfferContext(newMsg);
-                }}
-              />
-            ) : (
-              <RequirementsViewPanel 
-                key={offerContext?._id}
-                chat={offerContext}
-                onClose={() => {
-                  setShowRequirementsView(false);
-                  setIsEditMode(false);
-                }}
-              />
-            )}
-          </>
+            hasVendorOffer={hasVendorOffer}
+          />
         )}
-        {!showRequirementsView && (
         <div
           id="chat-container"
-            className="hide-scrollbar flex flex-1 flex-col-reverse gap-5 overflow-y-auto bg-[#E9ECF7] px-5 py-8"
+          className="flex-1 overflow-y-auto p-2 bg-white flex flex-col-reverse gap-2 hide-scrollbar"
         >
+          {/* {console.log("Rendering messages:", chat?.messages)} */}
           {chat?.messages?.length > 0 ? (
-              chat?.messages?.map((item, index) => <ChatMessage chat={item} key={index} />)
+            chat?.messages?.map((item, index) => {
+              {/* console.log(`Rendering message ${index}:`, item); */}
+              return <ChatMessage chat={item} key={index} />;
+            })
           ) : (
-              <div className="text-center text-[#667085]">
+            <div className="text-center text-gray-500 py-4">
               No messages yet
             </div>
           )}
             </div>
-          )}
-        {!showRequirementsView && (
-          <div className="border-t border-[#E5E7EB] bg-white pt-4 space-y-4">
-            {showOfferComposer && offerContext ? (
-              <div className="px-5">
-                <BiddingRequirement
-                  chat={offerContext}
-                  fetchChatMessages={fetchChatMessages}
-                  onClose={() => {
-                    setShowOfferComposer(false);
-                  }}
+        <div className="bg-white sticky bottom-0">
+          {showMakeOffer && displayRequirements?._id && (
+            <div className="p-3 sm:p-4 border-t">
+              <div className="bg-[#2B3F6C] rounded-3xl p-3 sm:p-4">
+                <label className="block text-white text-xs sm:text-sm font-semibold mb-2">
+                  Make offer
+                </label>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 sm:px-4 py-2 sm:py-3">
+                    <span className="text-[#2B3F6C] text-base sm:text-lg font-semibold">₹</span>
+                    <input
+                      type="number"
+                      className="flex-1 border-0 bg-transparent text-[#2B3F6C] text-base sm:text-lg font-semibold focus:outline-none focus:ring-0 min-w-0"
+                      value={newPrice ?? ""}
+                      onChange={(e) => setNewPrice(e.target.value)}
+                      placeholder="Enter amount"
                 />
               </div>
-            ) : null}
-            <div className="flex items-center gap-3 px-5">
+                  <button
+                    onClick={() => {
+                      // Validate price
+                      if (!newPrice || newPrice <= 0) {
+                        toast.error("Please enter a valid price.");
+                        return;
+                      }
+
+                      // Check if vendor has already made an offer
+                      if (hasVendorOffer) {
+                        toast.warning("You have already made an offer. You can only make one offer per chat.");
+                        return;
+                      }
+                      
+                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
+                      fetch(`${apiUrl}/chat/${displayRequirements?.chat}/content`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                        body: JSON.stringify({
+                          content: newPrice,
+                          contentType: "BiddingOffer",
+                          other: {
+                            bidding: displayRequirements?.other?.bidding,
+                            biddingBid: displayRequirements.other?.biddingBid,
+                            events: displayRequirements?.other?.events,
+                          },
+                        }),
+                      })
+                        .then((response) => response.json())
+                        .then((response) => {
+                          console.log("New offer sent successfully:", response);
+                          toast.success("Offer sent successfully!");
+                          // Immediately set the flag to prevent duplicate submissions
+                          setHasVendorOffer(true);
+                          fetchChatMessages();
+                          setNewPrice(null);
+                          setShowMakeOffer(false);
+                        })
+                        .catch((error) => {
+                          console.error("There was a problem with the fetch operation:", error);
+                          toast.error("Failed to send offer. Please try again.");
+                        });
+                    }}
+                    className="flex-shrink-0 bg-white rounded-full p-2 hover:bg-gray-100 transition"
+                  >
+                    <IoArrowUpCircle className="text-[#2B3F6C]" size={32} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="p-2 sm:p-3">
           <input
             id="messageInput"
             type="text"
             placeholder="Send message here..."
-              className="flex-1 rounded-full border border-[#CBD5F5] bg-white px-5 py-3 text-sm text-[#1A1F2C] shadow-sm focus:border-[#1C2B5A] focus:outline-none"
+              className="flex-1 rounded-full px-3 sm:px-4 py-2 text-sm sm:text-base focus:outline-0 focus:ring-0 focus:ring-offset-0 bg-[#F2F2F2] w-full mb-2"
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
@@ -1700,55 +1213,27 @@ export default function Home({}) {
               }
             }}
           />
+            <div className="flex items-center justify-between px-1 sm:px-2">
           <button
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1C2B5A] text-white shadow-md transition hover:bg-[#162349] disabled:bg-[#CBD5F5] disabled:text-white/70"
-            disabled={loading || !content.trim()}
-            onClick={CreateChatMessage}
-          >
-              <VscSend size={22} />
-          </button>
-        </div>
-          <div className="flex items-center justify-between px-5 pb-4 text-[#1C2B5A]">
-            <button
               type="button"
-              className="text-sm font-semibold px-2 py-1"
-              onClick={() => {
-                if (showOfferComposer) {
-                  // If card is already open, hide it (but keep top bar visible)
-                  setShowOfferComposer(false);
-                } else {
-                  // If card is closed, find latest offer and show it
-                  const latestOffer = [...(chat?.messages || [])]
-                    .reverse()
-                    .find((msg) =>
-                      ["BiddingBid", "BiddingOffer"].includes(msg?.contentType)
-                    );
-                  if (latestOffer) {
-                    setOfferContext(latestOffer);
-                    setShowOfferComposer(true);
-                  }
-                }
-              }}
-            >
-              ₹
-            </button>
-            <div className="flex items-center gap-4">
-              <button type="button">
-                <BsPaperclip size={18} />
-              </button>
-              <button type="button">
-                <BsImage size={20} />
-              </button>
-              <button type="button">
-                <BsMic size={18} />
-              </button>
-            </div>
-            <button type="button" className="text-sm font-semibold">
+                className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800"
+                onClick={() => setShowMakeOffer(!showMakeOffer)}
+              >
+                <BiRupee size={22} className="sm:w-6 sm:h-6" />
+          </button>
+              <button type="button" className="p-1.5 sm:p-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-gray-800">
               Aa
             </button>
+            <button
+                className="ml-auto inline-flex items-center justify-center rounded-full bg-[#2B3F6C] text-white h-9 w-9 sm:h-10 sm:w-10 disabled:bg-[#A9B4D3]"
+                disabled={loading || !content.trim()}
+                onClick={CreateChatMessage}
+              >
+                <VscSend size={18} className="sm:w-5 sm:h-5" />
+              </button>
+            </div>
           </div>
           </div>
-        )}
       </div>
     </>
   );
