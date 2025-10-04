@@ -95,13 +95,19 @@ export default function Home({}) {
         }
       })
       .then((response) => {
+        console.log("Bidding API Response:", response);
         if (response) {
           setLoading(false);
           setBiddingList(response);
+        } else {
+          setLoading(false);
+          setBiddingList([]);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
+        setBiddingList([]);
       });
   };
 
@@ -123,13 +129,19 @@ export default function Home({}) {
         }
       })
       .then((response) => {
+        console.log("Packages API Response:", response);
         if (response) {
           setLoading(false);
           setPackageList(response);
+        } else {
+          setLoading(false);
+          setPackageList([]);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
+        setPackageList([]);
       });
   };
 
@@ -274,6 +286,15 @@ export default function Home({}) {
       </div>
       <div className="flex flex-col gap-0 pb-4">
         {primaryTab === "Bidding" && (() => {
+          if (loading) {
+            return (
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-dark-blue mb-4"></div>
+                <p className="text-sm text-gray-600">Loading bidding requests...</p>
+              </div>
+            );
+          }
+          
           const filteredBiddingList = biddingList.filter((item) =>
             secondaryTab === "Pending"
               ? item?.status?.accepted === false
@@ -293,6 +314,13 @@ export default function Home({}) {
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Pending Bids</p>
                   <p className="text-sm text-gray-500">You don&apos;t have any pending bidding requests at the moment.</p>
+                  {/* Debug info */}
+                  <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-left">
+                    <p>Debug Info:</p>
+                    <p>Total bidding list: {biddingList.length}</p>
+                    <p>Filtered list: {filteredBiddingList.length}</p>
+                    <p>Secondary tab: {secondaryTab}</p>
+                  </div>
                 </div>
               </div>
             );
