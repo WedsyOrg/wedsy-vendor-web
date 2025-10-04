@@ -163,6 +163,7 @@ const Signup = memo(() => {
             message: "",
           }));
           localStorage.setItem("token", response.token);
+          localStorage.setItem("vendor-just-signed-up", "true");
           setLoadingStates(prev => ({ ...prev, otp: false }));
           router.push("/");
         } else {

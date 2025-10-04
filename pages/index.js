@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { MdLocationPin, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 export default function Home({ user }) {
   const router = useRouter();
@@ -38,6 +39,157 @@ export default function Home({ user }) {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const dashboardRef = useRef(null);
+  
+  // Guided tour state
+  const [showTour, setShowTour] = useState(false);
+  const [currentTourStep, setCurrentTourStep] = useState(0);
+  const [tourCompleted, setTourCompleted] = useState(false);
+
+  // Comprehensive tour steps covering all pages
+  const tourSteps = [
+    {
+      title: 'Welcome to WEDSY!',
+      message: 'Welcome to your vendor dashboard! Let\'s explore all the features to help you grow your business.',
+      action: 'This is your main dashboard where you\'ll manage everything.'
+    },
+    {
+      title: 'Complete Your Profile',
+      message: 'First, complete your profile to start receiving bookings. Add your business details, photos, and services.',
+      action: 'Click here to complete your profile',
+      highlight: 'profile'
+    },
+    {
+      title: 'Bidding Requests',
+      message: 'Find new customers by browsing bidding requests. Submit your proposals to get more bookings.',
+      action: 'Let\'s explore the bidding section',
+      navigateTo: '/chats/bidding'
+    },
+    {
+      title: 'Package Management',
+      message: 'Create and manage your service packages. Set different pricing for bridal, party, and groom services.',
+      action: 'Let\'s check out package management',
+      navigateTo: '/chats/packages'
+    },
+    {
+      title: 'Personal Packages',
+      message: 'Create custom packages for your clients with personalized pricing and services.',
+      action: 'Explore personal package creation',
+      navigateTo: '/chats/personal-packages'
+    },
+    {
+      title: 'Create Personal Leads',
+      message: 'Create your own leads and reach out to potential customers directly.',
+      action: 'Let\'s see how to create leads',
+      navigateTo: '/personal-leads'
+    },
+    {
+      title: 'Create New Lead',
+      message: 'Learn how to create a new lead by filling out customer details and requirements.',
+      action: 'See the lead creation process',
+      navigateTo: '/personal-leads/create'
+    },
+    {
+      title: 'Personal Packages Management',
+      message: 'Manage your personal packages, create new ones, and track their performance.',
+      action: 'Explore package management',
+      navigateTo: '/personal-packages'
+    },
+    {
+      title: 'Create Personal Package',
+      message: 'Learn how to create a new personal package with custom pricing and services.',
+      action: 'See package creation process',
+      navigateTo: '/personal-packages/create'
+    },
+    {
+      title: 'Orders Management',
+      message: 'View and manage all your orders, track their status, and handle customer requests.',
+      action: 'Let\'s check your orders',
+      navigateTo: '/orders'
+    },
+    {
+      title: 'Community',
+      message: 'Connect with other vendors, share experiences, and learn from the community.',
+      action: 'Explore the community section',
+      navigateTo: '/community'
+    },
+    {
+      title: 'Create Community Post',
+      message: 'Share your experiences, ask questions, or help other vendors in the community.',
+      action: 'See how to create community posts',
+      navigateTo: '/community/create'
+    },
+    {
+      title: 'Reviews',
+      message: 'View customer reviews and ratings to understand your performance and improve.',
+      action: 'Check your reviews and ratings',
+      navigateTo: '/reviews'
+    },
+    {
+      title: 'Notifications',
+      message: 'Stay updated with all your notifications, bookings, and important updates.',
+      action: 'Check your notifications',
+      navigateTo: '/notifications'
+    },
+    {
+      title: 'Calendar',
+      message: 'Manage your schedule, view upcoming bookings, and plan your work efficiently.',
+      action: 'Explore your calendar',
+      navigateTo: '/calender'
+    },
+    {
+      title: 'Settings Overview',
+      message: 'Access all your account settings, profile management, and configuration options.',
+      action: 'Let\'s explore settings',
+      navigateTo: '/settings'
+    },
+    {
+      title: 'Profile Settings',
+      message: 'Update your business profile, photos, services, and contact information.',
+      action: 'Manage your profile details',
+      navigateTo: '/settings/profile'
+    },
+    {
+      title: 'Account Details',
+      message: 'Configure your payment details, bank information, and financial settings.',
+      action: 'Set up your account details',
+      navigateTo: '/settings/account-details'
+    },
+    {
+      title: 'Analytics',
+      message: 'View detailed analytics about your business performance, bookings, and revenue.',
+      action: 'Check your business analytics',
+      navigateTo: '/settings/analytics'
+    },
+    {
+      title: 'Notification Center',
+      message: 'Customize your notification preferences and manage how you receive updates.',
+      action: 'Configure your notifications',
+      navigateTo: '/settings/notification-center'
+    },
+    {
+      title: 'Settlements',
+      message: 'Track your payments, settlements, and financial transactions.',
+      action: 'Check your settlements',
+      navigateTo: '/settings/settlements'
+    },
+    {
+      title: 'Settlement Transactions',
+      message: 'View detailed transaction history and payment records.',
+      action: 'See your transaction details',
+      navigateTo: '/settings/settlements/transactions'
+    },
+    {
+      title: 'Back to Dashboard',
+      message: 'Return to your main dashboard to start using all the features you\'ve learned about.',
+      action: 'You\'re now ready to use WEDSY!',
+      navigateTo: '/'
+    },
+    {
+      title: 'Tour Complete!',
+      message: 'Congratulations! You\'ve explored all the features of WEDSY. You\'re now ready to grow your business!',
+      action: 'Start building your successful business!'
+    }
+  ];
 
 
   // Lazy loading function that fetches all data at once
@@ -271,8 +423,119 @@ export default function Home({ user }) {
     return diffDays === 0 ? "Today" : diffDays === 1 ? "Day 1" : `Day ${diffDays}`;
   };
 
+  // Tour functions
+  const startTour = () => {
+    setShowTour(true);
+    setCurrentTourStep(0);
+  };
+
+  const nextTourStep = () => {
+    const currentStep = tourSteps[currentTourStep];
+    
+    // If current step has navigation, navigate first
+    if (currentStep.navigateTo) {
+      router.push(currentStep.navigateTo);
+    }
+    
+    if (currentTourStep < tourSteps.length - 1) {
+      setCurrentTourStep(currentTourStep + 1);
+    } else {
+      completeTour();
+    }
+  };
+
+  const skipTour = () => {
+    completeTour();
+  };
+
+  const completeTour = () => {
+    setShowTour(false);
+    setTourCompleted(true);
+    localStorage.setItem('vendor-tour-completed', 'true');
+  };
+
+  // Auto-advance tour with delay
+  useEffect(() => {
+    if (showTour && currentTourStep < tourSteps.length) {
+      const timer = setTimeout(() => {
+        nextTourStep();
+      }, 3000); // 3 seconds per step
+
+      return () => clearTimeout(timer);
+    }
+  }, [showTour, currentTourStep]);
+
+  // Check if user is first-time and should see tour
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem('vendor-tour-completed');
+    const justSignedUp = localStorage.getItem('vendor-just-signed-up');
+    
+    if (!tourCompleted && justSignedUp === 'true') {
+      // Clear the signup flag
+      localStorage.removeItem('vendor-just-signed-up');
+      // Start tour immediately for first-time users
+      startTour();
+    }
+  }, [user]);
+
   return (
     <>
+      {/* Tour Overlay */}
+      {showTour && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {tourSteps[currentTourStep]?.title}
+              </h3>
+              <button
+                onClick={skipTour}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              {tourSteps[currentTourStep]?.message}
+            </p>
+            
+            <p className="text-sm text-blue-600 mb-4 font-medium">
+              {tourSteps[currentTourStep]?.action}
+            </p>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentTourStep + 1) / tourSteps.length) * 100}%` }}
+              ></div>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                Step {currentTourStep + 1} of {tourSteps.length}
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={skipTour}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Skip Tour
+                </button>
+                <button
+                  onClick={nextTourStep}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  {currentTourStep === tourSteps.length - 1 ? 'Finish' : 'Next'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
         <img src="/assets/icons/wedsy.png" />
         <p className="grow text-lg font-medium">Business</p>
@@ -284,11 +547,17 @@ export default function Home({ user }) {
       {/*completed profile component */}
       <div ref={dashboardRef} className="flex flex-col gap-8 py-4 px-6 bg-custom-bg-blue">
         {!user?.profileCompleted && (
-          <Link href={"/settings/profile"}>
-            <Button className="bg-white text-black shadow-lg rounded-xl w-full">
-              Complete your profile
-            </Button>
-          </Link>
+          <div 
+            className={`transition-all duration-300 ${
+              showTour && tourSteps[currentTourStep]?.highlight === 'profile' ? 'ring-4 ring-blue-500 ring-opacity-50 rounded-xl p-2' : ''
+            }`}
+          >
+            <Link href={"/settings/profile"}>
+              <Button className="bg-white text-black shadow-lg rounded-xl w-full">
+                Complete your profile
+              </Button>
+            </Link>
+          </div>
         )}
         {user?.profileCompleted && !user?.paymentCompleted && (
           <Link href={"/settings/account-details"}>
@@ -309,11 +578,17 @@ export default function Home({ user }) {
           </div>
         )}
         
-        <Link href="/bidding">
-          <Button className="bg-white text-black shadow-lg rounded-xl w-full">
-            {user?.profileCompleted ? "View Bidding Requests" : "Find Hairstylist!"}
-          </Button>
-        </Link>
+        <div 
+          className={`transition-all duration-300 ${
+            showTour && tourSteps[currentTourStep]?.highlight === 'bidding' ? 'ring-4 ring-blue-500 ring-opacity-50 rounded-xl p-2' : ''
+          }`}
+        >
+          <Link href="/chats/bidding">
+            <Button className="bg-white text-black shadow-lg rounded-xl w-full">
+              {user?.profileCompleted ? "View Bidding Requests" : "Find Hairstylist!"}
+            </Button>
+          </Link>
+        </div>
 
       {/*completed profile component */}
       
@@ -395,7 +670,10 @@ export default function Home({ user }) {
 
 
         {/* Revenue this month Card */}
-        <div className="rounded-lg shadow-lg p-4" style={{backgroundColor: '#F9A8D4'}}>
+        <div 
+          className="rounded-lg shadow-lg p-4"
+          style={{backgroundColor: '#F9A8D4'}}
+        >
           <p className="text-sm text-black">Revenue this month</p>
           {!dataLoaded && revenueLoading ? (
             <div className="my-4 flex flex-col items-center justify-center animate-pulse">
@@ -551,8 +829,9 @@ export default function Home({ user }) {
 
 
         {/* Follow Ups Card */}
-        <p className="text-xl font-bold text-center">FOLLOW UPS</p>
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xl font-bold text-center">FOLLOW UPS</p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
           {/* Chats Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden">
             <p className="col-span-3 font-medium">Chats</p>
@@ -664,12 +943,16 @@ export default function Home({ user }) {
               </>
             )}
           </div>
-        </div>        
-        {/* End of Follow Ups Card */}
+          </div>        
+          {/* End of Follow Ups Card */}
+        </div>
       </div>
       
       {/*ongoing_order */}
-      <div className="rounded-t-2xl px-6 pb-4 pt-2 text-white sticky bottom-0 w-full" style={{backgroundColor: '#840032'}}>
+      <div 
+        className="rounded-t-2xl px-6 pb-4 pt-2 text-white sticky bottom-0 w-full"
+        style={{backgroundColor: '#840032'}}
+      >
         <div
           className="block w-24 h-2 rounded-full bg-white mx-auto mb-4"
           onClick={() => {
