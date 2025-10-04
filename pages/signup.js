@@ -1,4 +1,5 @@
 import { processMobileNumber } from "@/utils/phoneNumber";
+import { loadGoogleMaps } from "@/utils/loadGoogleMaps";
 import {
   Select,
   TextInput,
@@ -22,6 +23,7 @@ const Signup = memo(() => {
     setBusinessAddress(prev => ({ ...prev, [field]: value }));
   }, []);
   const inputRefs = useRef([]);
+  const areaInputRef = useRef(null);
   const router = useRouter();
   const [display, setDisplay] = useState("SignUp");
   const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -58,36 +60,40 @@ const Signup = memo(() => {
     googleMaps: "",
   });
   const updateAddress = useMemo(() => async (tag) => {
+    console.log("updateAddress called");
     setLoadingStates(prev => ({ ...prev, submit: true }));
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-      method: "PUT",
+    
+    // First, send OTP
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({
-        businessAddress: {
-          state: businessAddress.state,
-          city: businessAddress.city,
-          area: businessAddress.area,
-          pincode: businessAddress.pincode,
-          address: businessAddress.address,
-          googleMaps: businessAddress.googleMaps,
-        },
+        phone: processMobileNumber(data.phone),
       }),
     })
-      .then((response) => response.json())
-      .then((response) => {
-        if (response.message === "success") {
-          setLoadingStates(prev => ({ ...prev, submit: false }));
-          router.push("/");
-        }
+      .then((otpResponse) => otpResponse.json())
+      .then((otpResponse) => {
+        console.log("OTP API Response:", otpResponse);
+        setData(prev => ({
+          ...prev,
+          otpSent: true,
+          ReferenceId: otpResponse.ReferenceId,
+        }));
+        setLoadingStates(prev => ({ ...prev, submit: false }));
+        console.log("Redirecting to OTP page...");
+        setDisplay("OTP");
+        setTimeout(() => {
+          setShowResend(true);
+        }, 60000);
       })
       .catch((error) => {
         setLoadingStates(prev => ({ ...prev, submit: false }));
-        console.error("There was a problem with the fetch operation:", error);
+        console.error("There was a problem with the operation:", error);
+        alert(error.message || "Network error. Please check your connection and try again.");
       });
-  }, [businessAddress, router]);
+  }, [data.phone, router]);
 
   const handleChange = useMemo(() => (element, index) => {
     if (/[^0-9]/.test(element.value)) return;
@@ -108,38 +114,16 @@ const Signup = memo(() => {
   }, [otp, inputRefs]);
 
   const SendOTP = useCallback(() => {
+    // Just redirect to Address page without sending OTP
+    setDisplay("Address");
+  }, []);
+  const handleOTPSubmit = useCallback(() => {
     setLoadingStates(prev => ({ ...prev, otp: true }));
-    setData({
-      ...data,
-      loading: true,
-    });
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        phone: processMobileNumber(data.phone),
-      }),
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        setData({
-          ...data,
-          loading: false,
-          otpSent: true,
-          ReferenceId: response.ReferenceId,
-        });
-        setDisplay("OTP");
-        setTimeout(() => {
-          setShowResend(true);
-        }, 60000);
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  }, [data]);
-  const handleSubmit = useCallback(() => {
+    
+    // Ensure googleMaps is set
+    const googleMapsValue = businessAddress.googleMaps || businessAddress.area || "Bangalore, Karnataka, India";
+    
+    // Create vendor account with OTP verification
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor`, {
       method: "POST",
       headers: {
@@ -148,40 +132,50 @@ const Signup = memo(() => {
       body: JSON.stringify({
         phone: processMobileNumber(data.phone),
         email: data.email,
-        Otp: data.Otp,
-        ReferenceId: data.ReferenceId,
         name: data.name,
         category: data.category,
         gender: data.gender,
         dob: data.dob,
         servicesOffered: data.servicesOffered,
+        Otp: data.Otp,
+        ReferenceId: data.ReferenceId,
+        businessAddress: {
+          state: businessAddress.state,
+          city: businessAddress.city,
+          area: businessAddress.area,
+          pincode: businessAddress.pincode,
+          address: businessAddress.address,
+          googleMaps: googleMapsValue,
+        },
       }),
     })
       .then((response) => response.json())
       .then((response) => {
+        console.log("Vendor Creation API Response:", response);
         if (response.message === "success" && response.token) {
-          setData({
-            ...data,
+          setData(prev => ({
+            ...prev,
             loading: false,
             success: true,
             otpSent: false,
             Otp: "",
             ReferenceId: "",
             message: "",
-          });
+          }));
           localStorage.setItem("token", response.token);
-          setDisplay("Address");
+          setLoadingStates(prev => ({ ...prev, otp: false }));
+          router.push("/");
         } else {
-          alert(response.message);
+          setLoadingStates(prev => ({ ...prev, otp: false }));
+          alert(response.message || "Invalid OTP. Please try again.");
         }
       })
       .catch((error) => {
-        setData(prev => ({ ...prev, loading: false }));
-        const errorMessage = error.response?.message || error.message || 'An error occurred';
-        alert(errorMessage);
+        setLoadingStates(prev => ({ ...prev, otp: false }));
         console.error("There was a problem with the fetch operation:", error);
+        alert("Network error. Please check your connection and try again.");
       });
-  }, [data]);
+  }, [data, businessAddress, router]);
   const fetchLocationData = () => {
     setLoadingStates(prev => ({ ...prev, location: true }));
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/location`, {
@@ -282,6 +276,78 @@ const Signup = memo(() => {
     fetchVendorCategories();
     fetchLocationData();
   }, []);
+
+  // Initialize Google Maps Places Autocomplete for area selection (Bangalore only)
+  useEffect(() => {
+    if (display !== "Address" || !areaInputRef.current) return;
+    
+    let autocomplete;
+    const initializeAutocomplete = async () => {
+      try {
+        const google = await loadGoogleMaps();
+        if (!google?.maps?.places) return;
+
+        // Define Bangalore bounds
+        const bangaloreBounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(12.8236, 77.3832), // Southwest corner
+          new google.maps.LatLng(13.1721, 77.8369)  // Northeast corner
+        );
+
+        autocomplete = new google.maps.places.Autocomplete(
+          areaInputRef.current,
+          {
+            types: ["geocode", "establishment"],
+            componentRestrictions: { country: "in" },
+            bounds: bangaloreBounds,
+            strictBounds: true,
+          }
+        );
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place.geometry) return;
+
+          const formattedAddress = place.formatted_address || "";
+          const lowerAddress = formattedAddress.toLowerCase();
+          
+          // Validate that the selected location is in Bangalore
+          if (!lowerAddress.includes("bengaluru") && !lowerAddress.includes("bangalore")) {
+            alert("Please select a location within Bangalore only.");
+            if (areaInputRef.current) areaInputRef.current.value = "";
+            setBusinessAddress(prev => ({ ...prev, area: "" }));
+            return;
+          }
+
+          // Extract area/locality from address components
+          let areaName = "";
+          if (place.address_components) {
+            const locality = place.address_components.find(component => 
+              component.types.includes("locality") || 
+              component.types.includes("sublocality") ||
+              component.types.includes("sublocality_level_1")
+            );
+            areaName = locality ? locality.long_name : formattedAddress;
+          } else {
+            areaName = formattedAddress;
+          }
+
+          setBusinessAddress(prev => ({ 
+            ...prev, 
+            area: areaName,
+            googleMaps: formattedAddress
+          }));
+        });
+      } catch (error) {
+        console.error("Failed to initialize Google Places:", error);
+      }
+    };
+
+    initializeAutocomplete();
+    
+    return () => {
+      // Cleanup if needed
+    };
+  }, [display]);
   // Memoize change handlers
   const handleNameChange = useCallback((e) => setData(prev => ({ ...prev, name: e.target.value })), []);
   const handlePhoneChange = useCallback((e) => {
@@ -333,18 +399,14 @@ const Signup = memo(() => {
             setBusinessAddress({
               ...businessAddress,
               state: e.target.value,
-              city: "",
+              city: "Bangalore",
               area: "",
             });
           }}
           disabled={data.loading}
         >
           <option value={""}>Select State</option>
-          {locationData.map((item, index) => (
-            <option value={item.title} key={index}>
-              {item.title}
-            </option>
-          ))}
+          <option value="Karnataka">Karnataka</option>
         </Select>
         <Select
           value={businessAddress.city}
@@ -358,34 +420,23 @@ const Signup = memo(() => {
           disabled={data.loading}
         >
           <option value={""}>Select City</option>
-          {locationData
-            ?.find((i) => i.title === businessAddress.state)
-            ?.cities?.map((item, index) => (
-              <option value={item.title} key={index}>
-                {item.title}
-              </option>
-            ))}
+          <option value="Bangalore">Bangalore</option>
         </Select>
-        <Select
+        <TextInput
+          ref={areaInputRef}
+          placeholder="Search for area in Bangalore"
           value={businessAddress.area}
           onChange={(e) => {
+            const areaValue = e.target.value;
             setBusinessAddress({
               ...businessAddress,
-              area: e.target.value,
+              area: areaValue,
+              // Auto-fill googleMaps if not already set
+              googleMaps: businessAddress.googleMaps || areaValue
             });
           }}
           disabled={data.loading}
-        >
-          <option value={""}>Select Area</option>
-          {locationData
-            ?.find((i) => i.title === businessAddress.state)
-            ?.cities?.find((i) => i.title === businessAddress.city)
-            ?.areas?.map((item, index) => (
-              <option value={item.title} key={index}>
-                {item.title}
-              </option>
-            ))}
-        </Select>
+        />
         <Textarea
           placeholder="Address"
           rows={3}
@@ -425,14 +476,16 @@ const Signup = memo(() => {
             !businessAddress.city ||
             !businessAddress.area ||
             !businessAddress.address ||
-            !businessAddress.googleMaps ||
             !businessAddress.pincode
           }
           onClick={() => {
+            console.log("Send OTP & Continue button clicked");
+            console.log("Business Address:", businessAddress);
+            console.log("Loading States:", loadingStates);
             updateAddress();
           }}
         >
-          Submit
+          {loadingStates.submit ? "Sending OTP..." : "Send OTP & Continue"}
         </Button>
       </>
     );
@@ -456,6 +509,13 @@ const Signup = memo(() => {
             />
           ))}
         </div>
+        <Button 
+          onClick={handleOTPSubmit} 
+          disabled={loadingStates.otp || data.Otp.length !== 6}
+          className="w-full"
+        >
+          {loadingStates.otp ? "Verifying..." : "Verify OTP"}
+        </Button>
         {showResend && (
           <Button onClick={SendOTP} disabled={data.loading}>
             Resend OTP
@@ -463,7 +523,7 @@ const Signup = memo(() => {
         )}
       </div>
     );
-  }, [otp, showResend, data.loading, SendOTP, handleChange, handleKeyDown]);
+  }, [otp, showResend, data.loading, data.Otp, loadingStates.otp, SendOTP, handleChange, handleKeyDown, handleOTPSubmit]);
 
   const signUpView = useMemo(() => {
     const handlePhoneChange = (e) => {
@@ -555,7 +615,7 @@ const Signup = memo(() => {
             }}
             disabled={!data.phone || !data.email || !data.name || data.loading}
           >
-            Send OTP
+            Continue to Address
           </Button>
         </div>
       </>
@@ -564,7 +624,7 @@ const Signup = memo(() => {
 
   return (
     <>
-      <div className="bg-white text-black flex flex-col p-8 gap-6 h-screen w-screen overflow-scroll">
+      <div className="bg-white text-black flex flex-col p-8 gap-6 h-screen w-screen overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
         {display === "SignUp" && signUpView}
         {display === "OTP" && otpView}
         {display === "Address" && addressView}

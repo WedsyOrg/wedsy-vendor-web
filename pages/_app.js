@@ -57,7 +57,7 @@ function MyApp({ Component, pageProps }) {
     };
 
     handleResize(); // Initial check
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
 
     return () => {
       window.removeEventListener("resize", handleResize);
