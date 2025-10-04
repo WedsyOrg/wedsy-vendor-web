@@ -189,6 +189,7 @@ export default function Home({}) {
     fetchPendingCounts();
   }, []);
 
+
   useEffect(() => {
     if (primaryTab === "Bidding") {
       fetchBidding();
@@ -244,7 +245,7 @@ export default function Home({}) {
         </div>
       </div>
       
-      {/* Secondary Tabs - Pending and Accepted */}
+      {/* Pending and Accepted Tabs - Rectangular Full Width */}
       <div className="flex flex-row items-center mb-4">
         <div
           className={`font-semibold text-lg py-2 text-center flex-grow ${
