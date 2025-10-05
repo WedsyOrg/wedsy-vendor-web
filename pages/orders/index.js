@@ -26,6 +26,7 @@ export default function Packages({}) {
   const [search, setSearch] = useState("");
   const [display, setDisplay] = useState("");
   const [orders, setOrders] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchOrders = () => {
     setLoading(true);
@@ -68,19 +69,66 @@ export default function Packages({}) {
           Orders
         </p>
         <div className="relative">
-          <select
-            value={display}
-            onChange={(e) => setDisplay(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-black bg-white appearance-none pr-8 focus:outline-none focus:ring-0 focus:border-gray-400"
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-black bg-white flex items-center gap-2"
           >
-            <option value={"Bidding"}>Bidding</option>
-            <option value={"Wedsy-Package"}>Packages</option>
-            <option value={"Personal-Package"}>Personal</option>
-            <option value={""}>All</option>
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            {display === "Bidding" ? "Bidding" : 
+             display === "Wedsy-Package" ? "Packages" : 
+             display === "Personal-Package" ? "Personal" : "All"}
             <MdKeyboardArrowDown className="w-4 h-4 text-gray-400" />
-          </div>
+          </button>
+          
+          {showDropdown && (
+            <div 
+              className="absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50"
+              style={{
+                width: '131px',
+                borderRadius: '10px',
+                border: '1px solid #D1D5DB'
+              }}
+            >
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Bidding");
+                  setShowDropdown(false);
+                }}
+              >
+                Bidding
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Wedsy-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Packages
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Personal-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Personal
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("");
+                  setShowDropdown(false);
+                }}
+              >
+                All
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

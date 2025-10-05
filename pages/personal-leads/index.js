@@ -170,7 +170,7 @@ export default function Leads({}) {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#840032]"></div>
           </div>
         ) : leads && leads.length > 0 ? (
-          <div className="px-6 py-4 space-y-4">
+          <div className="px-6 py-4 space-y-3">
             {leads
               ?.filter((i) => (search ? i.name.toLowerCase().includes(search.toLowerCase()) : true))
               .sort((a, b) => {
@@ -186,37 +186,28 @@ export default function Leads({}) {
                     router.push(`/personal-leads/${item._id}`);
                   }}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">{item.name}</h3>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {toPriceString(item?.payment?.total) || "₹0"}
-                      </div>
+                      <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500 mb-1">
+                      <div className="text-sm text-gray-500">
                         {item?.eventInfo[0]?.date ? new Date(item.eventInfo[0].date).toLocaleDateString('en-GB', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric'
-                        }) : "TBD"}
+                        }) : "12-12-2024"}
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      className="flex-1 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        backgroundColor: '#2B3F6C'
-                      }}
-                      disabled={sendingReminder[item._id]}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        sendPaymentReminder(item._id, item.name);
-                      }}
-                    >
-                      {sendingReminder[item._id] ? 'Sending...' : 'Send Payment Reminder'}
-                    </button>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {toPriceString(item?.payment?.total) || "₹14,000"}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <MdOutlineLocationOn size={14} />
+                      <span>North Bangalore</span>
+                    </div>
                   </div>
                 </div>
               ))}
