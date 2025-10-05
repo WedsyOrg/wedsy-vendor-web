@@ -535,7 +535,7 @@ const Signup = memo(() => {
     };
     return (
       <>
-        <h1 className="text-2xl font-medium">Sign Up</h1>
+        <h1 className="text-2xl font-medium">Sign In</h1>
         <div className="flex flex-col gap-4">
           <TextInput
             placeholder="Name"
@@ -616,8 +616,12 @@ const Signup = memo(() => {
             }}
             disabled={!data.phone || !data.email || !data.name || data.loading}
           >
-            Continue to Address
+            Sign In
           </Button>
+          <div className="text-center mt-4">
+            <span className="text-gray-600">Not a member? </span>
+            <span className="text-rose-600 cursor-pointer hover:underline">Sign up</span>
+          </div>
         </div>
       </>
     );

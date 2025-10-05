@@ -962,6 +962,7 @@ export default function Home({ user }) {
       
 
       {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         {/* Ongoing Order Banner */}
         {!showOrderDetails && (

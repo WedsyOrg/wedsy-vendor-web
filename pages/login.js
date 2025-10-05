@@ -190,7 +190,7 @@ export default function Login({}) {
               data.loading ||
               (data.otpSent ? !data.Otp : false)
             }
-            className="w-full bg-[#8B0000] text-white font-medium py-3 px-6 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
+            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
           >
             {data.loading ? (
               <div className="flex items-center justify-center">
@@ -198,15 +198,15 @@ export default function Login({}) {
                 Loading...
               </div>
             ) : (
-              "Register"
+              "Sign In"
             )}
           </button>
 
           {/* Sign In Link */}
           <p className="text-center text-gray-600 text-sm mt-4">
-            Already a member?{" "}
+            Not a member?{" "}
             <Link href="/signup" className="text-[#8B0000] underline">
-              Sign in
+              Sign up
             </Link>
           </p>
         </div>
