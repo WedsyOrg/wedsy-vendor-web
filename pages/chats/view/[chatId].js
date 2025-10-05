@@ -1062,22 +1062,18 @@ export default function Home({}) {
   }, [chatId]);
   console.log("chatId: last", chatId);
   
-  // useEffect(() => {
-    //   const onFocus = () => {
-  //     if (chatId) fetchChatMessages(false);
-  //   };
-  //   const onVisibility = () => {
-  //     if (document.visibilityState === "visible" && chatId) {
-  //       fetchChatMessages(false);
-  //     }
-  //   };
-  //   window.addEventListener("focus", onFocus);
-  //   document.addEventListener("visibilitychange", onVisibility);
-  //   return () => {
-  //     window.removeEventListener("focus", onFocus);
-  //     document.removeEventListener("visibilitychange", onVisibility);
-  //   };
-  // }, [chatId]);
+  useEffect(() => {
+    const onFocus = () => { if (chatId) fetchChatMessages(false); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && chatId) fetchChatMessages(false);
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [chatId]);
 
   return (
     <>
@@ -1112,18 +1108,21 @@ export default function Home({}) {
           id="chat-container"
           className="flex-1 overflow-y-auto p-2 bg-white flex flex-col-reverse gap-2 hide-scrollbar"
         >
-          {/* {console.log("Rendering messages:", chat?.messages)} */}
-          {chat?.messages?.length > 0 ? (
-            chat?.messages?.map((item, index) => {
-              {/* console.log(`Rendering message ${index}:`, item); */}
-              return <ChatMessage chat={item} key={index} />;
-            })
-          ) : (
-            <div className="text-center text-gray-500 py-4">
-              No messages yet
-            </div>
-          )}
-            </div>
+          {(() => {
+            const cutoff = Date.now() - 60 * 1000;
+            const filtered = (chat?.messages || []).filter((m) => {
+              const ts = m?.createdAt ? new Date(m.createdAt).getTime() : 0;
+              return ts >= cutoff;
+            });
+            return filtered.length > 0 ? (
+              filtered.map((item) => (
+                <ChatMessage chat={item} key={item?._id || item?.id || Math.random()} />
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-4">No messages yet</div>
+            );
+          })()}
+        </div>
         <div className="bg-white sticky bottom-0">
           {showMakeOffer && displayRequirements?._id && (
             <div className="p-3 sm:p-4 border-t">
