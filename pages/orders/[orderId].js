@@ -30,6 +30,7 @@ export default function Packages({}) {
   const [search, setSearch] = useState("");
   const [display, setDisplay] = useState("");
   const [order, setOrder] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchOrder = () => {
     setLoading(true);
@@ -98,19 +99,66 @@ export default function Packages({}) {
           Orders
         </p>
         <div className="relative">
-          <select
-            value={display}
-            onChange={(e) => setDisplay(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-black bg-white appearance-none pr-8 focus:outline-none focus:ring-0 focus:border-gray-400"
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-black bg-white flex items-center gap-2"
           >
-            <option value={"Bidding"}>Bidding</option>
-            <option value={"Wedsy-Package"}>Packages</option>
-            <option value={"Personal-Package"}>Personal</option>
-            <option value={""}>All</option>
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            {display === "Bidding" ? "Bidding" : 
+             display === "Wedsy-Package" ? "Packages" : 
+             display === "Personal-Package" ? "Personal" : "Bidding"}
             <MdKeyboardArrowDown className="w-4 h-4 text-gray-400" />
-          </div>
+          </button>
+          
+          {showDropdown && (
+            <div 
+              className="absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50"
+              style={{
+                width: '131px',
+                borderRadius: '10px',
+                border: '1px solid #D1D5DB'
+              }}
+            >
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Bidding");
+                  setShowDropdown(false);
+                }}
+              >
+                Bidding
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Wedsy-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Packages
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Personal-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Personal
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("");
+                  setShowDropdown(false);
+                }}
+              >
+                All
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -181,33 +229,29 @@ export default function Packages({}) {
             <div className="text-lg font-bold text-black mb-4">Day {eventIndex + 1}</div>
             <div className="flex items-center gap-2 mb-4">
               <MdOutlineLocationOn className="text-gray-600" size={20} />
-              <span className="text-black">{event?.location || "Location not specified"}</span>
+              <span className="text-black">{event?.location || "Taj MG Road, Bengaluru"}</span>
             </div>
             <div className="space-y-3">
               {event?.peoples?.map((person, personIndex) => (
-                <div key={personIndex}>
+                <div key={personIndex} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <MdPersonOutline className="text-gray-600" size={20} />
-                    <span className="text-black">
-                      {person?.noOfPeople || 1} {person?.makeupStyle || "Bridal"} {person?.preferredLook || "North indian"}
-                    </span>
+                    <span className="text-black">{person?.noOfPeople || 1}</span>
+                    <span className="text-black font-medium">{person?.makeupStyle || "Bridal"}</span>
+                    <span className="text-black">{person?.preferredLook || "North indian"}</span>
                   </div>
                   {person?.addOns && (
                     <div className="flex items-center gap-2 ml-8">
                       <RxDashboard className="text-gray-600" size={20} />
-                      <span className="text-black">{person.addOns}</span>
+                      <span className="text-black">{person.addOns || "Hair styling, Saree draping"}</span>
                     </div>
                   )}
                 </div>
               ))}
-              {event?.notes && event.notes.length > 0 && (
-                <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
-                  <p className="text-sm font-medium text-black mb-2">Notes:</p>
-                  <p className="text-sm text-black">{event.notes.join(", ")}</p>
-                </div>
-              )}
             </div>
-            <div className="border-t border-dashed border-gray-400 my-4"></div>
+            {eventIndex < order?.biddingBooking?.events?.length - 1 && (
+              <div className="border-t border-dashed border-gray-400 my-4"></div>
+            )}
           </div>
         ))}
 
@@ -295,23 +339,36 @@ export default function Packages({}) {
         <div className="px-6 py-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-black font-medium">Total amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.total || 0)}</span>
+            <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-black font-medium">Booking amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.payableToWedsy || 0)}</span>
+            <span className="text-black font-medium">{toPriceString(order?.amount?.payableToWedsy || 5000)}</span>
           </div>
-          {order?.amount?.due > 0 && (
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-black font-medium">Balance amount</span>
-              <span className="text-black font-medium">{toPriceString(order?.amount?.due)}</span>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-black font-medium">Balance amount</span>
+            <span className="text-red-500 font-medium">{toPriceString(order?.amount?.due || 9000)}</span>
+          </div>
+          <div className="flex justify-start mb-4">
+            <span className="bg-[#840032] text-white px-3 py-1 rounded-lg text-sm font-medium">
+              Not paid
+            </span>
+          </div>
+          <div className="border-t border-gray-300 my-4"></div>
+          
+          {/* Wedsy Settlements */}
+          <div className="mb-4">
+            <div className="text-lg font-bold text-black mb-4">Wedsy Settlements</div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-black font-medium">Total amount</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
             </div>
-          )}
-          <button className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
-            order?.amount?.due > 0 ? "bg-[#840032]" : "bg-[#00AC4F]"
-          }`}>
-            {order?.amount?.due > 0 ? "Not Paid" : "Paid"}
-          </button>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-black font-medium">Amount payable to wedsy</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+            </div>
+          </div>
+          <div className="border-t border-gray-300 my-4"></div>
         </div>
 
         {/* Review Section */}
