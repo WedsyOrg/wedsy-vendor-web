@@ -1286,7 +1286,9 @@ export default function Settings({ user }) {
                     + Upload address proof
                   </button>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Aadhar card / Driving license / Passport</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  <span className="text-red-500">*</span> Aadhar card / Driving license / Passport (Required)
+                </p>
               </div>
             </div>
 
@@ -1296,6 +1298,8 @@ export default function Settings({ user }) {
                   onClick={() => {
                     if (profile.businessDescription.length > 350) {
                     toast.error("The profile can have a maximum of 350 Characters.");
+                    } else if (documents.length === 0) {
+                      toast.error("Please upload at least one address proof document (Aadhaar Card, Driving License, or Passport) to complete your profile.");
                     } else {
                       updateProfile();
                     }
