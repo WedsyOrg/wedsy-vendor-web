@@ -10,24 +10,24 @@ export default function ExpandText({ text, limit }) {
             {text}
             <br />
             <span
-              className="text-blue-500 underline cursor-pointer"
+              className="text-[#840032] hover:text-[#6d0028] cursor-pointer font-medium ml-1"
               onClick={() => {
                 setExpanded(!expanded);
               }}
             >
-              show less
+              Show less
             </span>
           </>
         ) : (
           <>
             {text?.slice(0, limit)}...
             <span
-              className="text-blue-500 underline cursor-pointer"
+              className="text-[#840032] hover:text-[#6d0028] cursor-pointer font-medium ml-1"
               onClick={() => {
                 setExpanded(!expanded);
               }}
             >
-              show more
+              Show more
             </span>
           </>
         )

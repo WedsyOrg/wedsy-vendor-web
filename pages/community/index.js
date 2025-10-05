@@ -21,6 +21,7 @@ export default function Community({}) {
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState([]);
   const [search, setSearch] = useState("");
+  const [newPostId, setNewPostId] = useState(null);
 
   const fetchCommunity = () => {
     setLoading(true);
@@ -41,11 +42,13 @@ export default function Community({}) {
       })
       .then((response) => {
         if (response) {
+          console.log("Community API Response:", response);
           setLoading(false);
           setCommunity(response);
         }
       })
       .catch((error) => {
+        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -174,6 +177,24 @@ export default function Community({}) {
     fetchCommunity();
   }, []);
 
+  // Check for new posts from create page
+  useEffect(() => {
+    const checkForNewPost = () => {
+      const newPost = localStorage.getItem('newCommunityPost');
+      if (newPost) {
+        setNewPostId(JSON.parse(newPost).id);
+        localStorage.removeItem('newCommunityPost');
+        // Remove animation after 3 seconds
+        setTimeout(() => setNewPostId(null), 3000);
+      }
+    };
+    
+    checkForNewPost();
+    // Check every 2 seconds for new posts
+    const interval = setInterval(checkForNewPost, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
@@ -188,115 +209,145 @@ export default function Community({}) {
           <BsPencilSquare size={20} />
         </Link>
       </div>
-      <div className="flex items-center gap-3 px-4  ">
+      <div className="px-4 py-3">
         <TextInput
           type="search"
           icon={MdSearch}
           placeholder="Search"
-          className="my-4 grow"
+          className="w-full"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="flex flex-col gap-4 pb-4 px-6 divide-y-2">
-        {community
-          ?.filter((i) =>
-            search
-              ? i.title.toLowerCase().includes(search.toLowerCase()) ||
-                i.body.toLowerCase().includes(search.toLowerCase())
-              : true
-          )
-          .map((item, index) => (
-            <>
-              <div className="flex flex-col gap-4 py-4" key={index}>
+      <div className="flex flex-col gap-4 pb-4 px-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#840032]"></div>
+            <p className="text-gray-500 mt-2">Loading community posts...</p>
+          </div>
+        ) : community?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-6xl text-gray-300 mb-4">📝</div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Community Posts Yet</h3>
+            <p className="text-gray-500 text-center mb-6">
+              Be the first to share your experiences, ask questions, or help other vendors in the community.
+            </p>
+            <Link href="/community/create">
+              <Button className="bg-[#840032] hover:bg-[#6d0028] text-white px-6 py-2 rounded-lg">
+                Create First Post
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          community
+            ?.filter((i) =>
+              search
+                ? i.title.toLowerCase().includes(search.toLowerCase()) ||
+                  i.body.toLowerCase().includes(search.toLowerCase())
+                : true
+            )
+            .map((item, index) => (
+            <div 
+              key={index} 
+              className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-500 ${
+                newPostId === item._id 
+                  ? 'animate-pulse border-[#840032] shadow-lg' 
+                  : ''
+              }`}
+            >
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-row gap-2 items-center">
                   <Avatar rounded size="md" />
-                  <div>
+                  <div className="flex-1">
                     {item?.author?.anonymous ? (
-                      <p className="text-lg font-regule">Anonymous</p>
+                      <p className="text-base font-medium text-black">Anonymous</p>
                     ) : (
-                      <p className="text-lg font-semibold">
+                      <p className="text-base font-semibold text-black">
                         {item?.author?.name}
                       </p>
                     )}
-                    <p className="text-sm">
-                      {item.category} |{" "}
-                      {new Date(item?.createdAt)?.toLocaleString()}{" "}
+                    <p className="text-xs text-gray-500">
+                      Level 1 • 13 points
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={`/community/${item._id}`}
-                  className="text-xl font-semibold"
-                >
-                  {item.title}
-                </Link>
-                <p className="-mt-4">
-                  <ExpandText text={item.body} limit={150} />
-                </p>
-                <div className="flex flex-row gap-4 items-center">
+                
+                <div className="space-y-2">
+                  <Link
+                    href={`/community/${item._id}`}
+                    className="text-lg font-semibold text-black hover:text-[#840032] transition-colors block"
+                  >
+                    {item.title}
+                  </Link>
+                  <div className="text-sm text-black">
+                    <ExpandText text={item.body} limit={150} />
+                  </div>
+                </div>
+                
+                <div className="flex flex-row gap-4 items-center pt-2">
                   <Button
                     onClick={() =>
                       router.push(`/community/${item._id}?replyCommunity=true`)
                     }
-                    className="px-4 py-0 rounded-full text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max"
+                    className="px-4 py-1 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] transition-colors text-sm"
                   >
                     Reply
                   </Button>
-                  {item.liked ? (
-                    <div className="flex flex-row gap-1 items-center">
-                      <BiSolidLike
-                        size={24}
-                        className="text-custom-dark-blue"
-                        cursor={"pointer"}
-                        onClick={() => {
-                          removeCommunityLike(item._id);
-                        }}
-                      />
-                      {item.likes}
-                    </div>
-                  ) : (
-                    <div className="flex flex-row gap-1 items-center">
-                      <BiLike
-                        size={24}
-                        className="text-custom-dark-blue"
-                        cursor={"pointer"}
-                        onClick={() => {
-                          addCommunityLike(item._id);
-                        }}
-                      />
-                      {item.likes}
-                    </div>
-                  )}
-                  {item.disliked ? (
-                    <div className="flex flex-row gap-1 items-center">
-                      <BiSolidDislike
-                        size={24}
-                        className="text-custom-dark-blue"
-                        cursor={"pointer"}
-                        onClick={() => {
-                          removeCommunityDisLike(item._id);
-                        }}
-                      />
-                      {item.dislikes}
-                    </div>
-                  ) : (
-                    <div className="flex flex-row gap-1 items-center">
-                      <BiDislike
-                        size={24}
-                        className="text-custom-dark-blue"
-                        cursor={"pointer"}
-                        onClick={() => {
-                          addCommunityDisLike(item._id);
-                        }}
-                      />
-                      {item.dislikes}
-                    </div>
-                  )}
+                  
+                  <div className="flex flex-row gap-6 items-center">
+                    {item.liked ? (
+                      <div className="flex flex-col items-center cursor-pointer">
+                        <BiSolidLike
+                          size={20}
+                          className="text-[#840032]"
+                          onClick={() => {
+                            removeCommunityLike(item._id);
+                          }}
+                        />
+                        <span className="text-xs text-black mt-1">{item.likes || 0}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center cursor-pointer">
+                        <BiLike
+                          size={20}
+                          className="text-[#840032]"
+                          onClick={() => {
+                            addCommunityLike(item._id);
+                          }}
+                        />
+                        <span className="text-xs text-black mt-1">{item.likes || 0}</span>
+                      </div>
+                    )}
+                    
+                    {item.disliked ? (
+                      <div className="flex flex-col items-center cursor-pointer">
+                        <BiSolidDislike
+                          size={20}
+                          className="text-[#840032]"
+                          onClick={() => {
+                            removeCommunityDisLike(item._id);
+                          }}
+                        />
+                        <span className="text-xs text-black mt-1">{item.dislikes || 0}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center cursor-pointer">
+                        <BiDislike
+                          size={20}
+                          className="text-[#840032]"
+                          onClick={() => {
+                            addCommunityDisLike(item._id);
+                          }}
+                        />
+                        <span className="text-xs text-black mt-1">{item.dislikes || 0}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </>
-          ))}
+            </div>
+          ))
+        )}
       </div>
     </>
   );
