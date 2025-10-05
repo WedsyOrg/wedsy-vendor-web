@@ -11,6 +11,7 @@ import {
 } from "flowbite-react";
 import { memo, useCallback, useRef, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 const Signup = memo(() => {
   Signup.displayName = 'Signup';
@@ -91,7 +92,7 @@ const Signup = memo(() => {
       .catch((error) => {
         setLoadingStates(prev => ({ ...prev, submit: false }));
         console.error("There was a problem with the operation:", error);
-        alert(error.message || "Network error. Please check your connection and try again.");
+        toast.error(error.message || "Network error. Please check your connection and try again.");
       });
   }, [data.phone, router]);
 
@@ -168,13 +169,13 @@ const Signup = memo(() => {
           router.push("/");
         } else {
           setLoadingStates(prev => ({ ...prev, otp: false }));
-          alert(response.message || "Invalid OTP. Please try again.");
+          toast.error(response.message || "Invalid OTP. Please try again.");
         }
       })
       .catch((error) => {
         setLoadingStates(prev => ({ ...prev, otp: false }));
         console.error("There was a problem with the fetch operation:", error);
-        alert("Network error. Please check your connection and try again.");
+        toast.error("Network error. Please check your connection and try again.");
       });
   }, [data, businessAddress, router]);
   const fetchLocationData = () => {
@@ -313,7 +314,7 @@ const Signup = memo(() => {
           
           // Validate that the selected location is in Bangalore
           if (!lowerAddress.includes("bengaluru") && !lowerAddress.includes("bangalore")) {
-            alert("Please select a location within Bangalore only.");
+            toast.error("Please select a location within Bangalore only.");
             if (areaInputRef.current) areaInputRef.current.value = "";
             setBusinessAddress(prev => ({ ...prev, area: "" }));
             return;
@@ -601,15 +602,15 @@ const Signup = memo(() => {
             onClick={() => {
               if (data.loading) return;
               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-                alert('Please enter a valid email address');
+                toast.error('Please enter a valid email address');
                 return;
               }
               if (data.phone.length !== 10) {
-                alert('Please enter a valid 10-digit phone number');
+                toast.error('Please enter a valid 10-digit phone number');
                 return;
               }
               if (data.name.length < 3) {
-                alert('Name must be at least 3 characters');
+                toast.error('Name must be at least 3 characters');
                 return;
               }
               SendOTP();

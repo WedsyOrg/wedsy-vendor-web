@@ -1,4 +1,5 @@
 import {Loader} from "@googlemaps/js-api-loader";
+import { toast } from "react-toastify";
 
 export const loadGoogleMaps = async () => {
   // Use a simpler implementation to avoid potential issues
@@ -6,7 +7,7 @@ export const loadGoogleMaps = async () => {
 
   if (!apiKey) {
     console.error("Google Maps API key is missing");
-    alert(
+    toast.error(
       "Google Maps API key is missing. Please check your environment setup."
     );
     throw new Error("Missing API key");

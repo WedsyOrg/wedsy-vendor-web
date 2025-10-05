@@ -5,6 +5,7 @@ import {
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import {
   Avatar,
   Button,
@@ -85,7 +86,7 @@ export default function Lead({}) {
       .then((response) => {
         setLoading(false);
         if (response.message !== "success") {
-          alert("Error");
+          toast.error("Error");
         } else {
           setLoading(false);
           setEditDetails(false);

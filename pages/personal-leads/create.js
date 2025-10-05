@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 export default function Home({}) {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function Home({}) {
       .then((response) => {
         setLoading(false);
         if (response.message !== "success") {
-          alert("Error");
+          toast.error("Error");
         } else {
           router.push(`/personal-leads/${response.id}`);
         }
