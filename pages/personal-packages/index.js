@@ -12,6 +12,7 @@ import {
   MdKeyboardArrowRight,
   MdOutlineLocationOn,
   MdSearch,
+  MdClose,
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
@@ -57,6 +58,7 @@ export default function Packages({}) {
     fetchPackages();
   }, []);
 
+
   return (
     <>
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
@@ -73,7 +75,7 @@ export default function Packages({}) {
       </div>
       <div className="flex flex-col gap-4 py-4 px-6 divide-y-2">
         <p className="text-xl text-gray-500">Create your Package/Offers</p>
-        <Link href="/personal-packages/create" className=" text-sm">
+        <Link href="/personal-packages/create" className="text-sm">
           <Button className="bg-custom-dark-blue enabled:hover:bg-custom-dark-blue w-full flex flex-row items-center gap-1">
             Add Packages &nbsp;
             <MdAdd size={20} />
@@ -122,6 +124,7 @@ export default function Packages({}) {
           </div>
         ))}
       </div>
+
     </>
   );
 }

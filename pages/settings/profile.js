@@ -439,13 +439,17 @@ export default function Settings({ user }) {
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
-        } else if (!user?.profileCompleted) {
-          setDisplay("Prices");
+        } else {
+          toast.success("Details Updated");
+          if (!user?.profileCompleted) {
+            setDisplay("Prices");
+          }
         }
       })
       .catch((error) => {
         setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
+        toast.error("Error updating details.");
       });
   };
   const updatePrices = async () => {
@@ -1327,7 +1331,7 @@ export default function Settings({ user }) {
             {/* Experience Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How many years of experience?
+                How many years of experience? <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -1340,14 +1344,21 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
+                  !other.experience || other.experience.trim() === '' 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-[#840032] focus:border-[#840032]'
+                }`}
               />
+              {(!other.experience || other.experience.trim() === '') && (
+                <p className="text-xs text-red-500 mt-1">This field is required</p>
+              )}
             </div>
 
             {/* Clients Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How many clients have you served till date?
+                How many clients have you served till date? <span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-gray-500 mb-2">(approx. number)</p>
               <input
@@ -1361,8 +1372,15 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
+                  !other.clients || other.clients.trim() === '' 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-[#840032] focus:border-[#840032]'
+                }`}
               />
+              {(!other.clients || other.clients.trim() === '') && (
+                <p className="text-xs text-red-500 mt-1">This field is required</p>
+              )}
             </div>
 
             {/* Certificates/Awards Section */}
@@ -1593,29 +1611,6 @@ export default function Settings({ user }) {
               </div>
             </div>
 
-            {/* Done Button */}
-            <div className="pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  updateOther();
-                }}
-                disabled={loading}
-                className="w-full py-3 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  'Done'
-                )}
-              </button>
-            </div>
 
             {/* LGBTQ Question */}
             <div>
@@ -1661,7 +1656,7 @@ export default function Settings({ user }) {
             {/* USP Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How are you different from other artist?
+                How are you different from other artist? <span className="text-red-500">*</span>
               </label>
               <textarea
                 placeholder="I specialize in creating customized bridal looks that enhance natural beauty while ensuring long-lasting results, using only high-quality, cruelty-free products. My signature style focuses on glowing, radiant skin and timeless elegance, making every client feel confident and camera-ready."
@@ -1676,7 +1671,13 @@ export default function Settings({ user }) {
                   }
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#840032] resize-none"
+                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 resize-none ${
+                  !other.usp || other.usp.trim() === '' 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : other.usp.length < 500 
+                    ? 'border-yellow-300 focus:border-yellow-500'
+                    : 'border-[#840032] focus:border-[#840032]'
+                }`}
               />
               <div className="flex justify-between items-center mt-1">
                 <div className={`text-xs ${other.usp.length < 500 ? 'text-red-500' : other.usp.length > 1000 ? 'text-red-500' : 'text-gray-500'}`}>
@@ -1694,19 +1695,32 @@ export default function Settings({ user }) {
             <div className="pt-6">
               <button
                 onClick={() => {
-                  if (other.usp.length >= 500 && other.usp.length <= 1000) {
-                    updateOther();
-                  } else if (other.usp.length > 1000) {
-                    toast.error(
-                      "How are you different from other artist can have a maximum of 1000 characters."
-                    );
-                  } else if (other.usp.length < 500) {
-                    toast.error(
-                      "How are you different from other artist should have a minimum of 500 characters."
-                    );
+                  // Validate all fields
+                  if (!other.experience || other.experience.trim() === '') {
+                    toast.error("Please enter your years of experience.");
+                    return;
                   }
+                  if (!other.clients || other.clients.trim() === '') {
+                    toast.error("Please enter the number of clients you've served.");
+                    return;
+                  }
+                  if (!other.usp || other.usp.trim() === '') {
+                    toast.error("Please describe how you're different from other artists.");
+                    return;
+                  }
+                  if (other.usp.length < 500) {
+                    toast.error("How are you different from other artist should have a minimum of 500 characters.");
+                    return;
+                  }
+                  if (other.usp.length > 1000) {
+                    toast.error("How are you different from other artist can have a maximum of 1000 characters.");
+                    return;
+                  }
+                  
+                  // All validations passed, proceed with update
+                  updateOther();
                 }}
-                disabled={!other.experience || !other.clients || !other.usp || other.usp.length < 500 || other.usp.length > 1000}
+                disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length < 500 || other.usp.length > 1000}
                 className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
