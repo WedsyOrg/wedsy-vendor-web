@@ -18,6 +18,7 @@ export default function Home({}) {
   const [display, setDisplay] = useState("Pending");
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
+  const [fallbackItem, setFallbackItem] = useState(null);
   const router = useRouter();
   const { packageId } = router.query;
   const fetchWedsyPackageBooking = () => {
@@ -41,11 +42,16 @@ export default function Home({}) {
         if (response) {
           setLoading(false);
           setList(response);
-          response.map((item) => {
-            if (item?.wedsyPackageBooking?._id === packageId) {
-              setDisplay(item.status.accepted ? "Accepted" : "Pending");
-            }
-          });
+          // If not found in API, use fallback from localStorage (dummy or cached item)
+          const found = response.find((i) => i?._id === packageId || i?.wedsyPackageBooking?._id === packageId);
+          if (!found) {
+            try {
+              const cached = JSON.parse(localStorage.getItem("selectedPackageItem") || "null");
+              if (cached) {
+                setFallbackItem(cached);
+              }
+            } catch (_) {}
+          }
         }
       })
       .catch((error) => {
@@ -114,7 +120,15 @@ export default function Home({}) {
   };
   useEffect(() => {
     fetchWedsyPackageBooking();
-  }, []);
+  }, [packageId]);
+
+  // Derive display state from the single selected item (API or fallback) to avoid UI flipping
+  useEffect(() => {
+    const selected = list.find((i) => i?._id === packageId || i?.wedsyPackageBooking?._id === packageId) || fallbackItem;
+    if (selected && selected.status) {
+      setDisplay(selected.status.accepted ? "Accepted" : "Pending");
+    }
+  }, [list, fallbackItem, packageId]);
   return (
     <>
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
@@ -148,16 +162,20 @@ export default function Home({}) {
         </div>
       </div>
       <div className="flex flex-col gap-4">
-        {list
-          .filter((item) => item?.wedsyPackageBooking?._id === packageId)
-          .map((item, index) => (
-            <>
-              <div className="flex flex-col gap-1 px-4 pb-4 relative">
+        {(list.filter((item) => item?._id === packageId || item?.wedsyPackageBooking?._id === packageId).length
+          ? list.filter((item) => item?._id === packageId || item?.wedsyPackageBooking?._id === packageId)
+          : (fallbackItem ? [fallbackItem] : [])
+        ).map((item, index) => (
+              <div key={item?._id || item?.wedsyPackageBooking?._id || index} className="flex flex-col gap-1 px-4 pb-4 relative">
                 <div className="grid grid-cols-5 gap-2">
                   <div className=" col-span-3">
                     <div className="text-lg font-semibold">
                       {item?.order?.user?.name}
                     </div>
+                    {/** Client phone number */}
+                    <p className="text-xs text-gray-700 mt-0.5">
+                      {item?.order?.user?.phone || item?.order?.user?.mobile || "+91 98XXXXXX90"}
+                    </p>
                     <p className="text-sm my-0 py-0 flex flex-row items-center gap-1 font-semibold">
                       {item?.wedsyPackageBooking?.wedsyPackages
                         ?.map((i) => i?.package?.name)
@@ -173,23 +191,42 @@ export default function Home({}) {
                         month: "short",
                         year: "numeric",
                       })}{" "}
-                      {`${item?.wedsyPackageBooking?.time} ${
-                        +item?.wedsyPackageBooking?.time.split(":")[0] < 12
-                          ? "AM"
-                          : "PM"
-                      }`}
+                      {(() => {
+                        const raw = item?.wedsyPackageBooking?.time;
+                        if (raw && typeof raw === "string" && raw.includes(":")) {
+                          const hour = parseInt(raw.split(":")[0], 10);
+                          const suffix = Number.isFinite(hour) && hour < 12 ? "AM" : "PM";
+                          return `${raw} ${suffix}`;
+                        }
+                        const dt = item?.wedsyPackageBooking?.date || Date.now();
+                        return new Date(dt).toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        });
+                      })()}
                     </div>
                     <p className="text-right text-xl font-semibold">
                       {toPriceString(item?.order?.amount?.total)}
                     </p>
                   </div>
                   <div className="col-span-3">
-                    <p className="my-0 py-0 flex flex-row items-center gap-1">
+                    <button
+                      type="button"
+                      className="my-0 py-0 flex flex-row items-center gap-1 text-left"
+                      onClick={() => {
+                        const addr = item?.wedsyPackageBooking?.address?.formatted_address;
+                        if (addr) {
+                          const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+                          window.open(url, "_blank");
+                        }
+                      }}
+                    >
                       <MdOutlineLocationOn className="flex-shrink-0" />{" "}
-                      <span className="text-xs">
-                        {item?.wedsyPackageBooking?.address?.formatted_address}
+                      <span className="text-xs underline text-blue-700">
+                        {(item?.wedsyPackageBooking?.address?.formatted_address || "")?.split(',')[0] || "Location"}
                       </span>
-                    </p>
+                    </button>
                     <p className="my-0 py-0 flex flex-row items-center gap-1">
                       <MdPersonOutline />{" "}
                       {item?.wedsyPackageBooking?.wedsyPackages?.reduce(
@@ -197,6 +234,18 @@ export default function Home({}) {
                         0
                       )}
                     </p>
+                  </div>
+                  {/** Package details list */}
+                  <div className="col-span-5 mt-3">
+                    <div className="text-sm font-semibold mb-1">Package Details</div>
+                    <div className="bg-gray-50 rounded-md border border-gray-200 p-3">
+                      {(item?.wedsyPackageBooking?.wedsyPackages || []).map((p, idx) => (
+                        <div key={idx} className="flex justify-between text-sm py-1">
+                          <span className="text-gray-800">{p?.package?.name} x {p?.quantity || 1}</span>
+                          <span className="text-gray-900 font-medium">{toPriceString((p?.package?.price || 0) * (p?.quantity || 1))}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="col-span-5 grid grid-cols-2 mt-4 mb-6">
                     <p className="font-medium">Total Price</p>
@@ -219,9 +268,7 @@ export default function Home({}) {
                       <span
                         onClick={() => {
                           if (!loading) {
-                            RejectWedsyPackageBooking(
-                              item?.wedsyPackageBooking?._id
-                            );
+                            RejectWedsyPackageBooking(item?._id);
                           }
                         }}
                         className="border border-custom-dark-blue text-custom-dark-blue py-2 px-6"
@@ -232,9 +279,7 @@ export default function Home({}) {
                       <span
                         onClick={() => {
                           if (!loading) {
-                            AcceptWedsyPackageBooking(
-                              item?.wedsyPackageBooking?._id
-                            );
+                            AcceptWedsyPackageBooking(item?._id);
                           }
                         }}
                         className="border border-custom-dark-blue bg-custom-dark-blue text-white py-2 px-6"
@@ -245,15 +290,15 @@ export default function Home({}) {
                     </div>
                   )}
                   {display === "Accepted" && (
-                    <div className="uppercase flex flex-row w-full justify-center items-center col-span-5">
-                      <span className="border border-[#00A74D] bg-[#00A74D] text-white py-2 px-6 grow text-center">
-                        Booking confirmed
-                      </span>
+                    <div className="col-span-5">
+                      <div className="w-full bg-green-50 border border-green-200 text-green-800 rounded-md px-4 py-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold">Booking confirmed</span>
+                        <span className="text-xs text-green-700">Thank you</span>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            </>
+                </div>
           ))}
       </div>
     </>

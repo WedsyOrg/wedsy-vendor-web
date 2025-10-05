@@ -30,6 +30,7 @@ export default function Packages({}) {
   const [search, setSearch] = useState("");
   const [display, setDisplay] = useState("");
   const [order, setOrder] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchOrder = () => {
     setLoading(true);
@@ -57,6 +58,7 @@ export default function Packages({}) {
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
       });
   };
 
@@ -98,24 +100,71 @@ export default function Packages({}) {
           Orders
         </p>
         <div className="relative">
-          <select
-            value={display}
-            onChange={(e) => setDisplay(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-black bg-white appearance-none pr-8 focus:outline-none focus:ring-0 focus:border-gray-400"
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-black bg-white flex items-center gap-2"
           >
-            <option value={"Bidding"}>Bidding</option>
-            <option value={"Wedsy-Package"}>Packages</option>
-            <option value={"Personal-Package"}>Personal</option>
-            <option value={""}>All</option>
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            {display === "Bidding" ? "Bidding" : 
+             display === "Wedsy-Package" ? "Packages" : 
+             display === "Personal-Package" ? "Personal" : "Bidding"}
             <MdKeyboardArrowDown className="w-4 h-4 text-gray-400" />
-          </div>
+          </button>
+          
+          {showDropdown && (
+            <div 
+              className="absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50"
+              style={{
+                width: '131px',
+                borderRadius: '10px',
+                border: '1px solid #D1D5DB'
+              }}
+            >
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Bidding");
+                  setShowDropdown(false);
+                }}
+              >
+                Bidding
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Wedsy-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Packages
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("Personal-Package");
+                  setShowDropdown(false);
+                }}
+              >
+                Personal
+              </div>
+              <div className="border-t border-gray-200"></div>
+              <div 
+                className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                onClick={() => {
+                  setDisplay("");
+                  setShowDropdown(false);
+                }}
+              >
+                All
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="px-6 py-4">
+      <div className="px-6 py-4 flex justify-center">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MdSearch className="h-5 w-5 text-gray-400" />
@@ -125,53 +174,113 @@ export default function Packages({}) {
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-gray-400"
+            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
+            style={{
+              background: '#D9D9D9',
+              width: '318px',
+              height: '34px',
+              borderRadius: '10px',
+              opacity: 1
+            }}
           />
         </div>
       </div>
 
       {/* Order Details */}
-      <div className="flex flex-col">
-        {/* Customer Name and Date */}
-        <div className="px-6 py-4 flex justify-between items-center">
-          <div className="text-lg font-semibold text-black">
-            {order?.user?.name || "Deepika Padukone"}
+      <div className="flex flex-col px-6 py-4">
+        {/* Client Name and Date for Bidding Orders */}
+        {order?.source === "Bidding" && (
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-lg font-semibold text-black">
+              {order?.user?.name || "Deepika Padukone"}
+            </div>
+            <div className="text-sm font-medium text-black">
+              {order?.biddingBooking?.events?.[0]?.date ? 
+                new Date(order.biddingBooking.events[0].date).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }) : "18 May 2023"}
+            </div>
           </div>
-          <div className="text-sm font-medium text-black">
-            {order?.source === "Bidding" && (
-              <>
-                {new Date(
-                  order?.biddingBooking?.events[0]?.date
-                )?.toLocaleDateString("en-GB", {
+        )}
+
+        {/* Client Information for Package Orders */}
+        {(order?.source === "Wedsy-Package" || order?.source === "Personal-Package") && (
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-black mb-2">Client Information</h3>
+            <div className="bg-gray-200 rounded-lg p-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black font-medium">Name:</span>
+                <span className="text-black">{order?.user?.name || "Deepika Padukone"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-black font-medium">Phone:</span>
+                <span className="text-black">{order?.user?.phone || order?.user?.mobile || "+91 9876543210"}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Location</h3>
+          <div 
+            className="bg-gray-200 rounded-lg p-3 flex items-center gap-2 cursor-pointer hover:bg-gray-300 transition-colors"
+            onClick={() => {
+              const address = order?.wedsyPackageBooking?.address?.formatted_address || 
+                             order?.vendorPersonalPackageBooking?.address?.formatted_address || 
+                             order?.biddingBooking?.events?.[0]?.location ||
+                             "#2014, Prestige garden bay, Yelahan";
+              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+              window.open(mapsUrl, '_blank');
+            }}
+          >
+            <MdOutlineLocationOn className="text-[#840032]" size={20} />
+            <span className="text-black font-medium">HOME</span>
+            <span className="text-black">{order?.wedsyPackageBooking?.address?.formatted_address || order?.vendorPersonalPackageBooking?.address?.formatted_address || order?.biddingBooking?.events?.[0]?.location || "#2014, Prestige garden bay, Yelahan"}</span>
+          </div>
+        </div>
+
+        {/* Date Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Date</h3>
+          <div className="bg-gray-200 rounded-lg p-3">
+            <span className="text-black">
+              {order?.source === "Bidding" && (
+                order?.biddingBooking?.events?.[0]?.date ? 
+                  new Date(order.biddingBooking.events[0].date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  }).toUpperCase() : "14 OCT 2025"
+              )}
+              {order?.source === "Wedsy-Package" && (
+                new Date(order?.wedsyPackageBooking?.date)?.toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {order?.source === "Personal-Package" && (
-              <>
-                {new Date(
-                  order?.vendorPersonalPackageBooking?.date
-                )?.toLocaleDateString("en-GB", {
+                }).toUpperCase() || "11 OCT 2024"
+              )}
+              {order?.source === "Personal-Package" && (
+                new Date(order?.vendorPersonalPackageBooking?.date)?.toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {order?.source === "Wedsy-Package" && (
-              <>
-                {new Date(
-                  order?.wedsyPackageBooking?.date
-                )?.toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {!order?.source && "18 May 2023"}
+                }).toUpperCase() || "11 OCT 2024"
+              )}
+              {!order?.source && "14 OCT 2025"}
+            </span>
+          </div>
+        </div>
+
+        {/* Time Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Time</h3>
+          <div className="bg-gray-200 rounded-lg p-3">
+            <span className="text-black">
+              {order?.wedsyPackageBooking?.time || order?.vendorPersonalPackageBooking?.time || "05:30 pm"}
+            </span>
           </div>
         </div>
 
@@ -181,7 +290,7 @@ export default function Packages({}) {
             <div className="text-lg font-bold text-black mb-4">Day {eventIndex + 1}</div>
             <div className="flex items-center gap-2 mb-4">
               <MdOutlineLocationOn className="text-gray-600" size={20} />
-              <span className="text-black">{event?.location || "Location not specified"}</span>
+              <span className="text-black">{event?.location || "Taj MG Road, Bengaluru"}</span>
             </div>
             <div className="space-y-3">
               {event?.peoples?.map((person, personIndex) => (
@@ -200,54 +309,53 @@ export default function Packages({}) {
                   )}
                 </div>
               ))}
-              {event?.notes && event.notes.length > 0 && (
-                <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
-                  <p className="text-sm font-medium text-black mb-2">Notes:</p>
-                  <p className="text-sm text-black">{event.notes.join(", ")}</p>
-                </div>
-              )}
             </div>
+            {event?.notes && event.notes.length > 0 && (
+              <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
+                <p className="text-sm font-medium text-black mb-2">Notes:</p>
+                <p className="text-sm text-black">{event.notes.join(", ")}</p>
+              </div>
+            )}
             <div className="border-t border-dashed border-gray-400 my-4"></div>
           </div>
         ))}
 
-        {/* Personal Package Section */}
+        {/* Personal Package Section - Same style as Wedsy Package */}
         {order?.source === "Personal-Package" && (
           <div className="px-6 py-4">
-            <div className="text-lg font-bold text-black mb-4">Event Details</div>
-            <div className="flex items-center gap-2 mb-4">
-              <MdOutlineLocationOn className="text-gray-600" size={20} />
-              <span className="text-black">
-                {order?.vendorPersonalPackageBooking?.address?.formatted_address || "Location not specified"}
-              </span>
+            {/* Address Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Address</h3>
+              <div className="bg-gray-200 rounded-lg p-3 flex items-center gap-2">
+                <MdOutlineLocationOn className="text-[#840032]" size={20} />
+                <span className="text-black font-medium">HOME</span>
+                <span className="text-black">{order?.vendorPersonalPackageBooking?.address?.formatted_address || "#2014, Prestige garden bay, Yelahan"}</span>
+              </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MdPersonOutline className="text-gray-600" size={20} />
+
+            {/* Date Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Date</h3>
+              <div className="bg-gray-200 rounded-lg p-3">
                 <span className="text-black">
-                  Date: {new Date(order?.vendorPersonalPackageBooking?.date).toLocaleDateString("en-GB", {
+                  {new Date(order?.vendorPersonalPackageBooking?.date)?.toLocaleDateString("en-GB", {
                     day: "2-digit",
                     month: "short",
                     year: "numeric",
-                  })}
+                  }).toUpperCase() || "11 OCT 2024"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <RxDashboard className="text-gray-600" size={20} />
-                <span className="text-black">
-                  Time: {order?.vendorPersonalPackageBooking?.time}
-                </span>
-              </div>
-              {order?.vendorPersonalPackageBooking?.personalPackages?.map((pkg, pkgIndex) => (
-                <div key={pkgIndex} className="flex items-center gap-2">
-                  <MdPersonOutline className="text-gray-600" size={20} />
-                  <span className="text-black">
-                    {pkg?.package?.name} x {pkg?.quantity}
-                  </span>
-                </div>
-              ))}
             </div>
-            <div className="border-t border-dashed border-gray-400 my-4"></div>
+
+            {/* Time Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Time</h3>
+              <div className="bg-gray-200 rounded-lg p-3">
+                <span className="text-black">
+                  {order?.vendorPersonalPackageBooking?.time || "05:30 pm"}
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -293,25 +401,126 @@ export default function Packages({}) {
 
         {/* Payment Summary */}
         <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-black font-medium">Total amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.total || 0)}</span>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-black font-medium">Booking amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.payableToWedsy || 0)}</span>
-          </div>
-          {order?.amount?.due > 0 && (
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-black font-medium">Balance amount</span>
-              <span className="text-black font-medium">{toPriceString(order?.amount?.due)}</span>
+          <div className="text-lg font-bold text-black mb-4">Payment Summary</div>
+          
+          {/* Package Items with Full Details */}
+          {order?.source === "Wedsy-Package" && order?.wedsyPackageBooking?.wedsyPackages?.map((pkg, index) => (
+            <div key={index} className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black font-medium">{pkg?.package?.name} x {pkg?.quantity}</span>
+                <span className="text-black font-bold">{toPriceString(pkg?.package?.price * pkg?.quantity || 5850)}</span>
+              </div>
+              {pkg?.package?.description && (
+                <div className="text-sm text-gray-600 mb-2">
+                  <span className="font-medium">Description:</span> {pkg?.package?.description}
+                </div>
+              )}
+              {pkg?.package?.deliverables && pkg?.package?.deliverables.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Deliverables:</span>
+                  <ul className="list-disc list-inside ml-2">
+                    {pkg?.package?.deliverables.map((deliverable, idx) => (
+                      <li key={idx}>{deliverable}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
+          ))}
+          
+          {order?.source === "Personal-Package" && order?.vendorPersonalPackageBooking?.personalPackages?.map((pkg, index) => (
+            <div key={index} className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black font-medium">{pkg?.package?.name} x {pkg?.quantity}</span>
+                <span className="text-black font-bold">{toPriceString(pkg?.package?.price * pkg?.quantity || 5850)}</span>
+              </div>
+              {pkg?.package?.description && (
+                <div className="text-sm text-gray-600 mb-2">
+                  <span className="font-medium">Description:</span> {pkg?.package?.description}
+                </div>
+              )}
+              {pkg?.package?.deliverables && pkg?.package?.deliverables.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Deliverables:</span>
+                  <ul className="list-disc list-inside ml-2">
+                    {pkg?.package?.deliverables.map((deliverable, idx) => (
+                      <li key={idx}>{deliverable}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Default package items if no data */}
+          {(!order?.source || (!order?.wedsyPackageBooking?.wedsyPackages && !order?.vendorPersonalPackageBooking?.personalPackages)) && (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black">Basic Makeup Package x 1</span>
+                <span className="text-black">₹ 5,850</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black">Draping x 1</span>
+                <span className="text-black">₹ 5,850</span>
+              </div>
+            </>
           )}
-          <button className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
-            order?.amount?.due > 0 ? "bg-[#840032]" : "bg-[#00AC4F]"
-          }`}>
-            {order?.amount?.due > 0 ? "Not Paid" : "Paid"}
-          </button>
+          
+          <div className="border-t border-gray-300 my-2"></div>
+          
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-black">Taxes and fare</span>
+            <span className="text-black">₹ 5,850</span>
+          </div>
+          
+          <div className="border-t border-gray-300 my-2"></div>
+          
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-black font-bold">Total</span>
+            <span className="text-black font-bold">₹ 5,850</span>
+          </div>
+          
+          <div className="border-t border-gray-300 my-4"></div>
+          
+          {/* Clear Payment Information */}
+          <div className="mb-4">
+            <div className="text-lg font-bold text-black mb-4">Payment Details</div>
+            <div className="bg-gray-100 rounded-lg p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-black font-medium">Booked Amount:</span>
+                <span className="text-black font-bold text-lg">{toPriceString(order?.amount?.total || 14000)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-black font-medium">Amount Paid:</span>
+                <span className="text-green-600 font-bold text-lg">{toPriceString(order?.amount?.paid || 5000)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-black font-medium">Balance Amount:</span>
+                <span className="text-red-500 font-bold text-lg">{toPriceString(order?.amount?.due || 9000)}</span>
+              </div>
+              <div className="flex justify-start mt-3">
+                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  (order?.amount?.due || 9000) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                }`}>
+                  {(order?.amount?.due || 9000) > 0 ? 'Not Paid' : 'Paid'}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Wedsy Settlements */}
+          <div className="mb-4">
+            <div className="text-lg font-bold text-black mb-4">Wedsy Settlements</div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-black font-medium">Total amount</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-black font-medium">Amount payable to wedsy</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+            </div>
+          </div>
+          <div className="border-t border-gray-300 my-4"></div>
         </div>
 
         {/* Review Section */}

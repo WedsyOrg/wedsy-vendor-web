@@ -11,6 +11,7 @@ import {
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import {
   Avatar,
   Button,
@@ -47,8 +48,12 @@ export default function Home({ user }) {
       .then((response) => {
         setLoading(false);
         if (response.message !== "success") {
-          alert("Error");
+          toast.error("Error");
         } else {
+          // Set flag for new post animation
+          const postData = { id: response.community?._id };
+          console.log('Setting new post data:', postData);
+          localStorage.setItem('newCommunityPost', JSON.stringify(postData));
           setDisplay("Success");
         }
       })
@@ -65,28 +70,41 @@ export default function Home({ user }) {
           Community
         </p>
       </div>
-      <div className="flex flex-col gap-4 py-4 px-6">
+      <div className="flex flex-col gap-6 py-4 px-6">
         {display === "Create" && (
           <>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               <div>
-                <Label value="1. Start with a descriptive title" />
-                <TextInput
-                  placeholder="title"
-                  disabled={loading}
-                  value={community?.title}
-                  onChange={(e) => {
-                    setCommunity({
-                      ...community,
-                      title: e.target.value,
-                    });
-                  }}
-                />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-sm font-bold">①</div>
+                  <Label value="Start with a descriptive title" className="text-base font-semibold text-black" />
+                </div>
+                <div className="relative">
+                  <TextInput
+                    placeholder="how to"
+                    disabled={loading}
+                    value={community?.title}
+                    onChange={(e) => {
+                      setCommunity({
+                        ...community,
+                        title: e.target.value,
+                      });
+                    }}
+                    className="w-full"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+                    {community?.title?.length || 0}
+                  </div>
+                </div>
               </div>
+              
               <div>
-                <Label value="2. Provide more details" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-sm font-bold">②</div>
+                  <Label value="Provide more details" className="text-base font-semibold text-black" />
+                </div>
                 <Textarea
-                  placeholder="..."
+                  placeholder="Providing details like steps to reproduce the issue, affected devices, and software will help Community members answer your question. Please do not include personal information."
                   disabled={loading}
                   value={community?.body}
                   onChange={(e) => {
@@ -95,13 +113,40 @@ export default function Home({ user }) {
                       body: e.target.value,
                     });
                   }}
-                  rows={4}
+                  rows={6}
+                  className="w-full"
                 />
+                
+                {/* Formatting toolbar */}
+                <div className="flex items-center gap-2 mt-2 p-2 border-t border-gray-200">
+                  <button className="p-1 hover:bg-gray-100 rounded">
+                    <span className="font-bold text-sm">B</span>
+                  </button>
+                  <button className="p-1 hover:bg-gray-100 rounded">
+                    <span className="italic text-sm">I</span>
+                  </button>
+                  <button className="p-1 hover:bg-gray-100 rounded">
+                    <span className="underline text-sm">U</span>
+                  </button>
+                  <div className="w-px h-4 bg-gray-300"></div>
+                  <button className="p-1 hover:bg-gray-100 rounded">
+                    <span className="text-sm">¶</span>
+                  </button>
+                  <div className="w-px h-4 bg-gray-300"></div>
+                  <button className="p-1 hover:bg-gray-100 rounded">
+                    <span className="text-sm">⋯</span>
+                  </button>
+                </div>
               </div>
             </div>
-            <div>
+            
+            <div className="text-sm text-black space-y-1">
+              <p>Be respectful. Do not use foul language or anything offensive.</p>
+              <p>Thank you for keeping the community clean. Enjoy!</p>
+            </div>
+            <div className="flex justify-center">
               <Button
-                className="mt-4 px-6 rounded-full text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max mx-auto"
+                className="px-8 py-3 rounded-lg text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
                 disabled={!community.title || !community.body}
                 onClick={() => {
                   setDisplay("Post");
@@ -114,42 +159,45 @@ export default function Home({ user }) {
         )}
         {display === "Post" && (
           <>
-            <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold">Post as</p>
-              <div className="flex items-center gap-2">
-                <Radio
-                  id="author"
-                  name="post"
-                  value="author"
-                  checked={community.anonymous === false}
-                  onChange={() => {
-                    setCommunity({ ...community, anonymous: false });
-                  }}
-                />
-                <Label htmlFor="author">{user?.name}</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Radio
-                  id="anonymous"
-                  name="post"
-                  value="anonymous"
-                  checked={community.anonymous === true}
-                  onChange={() => {
-                    setCommunity({ ...community, anonymous: true });
-                  }}
-                />
-                <Label
-                  htmlFor="anonymous"
-                  className="flex font-light items-center"
-                >
-                  Anonymous &nbsp;
-                  <p className="text-xs">(Computer Generated ID)</p>
-                </Label>
+            <div className="flex flex-col gap-4">
+              <p className="text-xl font-semibold text-black text-center">Post as</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <Radio
+                    id="author"
+                    name="post"
+                    value="author"
+                    checked={community.anonymous === false}
+                    onChange={() => {
+                      setCommunity({ ...community, anonymous: false });
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="author" className="text-base text-black">{user?.name}</Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Radio
+                    id="anonymous"
+                    name="post"
+                    value="anonymous"
+                    checked={community.anonymous === true}
+                    onChange={() => {
+                      setCommunity({ ...community, anonymous: true });
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <Label
+                    htmlFor="anonymous"
+                    className="text-base text-[#840032]"
+                  >
+                    Anonymous (Computer generated ID)
+                  </Label>
+                </div>
               </div>
             </div>
-            <div>
+            <div className="flex justify-center">
               <Button
-                className="mt-4 px-6 rounded-full text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max mx-auto"
+                className="px-8 py-3 rounded-lg text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
                 disabled={loading}
                 onClick={handleSubmit}
               >

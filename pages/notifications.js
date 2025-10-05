@@ -174,28 +174,49 @@ export default function Notifications({}) {
   };
 
   const getSenderName = (notification) => {
+    // Hide vendor name - only show notification subject/title
     if (notification.type === "bidding") {
-      return notification.references?.userName || "A user";
+      return "New Bid";
     } else if (notification.type === "message") {
-      // For message notifications, extract sender name from message or use title
-      const message = notification.message || "";
-      const match = message.match(/^([^s]+)\s+sent you a message:/);
-      if (match) {
-        return match[1].trim();
+      return "New Message";
+    } else if (notification.type === "order") {
+      if (notification.category === "New Package Booking") {
+        return "New Package Booking";
+      } else if (notification.category === "New Personal Package Booking") {
+        return "New Personal Package Booking";
       }
-      return notification.title || "Someone";
+      return "New Order";
+    } else if (notification.category === "packages") {
+      return "New Package";
+    } else if (notification.category === "personal-packages") {
+      return "New Personal Package";
     }
-    return "System";
+    return notification.title || "Notification";
   };
 
   const getMessageContent = (notification) => {
-    if (notification.type === "message") {
+    // Show only the notification subject/message content, hide vendor names
+    if (notification.type === "bidding") {
+      return notification.message || "You have received a new bid request";
+    } else if (notification.type === "message") {
       // Extract just the message content from "Sender sent you a message: content"
       const message = notification.message || "";
       const match = message.match(/sent you a message:\s*(.+)/);
       if (match) {
         return match[1].trim();
       }
+      return "You have received a new message";
+    } else if (notification.type === "order") {
+      if (notification.category === "New Package Booking") {
+        return notification.message || "A new package has been booked";
+      } else if (notification.category === "New Personal Package Booking") {
+        return notification.message || "Your personal package has been booked";
+      }
+      return notification.message || "You have received a new order";
+    } else if (notification.category === "packages") {
+      return notification.message || "A new package has been created";
+    } else if (notification.category === "personal-packages") {
+      return notification.message || "A new personal package has been created";
     }
     return notification.message || notification.title;
   };

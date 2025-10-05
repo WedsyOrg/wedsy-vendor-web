@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function StickFooter({}) {
   return (
     <>
-      <div className="z-10 sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-t-black p-2 px-4 justify-items-center bg-white">
+      <div className="z-50 sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-t-black p-2 px-4 justify-items-center bg-white">
         <Link href="/" className="flex flex-col items-center">
           <img src="/assets/icons/wedsy.png" className="w-8 h-8 mt-1" />
           <span className="text-xs text-gray-600 mt-2">Dashboard</span>
@@ -14,8 +14,8 @@ export default function StickFooter({}) {
           </svg>
           <span className="text-xs text-gray-600 mt-1">Bids</span>
         </Link>
-        <Link href="/personal-leads" className="flex flex-col items-center relative -top-8">
-          <div className="relative">
+        <Link href="/personal-leads" className="flex flex-col items-center relative -top-8 z-50">
+          <div className="relative z-50">
             <svg className="w-12 h-12" viewBox="0 0 40 40" fill="none">
               <circle cx="20" cy="20" r="18" fill="white" stroke="#2B3F6C" strokeWidth="2"/>
               <path d="M20 12v16M12 20h16" stroke="#2B3F6C" strokeWidth="3" strokeLinecap="round"/>

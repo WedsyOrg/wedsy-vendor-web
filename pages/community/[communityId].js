@@ -227,80 +227,79 @@ export default function Community({}) {
             <Avatar rounded size="md" />
             <div>
               {community?.author?.anonymous ? (
-                <p className="text-lg font-regule">Anonymous</p>
+                <p className="text-base font-semibold text-black">Anonymous</p>
               ) : (
-                <p className="text-lg font-semibold">
+                <p className="text-base font-semibold text-black">
                   {community?.author?.name}
                 </p>
               )}
-              <p className="text-sm">
-                {new Date(community?.createdAt)?.toLocaleString()}{" "}
+              <p className="text-xs text-gray-500">
+                Level 1 • 13 points
               </p>
             </div>
           </div>
-          <p className="text-xl font-semibold">{community.title}</p>
-          <p className="-mt-4">
+          <p className="text-lg font-semibold text-black">{community.title}</p>
+          <p className="text-sm text-black">
             <ExpandText text={community.body} limit={150} />
           </p>
           <div className="flex flex-row gap-4 items-center">
             {!displayReply && (
               <Button
                 onClick={() => setDisplayReply(true)}
-                className="px-4 py-0 rounded-full text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max"
+                className="px-4 py-1 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] text-sm"
               >
                 Reply
               </Button>
             )}
-            {community.liked ? (
-              <div className="flex flex-row gap-1 items-center">
-                <BiSolidLike
-                  size={24}
-                  className="text-custom-dark-blue"
-                  cursor={"pointer"}
-                  onClick={() => {
-                    removeCommunityLike(community._id);
-                  }}
-                />
-                {community.likes}
-              </div>
-            ) : (
-              <div className="flex flex-row gap-1 items-center">
-                <BiLike
-                  size={24}
-                  className="text-custom-dark-blue"
-                  cursor={"pointer"}
-                  onClick={() => {
-                    addCommunityLike(community._id);
-                  }}
-                />
-                {community.likes}
-              </div>
-            )}
-            {community.disliked ? (
-              <div className="flex flex-row gap-1 items-center">
-                <BiSolidDislike
-                  size={24}
-                  className="text-custom-dark-blue"
-                  cursor={"pointer"}
-                  onClick={() => {
-                    removeCommunityDisLike(community._id);
-                  }}
-                />
-                {community.dislikes}
-              </div>
-            ) : (
-              <div className="flex flex-row gap-1 items-center">
-                <BiDislike
-                  size={24}
-                  className="text-custom-dark-blue"
-                  cursor={"pointer"}
-                  onClick={() => {
-                    addCommunityDisLike(community._id);
-                  }}
-                />
-                {community.dislikes}
-              </div>
-            )}
+            <div className="flex flex-row gap-6 items-center">
+              {community.liked ? (
+                <div className="flex flex-col items-center cursor-pointer">
+                  <BiSolidLike
+                    size={20}
+                    className="text-[#840032]"
+                    onClick={() => {
+                      removeCommunityLike(community._id);
+                    }}
+                  />
+                  <span className="text-xs text-black mt-1">{community.likes || 0}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center cursor-pointer">
+                  <BiLike
+                    size={20}
+                    className="text-[#840032]"
+                    onClick={() => {
+                      addCommunityLike(community._id);
+                    }}
+                  />
+                  <span className="text-xs text-black mt-1">{community.likes || 0}</span>
+                </div>
+              )}
+              
+              {community.disliked ? (
+                <div className="flex flex-col items-center cursor-pointer">
+                  <BiSolidDislike
+                    size={20}
+                    className="text-[#840032]"
+                    onClick={() => {
+                      removeCommunityDisLike(community._id);
+                    }}
+                  />
+                  <span className="text-xs text-black mt-1">{community.dislikes || 0}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center cursor-pointer">
+                  <BiDislike
+                    size={20}
+                    className="text-[#840032]"
+                    onClick={() => {
+                      addCommunityDisLike(community._id);
+                    }}
+                  />
+                  <span className="text-xs text-black mt-1">{community.dislikes || 0}</span>
+                </div>
+              )}
+            </div>
           </div>
           {displayReply && (
             <>
@@ -324,30 +323,50 @@ export default function Community({}) {
             </>
           )}
         </div>
-        <div className="flex flex-col gap-4 pb-4 px-6 divide-y-2 pl-6">
+        <div className="flex flex-col gap-4 pb-4 px-6">
           {community?.replies?.map((item, index) => (
-            <>
-              <div className="flex flex-col gap-4 py-4" key={index}>
+            <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-4 h-4 text-gray-500">★</div>
+                <span className="text-sm text-gray-600">Best reply</span>
+              </div>
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-row gap-2 items-center">
                   <Avatar rounded size="md" />
                   <div>
                     {item?.author?.anonymous ? (
-                      <p className="text-lg font-regule">Anonymous</p>
+                      <p className="text-base font-semibold text-black">Anonymous</p>
                     ) : (
-                      <p className="text-lg font-semibold">
+                      <p className="text-base font-semibold text-black">
                         {item?.author?.name}
                       </p>
                     )}
-                    <p className="text-sm">
-                      {new Date(item?.createdAt)?.toLocaleString()}{" "}
+                    <p className="text-xs text-gray-500">
+                      Level 1 • 8 points
                     </p>
                   </div>
                 </div>
-                <p className="-mt-2">
+                <p className="text-xs text-gray-500">
+                  Posted on {new Date(item?.createdAt)?.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </p>
+                <p className="text-sm text-black">
                   <ExpandText text={item?.reply} limit={150} />
                 </p>
+                <div className="flex items-center gap-1 text-blue-500 text-sm">
+                  <span>View in context</span>
+                  <div className="w-4 h-4 rounded-full border border-blue-500 flex items-center justify-center">
+                    <span className="text-xs">→</span>
+                  </div>
+                </div>
               </div>
-            </>
+            </div>
           ))}
         </div>
       </div>

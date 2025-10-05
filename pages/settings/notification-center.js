@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { MdArrowBackIos } from "react-icons/md";
+import { toast } from "react-toastify";
 
 export default function Settings({}) {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function Settings({}) {
         fetchNotifications();
         setLoading(false);
         if (response.message !== "success") {
-          alert("Error updating notification status.");
+          toast.error("Error updating notification status.");
         }
       })
       .catch((error) => {

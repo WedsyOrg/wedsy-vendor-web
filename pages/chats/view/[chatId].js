@@ -1,7 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   MdArrowForwardIos,
   MdCurrencyRupee,
@@ -1061,23 +1061,36 @@ export default function Home({}) {
     }
   }, [chatId]);
   console.log("chatId: last", chatId);
+
+  // Derive high-level status for UI color coding
+  const deriveStatus = useCallback(() => {
+    const dr = displayRequirements;
+    if (!dr) return { label: "ONGOING", color: "bg-yellow-100 text-yellow-800" };
+    if (dr?.other?.cancelled) return { label: "CANCELLED", color: "bg-red-100 text-red-800" };
+    const eventDateStr = dr?.other?.events?.[0]?.date || dr?.events?.[0]?.date;
+    const eventDate = eventDateStr ? new Date(eventDateStr) : null;
+    const now = new Date();
+    if (dr?.other?.order) {
+      if (!eventDate || eventDate >= now) {
+        return { label: "FINALIZED", color: "bg-green-100 text-green-800" };
+      }
+      return { label: "COMPLETED", color: "bg-green-100 text-green-800" };
+    }
+    return { label: "ONGOING", color: "bg-yellow-100 text-yellow-800" };
+  }, [displayRequirements]);
   
-  // useEffect(() => {
-    //   const onFocus = () => {
-  //     if (chatId) fetchChatMessages(false);
-  //   };
-  //   const onVisibility = () => {
-  //     if (document.visibilityState === "visible" && chatId) {
-  //       fetchChatMessages(false);
-  //     }
-  //   };
-  //   window.addEventListener("focus", onFocus);
-  //   document.addEventListener("visibilitychange", onVisibility);
-  //   return () => {
-  //     window.removeEventListener("focus", onFocus);
-  //     document.removeEventListener("visibilitychange", onVisibility);
-  //   };
-  // }, [chatId]);
+  useEffect(() => {
+    const onFocus = () => { if (chatId) fetchChatMessages(false); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && chatId) fetchChatMessages(false);
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [chatId]);
 
   return (
     <>
@@ -1100,6 +1113,10 @@ export default function Home({}) {
           <p className="grow text-base sm:text-lg font-semibold text-custom-dark-blue truncate">
             {chat?.user?.name}
           </p>
+        {/* Status Chip */}
+        {(() => { const s = deriveStatus(); return (
+          <span className={`text-xs sm:text-sm px-2 py-1 rounded-md whitespace-nowrap ${s.color}`}>{s.label}</span>
+        ); })()}
         </div>
         {displayRequirements?._id && (
           <BiddingRequirement
@@ -1112,18 +1129,21 @@ export default function Home({}) {
           id="chat-container"
           className="flex-1 overflow-y-auto p-2 bg-white flex flex-col-reverse gap-2 hide-scrollbar"
         >
-          {/* {console.log("Rendering messages:", chat?.messages)} */}
-          {chat?.messages?.length > 0 ? (
-            chat?.messages?.map((item, index) => {
-              {/* console.log(`Rendering message ${index}:`, item); */}
-              return <ChatMessage chat={item} key={index} />;
-            })
-          ) : (
-            <div className="text-center text-gray-500 py-4">
-              No messages yet
-            </div>
-          )}
-            </div>
+          {(() => {
+            const cutoff = Date.now() - 60 * 1000;
+            const filtered = (chat?.messages || []).filter((m) => {
+              const ts = m?.createdAt ? new Date(m.createdAt).getTime() : 0;
+              return ts >= cutoff;
+            });
+            return filtered.length > 0 ? (
+              filtered.map((item) => (
+                <ChatMessage chat={item} key={item?._id || item?.id || Math.random()} />
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-4">No messages yet</div>
+            );
+          })()}
+        </div>
         <div className="bg-white sticky bottom-0">
           {showMakeOffer && displayRequirements?._id && (
             <div className="p-3 sm:p-4 border-t">
