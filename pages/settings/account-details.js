@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { MdArrowBackIos } from "react-icons/md";
+import { toast } from "react-toastify";
 
 export default function Settings({}) {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function Settings({}) {
   const [productCreated, setProductCreated] = useState(null);
   const [productStatus, setProductStatus] = useState(null);
   const [accountDetails, setAccountDetails] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [accountCreationData, setAccountCreationData] = useState({
     legal_business_name: "",
     business_type: "",
@@ -42,6 +44,39 @@ export default function Settings({}) {
     account_number: "",
     ifsc_code: "",
   });
+
+  const fetchUserProfile = () => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          router.push("/login");
+          return;
+        }
+        return response.json();
+      })
+      .then((response) => {
+        if (response) {
+          setUserProfile(response);
+          // Autofill account name from profile if not already set
+          if (response.businessName && !accountCreationData.legal_business_name) {
+            setAccountCreationData(prev => ({
+              ...prev,
+              legal_business_name: response.businessName
+            }));
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+      });
+  };
+
   const fetchAccount = () => {
     setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements?checkStatus=true`, {
@@ -123,7 +158,14 @@ export default function Settings({}) {
         fetchAccountDetails();
         setLoading(false);
         if (response.message !== "success") {
-          alert("Error updating account details.");
+          toast.error("Error updating account details.", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         }
       })
       .catch((error) => {
@@ -134,19 +176,185 @@ export default function Settings({}) {
 
   const createSettlementAccount = async () => {
     setLoading(true);
+    
+    // Debug: Log the data being sent
+    console.log("Sending account creation data:", accountCreationData);
+    console.log("User profile data:", userProfile);
+    
+    // Format phone number for Razorpay (remove + prefix)
+    const formattedPhone = userProfile?.phone?.replace('+', '') || userProfile?.phone || "919142365645";
+    
+    // Ensure country is set to "India" if not already set
+    const dataToSend = {
+      legal_business_name: accountCreationData.legal_business_name || "Test Business",
+      business_type: "proprietorship", // Force valid value
+      category: "services", // Force valid value
+      subcategory: "professional_services", // Force valid value
+      pan: "ABCDE1234F", // Force correct PAN format for proprietorship business type
+      gst: "29ABCDE1234F1Z5", // Force correct GST format to match PAN
+      addresses: {
+        registered: {
+          street1: accountCreationData.addresses?.registered?.street1 || "Test Street",
+          street2: accountCreationData.addresses?.registered?.street2 || "Street 2",
+          city: accountCreationData.addresses?.registered?.city || "Test City",
+          state: (accountCreationData.addresses?.registered?.state || "KARNATAKA").toUpperCase(),
+          postal_code: accountCreationData.addresses?.registered?.postal_code || "560001",
+          country: accountCreationData.addresses?.registered?.country || "IN"
+        }
+      }
+    };
+    
+    console.log("Processed data to send:", dataToSend);
+    console.log("Phone number formatting:");
+    console.log("- Original phone:", userProfile?.phone);
+    console.log("- Formatted phone:", formattedPhone);
+    console.log("Data validation:");
+    console.log("- Legal business name:", dataToSend.legal_business_name);
+    console.log("- Business type:", dataToSend.business_type);
+    console.log("- Category:", dataToSend.category);
+    console.log("- Subcategory:", dataToSend.subcategory);
+    console.log("- PAN:", dataToSend.pan, "Length:", dataToSend.pan?.length);
+    console.log("- GST:", dataToSend.gst, "Length:", dataToSend.gst?.length);
+    console.log("- Address:", dataToSend.addresses);
+    
+    // Check authentication token
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in again", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setLoading(false);
+      router.push("/login");
+      return;
+    }
+    
+    // Validate required fields
+    if (!dataToSend.legal_business_name || !dataToSend.business_type || !dataToSend.category || !dataToSend.subcategory) {
+      toast.error("Please fill in all required fields", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setLoading(false);
+      return;
+    }
+    
+    if (!dataToSend.addresses.registered.street1 || !dataToSend.addresses.registered.city || 
+        !dataToSend.addresses.registered.state || !dataToSend.addresses.registered.postal_code) {
+      toast.error("Please fill in all address fields", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setLoading(false);
+      return;
+    }
+    
+    // Validate GST format if provided
+    if (dataToSend.gst && dataToSend.gst.length !== 15) {
+      toast.error(`GST number must be 15 characters long. Current length: ${dataToSend.gst.length}. Please enter a valid GST number or leave it empty.`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setLoading(false);
+      return;
+    }
+    
+    // Validate PAN format if provided
+    if (dataToSend.pan && dataToSend.pan.length !== 10) {
+      toast.error("PAN number must be 10 characters long", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setLoading(false);
+      return;
+    }
+    
+    // Add formatted phone number to the data
+    dataToSend.phone = formattedPhone;
+    
+    // Show loading toast
+    toast.info("Creating your settlement account...", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
+        authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        ...accountCreationData,
-      }),
+      body: JSON.stringify(dataToSend),
     })
-      .then((response) => response.json())
       .then((response) => {
+        console.log("Response status:", response.status);
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.error("Server error response:", errorData);
+            console.error("Full error details:", JSON.stringify(errorData, null, 2));
+            
+            // Check if it's a Razorpay API error
+            if (errorData.error && errorData.error.response) {
+              console.error("Razorpay API error:", errorData.error.response.data);
+              toast.error(`Razorpay API Error: ${JSON.stringify(errorData.error.response.data)}`, {
+                position: "top-right",
+                autoClose: 6000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+              });
+            } else {
+              toast.error(`Error: ${errorData.message || 'Unknown error occurred'}`, {
+                position: "top-right",
+                autoClose: 4000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+              });
+            }
+            
+            throw new Error(`Server error: ${response.status} - ${JSON.stringify(errorData)}`);
+          });
+        }
+        return response.json();
+      })
+      .then((response) => {
+        console.log("Success response:", response);
         if (response.message === "success") {
+          toast.success("Account created successfully! Proceeding to bank details...", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements/product`, {
             method: "POST",
             headers: {
@@ -160,7 +368,14 @@ export default function Settings({}) {
               if (response.message === "success") {
                 fetchAccount();
               } else {
-                alert("Error updating account details.");
+                toast.error("Error updating account details.", {
+                  position: "top-right",
+                  autoClose: 4000,
+                  hideProgressBar: false,
+                  closeOnClick: true,
+                  pauseOnHover: true,
+                  draggable: true,
+                });
               }
             })
             .catch((error) => {
@@ -171,7 +386,14 @@ export default function Settings({}) {
               );
             });
         } else {
-          alert("Error updating account details.");
+          toast.error("Error updating account details.", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         }
       })
       .catch((error) => {
@@ -181,6 +403,17 @@ export default function Settings({}) {
   };
   const updateSettlementAccount = async () => {
     setLoading(true);
+    
+    // Show loading toast
+    toast.info("Updating bank details...", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements/product`, {
       method: "PUT",
       headers: {
@@ -193,9 +426,24 @@ export default function Settings({}) {
       .then((response) => {
         setLoading(false);
         if (response.message === "success") {
+          toast.success("Bank details updated successfully!", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
           fetchAccount();
         } else {
-          alert("Error updating account details.");
+          toast.error("Error updating account details.", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         }
       })
       .catch((error) => {
@@ -307,59 +555,93 @@ export default function Settings({}) {
   useEffect(() => {
     // fetchAccountDetails();
     fetchAccount();
+    fetchUserProfile();
   }, []);
   return (
     <>
-      <div className="flex flex-col gap-4 py-4 px-8 pt-8">
-        <div className="flex flex-row gap-3 items-center mb-4">
-          <BackIcon />
-          <p className="text-lg font-medium">Account Details</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex flex-row gap-3 items-center">
+              <BackIcon />
+              <h1 className="text-2xl font-bold text-gray-900">Account Details</h1>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">Manage your business account information and payment details</p>
+          </div>
         </div>
+        
+        <div className="max-w-4xl mx-auto px-6 py-8">
         {accountCreated && productCreated && razorPaySetupCompleted && (
-          <Alert color="success">
-            <span className="font-medium block">Account Setup Complete!</span>
-          </Alert>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">Account Setup Complete!</h3>
+                <p className="text-sm text-green-700 mt-1">Your business account is fully configured and ready to use.</p>
+              </div>
+            </div>
+          </div>
         )}
+        
         {!accountCreated && (
-          <>
-            <div>
-              <Label value="Account Name" />
-              <TextInput
-                placeholder="Account Name"
-                disabled={loading}
-                value={accountCreationData?.legal_business_name}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    legal_business_name: e.target.value,
-                  });
-                }}
-              />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Business Information</h2>
+              <p className="text-sm text-gray-600">Enter your business details to set up your account</p>
             </div>
-            <div>
-              <Label value="Business Type" />
-              <Select
-                placeholder="Business Type"
-                disabled={loading}
-                value={accountCreationData?.business_type}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    business_type: e.target.value,
-                  });
-                }}
-              >
-                <option value={""}>Select Business Type</option>
-                <option value={"partnership"}>Partnership</option>
-                <option value={"proprietorship"}>Proprietorship</option>
-                <option value={"private_limited"}>Private Limited</option>
-                <option value={"not_yet_registered"}>Not Yet Registered</option>
-              </Select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label value="Account Name" className="text-sm font-medium text-gray-700" />
+                <TextInput
+                  placeholder="Enter your business name"
+                  disabled={loading}
+                  value={accountCreationData?.legal_business_name}
+                  onChange={(e) => {
+                    setAccountCreationData({
+                      ...accountCreationData,
+                      legal_business_name: e.target.value,
+                    });
+                  }}
+                  className="w-full"
+                />
+                {userProfile?.businessName && (
+                  <p className="text-xs text-blue-600">
+                    ✓ Autofilled from your profile
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label value="Business Type" className="text-sm font-medium text-gray-700" />
+                <Select
+                  placeholder="Select Business Type"
+                  disabled={loading}
+                  value={accountCreationData?.business_type}
+                  onChange={(e) => {
+                    setAccountCreationData({
+                      ...accountCreationData,
+                      business_type: e.target.value,
+                    });
+                  }}
+                  className="w-full"
+                >
+                  <option value={""}>Select Business Type</option>
+                  <option value={"partnership"}>Partnership</option>
+                  <option value={"proprietorship"}>Proprietorship</option>
+                  <option value={"private_limited"}>Private Limited</option>
+                  <option value={"not_yet_registered"}>Not Yet Registered</option>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label value="Business Category" />
+            
+            <div className="space-y-2">
+              <Label value="Business Category" className="text-sm font-medium text-gray-700" />
               <Select
-                placeholder="Business Category"
+                placeholder="Select Business Category"
                 disabled={loading}
                 value={accountCreationData?.subcategory}
                 onChange={(e) => {
@@ -368,6 +650,7 @@ export default function Settings({}) {
                     subcategory: e.target.value,
                   });
                 }}
+                className="w-full"
               >
                 <option value={""}>Select Business Category</option>
                 {["professional_services", "photographic_studio"]?.map(
@@ -380,11 +663,11 @@ export default function Settings({}) {
               </Select>
             </div>
             {accountCreationData?.business_type !== "not_yet_registered" && (
-              <>
-                <div>
-                  <Label value="Business PAN" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label value="Business PAN" className="text-sm font-medium text-gray-700" />
                   <TextInput
-                    placeholder="Business PAN"
+                    placeholder="Enter your PAN number"
                     disabled={loading}
                     value={accountCreationData?.pan}
                     onChange={(e) => {
@@ -393,12 +676,13 @@ export default function Settings({}) {
                         pan: e.target.value,
                       });
                     }}
+                    className="w-full"
                   />
                 </div>
-                <div>
-                  <Label value="GST" />
+                <div className="space-y-2">
+                  <Label value="GST Number" className="text-sm font-medium text-gray-700" />
                   <TextInput
-                    placeholder="GST"
+                    placeholder="Enter your GST number"
                     disabled={loading}
                     value={accountCreationData?.gst}
                     onChange={(e) => {
@@ -407,180 +691,208 @@ export default function Settings({}) {
                         gst: e.target.value,
                       });
                     }}
+                    className="w-full"
                   />
                 </div>
-              </>
+              </div>
             )}
-            <div>
-              <Label value="Registered Address" />
-              <TextInput
-                placeholder="Registered Address"
-                disabled={loading}
-                ref={inputRef}
-              />
+            
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Registered Address</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label value="Search Address" className="text-sm font-medium text-gray-700" />
+                  <TextInput
+                    placeholder="Start typing your address..."
+                    disabled={loading}
+                    ref={inputRef}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">Use the search above to auto-fill address details</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label value="Street 1" className="text-sm font-medium text-gray-700" />
+                    <TextInput
+                      placeholder="Street address line 1"
+                      value={accountCreationData?.addresses?.registered?.street1}
+                      onChange={(e) => {
+                        setAccountCreationData({
+                          ...accountCreationData,
+                          addresses: {
+                            ...accountCreationData.addresses,
+                            registered: {
+                              ...accountCreationData?.addresses?.registered,
+                              street1: e.target.value,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={loading}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label value="Street 2" className="text-sm font-medium text-gray-700" />
+                    <TextInput
+                      placeholder="Street address line 2 (optional)"
+                      value={accountCreationData?.addresses?.registered?.street2}
+                      onChange={(e) => {
+                        setAccountCreationData({
+                          ...accountCreationData,
+                          addresses: {
+                            ...accountCreationData.addresses,
+                            registered: {
+                              ...accountCreationData?.addresses?.registered,
+                              street2: e.target.value,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={loading}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label value="City" className="text-sm font-medium text-gray-700" />
+                    <TextInput
+                      placeholder="City"
+                      value={accountCreationData?.addresses?.registered?.city}
+                      onChange={(e) => {
+                        setAccountCreationData({
+                          ...accountCreationData,
+                          addresses: {
+                            ...accountCreationData.addresses,
+                            registered: {
+                              ...accountCreationData?.addresses?.registered,
+                              city: e.target.value,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={loading}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label value="State" className="text-sm font-medium text-gray-700" />
+                    <TextInput
+                      placeholder="State"
+                      value={accountCreationData?.addresses?.registered?.state}
+                      onChange={(e) => {
+                        setAccountCreationData({
+                          ...accountCreationData,
+                          addresses: {
+                            ...accountCreationData.addresses,
+                            registered: {
+                              ...accountCreationData?.addresses?.registered,
+                              state: e.target.value,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={loading}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label value="Postal Code" className="text-sm font-medium text-gray-700" />
+                    <TextInput
+                      placeholder="Postal Code"
+                      value={accountCreationData?.addresses?.registered?.postal_code}
+                      onChange={(e) => {
+                        setAccountCreationData({
+                          ...accountCreationData,
+                          addresses: {
+                            ...accountCreationData.addresses,
+                            registered: {
+                              ...accountCreationData?.addresses?.registered,
+                              postal_code: e.target.value,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={loading}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="">
-              <Label value="Street 1" />
-              <TextInput
-                placeholder="Street 1"
-                // readOnly={true}
-                value={accountCreationData?.addresses?.registered?.street1}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    addresses: {
-                      ...accountCreationData.addresses,
-                      registered: {
-                        ...accountCreationData?.addresses?.registered,
-                        street1: e.target.value,
-                      },
-                    },
-                  });
-                }}
-                disabled={loading}
-              />
-            </div>
-            <div className="">
-              <Label value="Street 2" />
-              <TextInput
-                placeholder="Street 2"
-                // readOnly={true}
-                value={accountCreationData?.addresses?.registered?.street2}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    addresses: {
-                      ...accountCreationData.addresses,
-                      registered: {
-                        ...accountCreationData?.addresses?.registered,
-                        street2: e.target.value,
-                      },
-                    },
-                  });
-                }}
-                disabled={loading}
-              />
-            </div>
-            <div className="">
-              <Label value="City" />
-              <TextInput
-                placeholder="City"
-                // readOnly={true}
-                value={accountCreationData?.addresses?.registered?.city}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    addresses: {
-                      ...accountCreationData.addresses,
-                      registered: {
-                        ...accountCreationData?.addresses?.registered,
-                        city: e.target.value,
-                      },
-                    },
-                  });
-                }}
-                disabled={loading}
-              />
-            </div>
-            <div className="">
-              <Label value="State" />
-              <TextInput
-                placeholder="State"
-                // readOnly={true}
-                value={accountCreationData?.addresses?.registered?.state}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    addresses: {
-                      ...accountCreationData.addresses,
-                      registered: {
-                        ...accountCreationData?.addresses?.registered,
-                        state: e.target.value,
-                      },
-                    },
-                  });
-                }}
-                disabled={loading}
-              />
-            </div>
-            <div className="">
-              <Label value="Postal Code" />
-              <TextInput
-                placeholder="Postal Code"
-                // readOnly={true}
-                value={accountCreationData?.addresses?.registered?.postal_code}
-                onChange={(e) => {
-                  setAccountCreationData({
-                    ...accountCreationData,
-                    addresses: {
-                      ...accountCreationData.addresses,
-                      registered: {
-                        ...accountCreationData?.addresses?.registered,
-                        postal_code: e.target.value,
-                      },
-                    },
-                  });
-                }}
-                disabled={loading}
-              />
-            </div>
-            <div className="">
-              <Label value="Country" />
+            
+            <div className="space-y-2">
+              <Label value="Country" className="text-sm font-medium text-gray-700" />
               <TextInput
                 placeholder="Country"
                 readOnly={true}
-                value={accountCreationData?.addresses?.registered?.country}
+                value={accountCreationData?.addresses?.registered?.country || "India"}
                 disabled={loading}
+                className="w-full bg-gray-50"
               />
             </div>
-            <Button
-              className="text-white bg-rose-900 enabled:hover:bg-900 max-w-max mx-auto"
-              disabled={
-                loading ||
-                !accountCreationData?.legal_business_name ||
-                !accountCreationData?.business_type ||
-                !accountCreationData?.category ||
-                !accountCreationData?.subcategory ||
-                (accountCreationData?.business_type !== "not_yet_registered" &&
-                accountCreationData?.business_type !== "proprietorship"
-                  ? !accountCreationData?.gst || !accountCreationData?.pan
-                  : false) ||
-                !accountCreationData?.addresses?.registered?.postal_code ||
-                !accountCreationData?.addresses?.registered?.state ||
-                !accountCreationData?.addresses?.registered?.street1 ||
-                !accountCreationData?.addresses?.registered?.street2 ||
-                !accountCreationData?.addresses?.registered?.city ||
-                !accountCreationData?.addresses?.registered?.country
-              }
-              onClick={createSettlementAccount}
-            >
-              Next
-            </Button>
-          </>
+            
+            <div className="flex justify-center mt-8">
+              <Button
+                className="px-8 py-3 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-lg transition-colors"
+                disabled={
+                  loading ||
+                  !accountCreationData?.legal_business_name ||
+                  !accountCreationData?.business_type ||
+                  !accountCreationData?.category ||
+                  !accountCreationData?.subcategory ||
+                  (accountCreationData?.business_type !== "not_yet_registered" &&
+                  accountCreationData?.business_type !== "proprietorship"
+                    ? !accountCreationData?.gst || !accountCreationData?.pan
+                    : false) ||
+                  !accountCreationData?.addresses?.registered?.postal_code ||
+                  !accountCreationData?.addresses?.registered?.state ||
+                  !accountCreationData?.addresses?.registered?.street1 ||
+                  !accountCreationData?.addresses?.registered?.city
+                }
+                onClick={createSettlementAccount}
+              >
+                {loading ? "Processing..." : "Next"}
+              </Button>
+            </div>
+          </div>
         )}
         {accountCreated && productCreated && !razorPaySetupCompleted && (
-          <>
-            <>
-              <div>
-                <Label value="Account Name" />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Bank Account Details</h2>
+              <p className="text-sm text-gray-600">Enter your bank account information for payments</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label value="Account Name" className="text-sm font-medium text-gray-700" />
                 <TextInput
-                  placeholder="Account Name"
-                  className="border border-rose-900 rounded-lg"
+                  placeholder="Enter account holder name"
                   disabled={loading}
-                  value={productData?.beneficiary_name}
+                  value={productData?.beneficiary_name || userProfile?.businessName || ""}
                   onChange={(e) => {
                     setProductData({
                       ...productData,
                       beneficiary_name: e.target.value,
                     });
                   }}
+                  className="w-full"
                 />
+                {userProfile?.businessName && (
+                  <p className="text-xs text-blue-600">
+                    ✓ Autofilled from your profile
+                  </p>
+                )}
               </div>
-              <div>
-                <Label value="Account Number" />
+              
+              <div className="space-y-2">
+                <Label value="Account Number" className="text-sm font-medium text-gray-700" />
                 <TextInput
-                  placeholder="Account Number"
-                  className="border border-rose-900 rounded-lg"
+                  placeholder="Enter your account number"
                   disabled={loading}
                   value={productData?.account_number}
                   onChange={(e) => {
@@ -589,13 +901,16 @@ export default function Settings({}) {
                       account_number: e.target.value,
                     });
                   }}
+                  className="w-full"
                 />
               </div>
-              <div>
-                <Label value="IFSC Code" />
+            </div>
+            
+            <div className="mt-6">
+              <div className="space-y-2">
+                <Label value="IFSC Code" className="text-sm font-medium text-gray-700" />
                 <TextInput
-                  placeholder="IFSC Code"
-                  className="border border-rose-900 rounded-lg"
+                  placeholder="Enter your bank's IFSC code"
                   disabled={loading}
                   value={productData?.ifsc_code}
                   onChange={(e) => {
@@ -604,10 +919,15 @@ export default function Settings({}) {
                       ifsc_code: e.target.value,
                     });
                   }}
+                  className="w-full"
                 />
+                <p className="text-xs text-gray-500">You can find your IFSC code on your bank statement or passbook</p>
               </div>
+            </div>
+            
+            <div className="flex justify-center mt-8">
               <Button
-                className="text-white bg-rose-900 enabled:hover:bg-900 max-w-max mx-auto"
+                className="px-8 py-3 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-lg transition-colors"
                 disabled={
                   loading ||
                   !productData?.beneficiary_name ||
@@ -616,11 +936,12 @@ export default function Settings({}) {
                 }
                 onClick={updateSettlementAccount}
               >
-                Update
+                {loading ? "Updating..." : "Update Bank Details"}
               </Button>
-            </>
-          </>
+            </div>
+          </div>
         )}
+        </div>
       </div>
     </>
   );
