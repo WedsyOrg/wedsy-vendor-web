@@ -182,21 +182,45 @@ export default function Community({}) {
     const checkForNewPost = () => {
       const newPost = localStorage.getItem('newCommunityPost');
       if (newPost) {
-        setNewPostId(JSON.parse(newPost).id);
-        localStorage.removeItem('newCommunityPost');
-        // Remove animation after 3 seconds
-        setTimeout(() => setNewPostId(null), 3000);
+        try {
+          const postData = JSON.parse(newPost);
+          console.log('New post detected:', postData);
+          setNewPostId(postData.id);
+          localStorage.removeItem('newCommunityPost');
+          // Refresh the community list to show the new post
+          fetchCommunity();
+          // Remove animation after 4 seconds
+          setTimeout(() => {
+            console.log('Removing animation for post:', postData.id);
+            setNewPostId(null);
+          }, 4000);
+        } catch (error) {
+          console.error('Error parsing new post data:', error);
+          localStorage.removeItem('newCommunityPost');
+        }
       }
     };
     
     checkForNewPost();
-    // Check every 2 seconds for new posts
-    const interval = setInterval(checkForNewPost, 2000);
+    // Check every 1 second for new posts
+    const interval = setInterval(checkForNewPost, 1000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <>
+      <style jsx>{`
+        @keyframes slideInFromTop {
+          0% {
+            transform: translateY(-50px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
         <BackIcon />
         <p className="grow text-lg font-semibold text-custom-dark-blue">
@@ -249,11 +273,14 @@ export default function Community({}) {
             .map((item, index) => (
             <div 
               key={index} 
-              className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-500 ${
+              className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-700 transform ${
                 newPostId === item._id 
-                  ? 'animate-pulse border-[#840032] shadow-lg' 
-                  : ''
+                  ? 'animate-pulse border-[#840032] shadow-lg scale-105 animate-bounce' 
+                  : 'hover:scale-[1.02]'
               }`}
+              style={{
+                animation: newPostId === item._id ? 'slideInFromTop 0.8s ease-out' : undefined
+              }}
             >
               <div className="flex flex-col gap-3">
                 <div className="flex flex-row gap-2 items-center">
@@ -280,7 +307,7 @@ export default function Community({}) {
                     {item.title}
                   </Link>
                   <div className="text-sm text-black">
-                    <ExpandText text={item.body} limit={150} />
+                    <ExpandText text={item.body || "This is a test post with a very long text that should definitely exceed 150 characters to test the show more/show less functionality. This text is intentionally long to demonstrate the expand/collapse feature that should work properly when the text length exceeds the specified limit of 150 characters."} limit={150} />
                   </div>
                 </div>
                 

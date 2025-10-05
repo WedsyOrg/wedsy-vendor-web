@@ -50,7 +50,9 @@ export default function Home({ user }) {
           alert("Error");
         } else {
           // Set flag for new post animation
-          localStorage.setItem('newCommunityPost', JSON.stringify({ id: response.community?._id }));
+          const postData = { id: response.community?._id };
+          console.log('Setting new post data:', postData);
+          localStorage.setItem('newCommunityPost', JSON.stringify(postData));
           setDisplay("Success");
         }
       })
