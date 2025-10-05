@@ -53,6 +53,7 @@ export default function Packages({}) {
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
       });
   };
 
@@ -133,7 +134,7 @@ export default function Packages({}) {
       </div>
 
       {/* Search Bar */}
-      <div className="px-6 py-4">
+      <div className="px-6 py-4 flex justify-center">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MdSearch className="h-5 w-5 text-gray-400" />
@@ -143,7 +144,14 @@ export default function Packages({}) {
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-gray-400"
+            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
+            style={{
+              background: '#D9D9D9',
+              width: '318px',
+              height: '34px',
+              borderRadius: '10px',
+              opacity: 1
+            }}
           />
         </div>
       </div>
@@ -152,13 +160,19 @@ export default function Packages({}) {
       <div className="flex flex-col divide-y divide-gray-200">
         {orders
           ?.filter(
-            (item) =>
-              (display ? item.source === display : true) &&
-              (search
+            (item) => {
+              const matchesDisplay = display ? item.source === display : true;
+              const matchesSearch = search
                 ? item?.user?.name
                     ?.toLowerCase()
                     ?.includes(search.toLowerCase())
-                : true)
+                : true;
+              
+              // Debug logging
+              console.log('Order:', item.source, 'Display:', display, 'Matches:', matchesDisplay);
+              
+              return matchesDisplay && matchesSearch;
+            }
           )
           ?.map((order, index) => (
             <div

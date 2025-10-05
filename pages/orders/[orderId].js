@@ -58,6 +58,7 @@ export default function Packages({}) {
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setLoading(false);
       });
   };
 
@@ -163,7 +164,7 @@ export default function Packages({}) {
       </div>
 
       {/* Search Bar */}
-      <div className="px-6 py-4">
+      <div className="px-6 py-4 flex justify-center">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MdSearch className="h-5 w-5 text-gray-400" />
@@ -173,53 +174,61 @@ export default function Packages({}) {
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-gray-400"
+            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
+            style={{
+              background: '#D9D9D9',
+              width: '318px',
+              height: '34px',
+              borderRadius: '10px',
+              opacity: 1
+            }}
           />
         </div>
       </div>
 
       {/* Order Details */}
-      <div className="flex flex-col">
-        {/* Customer Name and Date */}
-        <div className="px-6 py-4 flex justify-between items-center">
-          <div className="text-lg font-semibold text-black">
-            {order?.user?.name || "Deepika Padukone"}
+      <div className="flex flex-col px-6 py-4">
+        {/* Address Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Address</h3>
+          <div className="bg-gray-200 rounded-lg p-3 flex items-center gap-2">
+            <MdOutlineLocationOn className="text-[#840032]" size={20} />
+            <span className="text-black font-medium">HOME</span>
+            <span className="text-black">{order?.wedsyPackageBooking?.address?.formatted_address || order?.vendorPersonalPackageBooking?.address?.formatted_address || "#2014, Prestige garden bay, Yelahan"}</span>
           </div>
-          <div className="text-sm font-medium text-black">
-            {order?.source === "Bidding" && (
-              <>
-                {new Date(
-                  order?.biddingBooking?.events[0]?.date
-                )?.toLocaleDateString("en-GB", {
+        </div>
+
+        {/* Date Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Date</h3>
+          <div className="bg-gray-200 rounded-lg p-3">
+            <span className="text-black">
+              {order?.source === "Wedsy-Package" && (
+                new Date(order?.wedsyPackageBooking?.date)?.toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {order?.source === "Personal-Package" && (
-              <>
-                {new Date(
-                  order?.vendorPersonalPackageBooking?.date
-                )?.toLocaleDateString("en-GB", {
+                }).toUpperCase() || "11 OCT 2024"
+              )}
+              {order?.source === "Personal-Package" && (
+                new Date(order?.vendorPersonalPackageBooking?.date)?.toLocaleDateString("en-GB", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {order?.source === "Wedsy-Package" && (
-              <>
-                {new Date(
-                  order?.wedsyPackageBooking?.date
-                )?.toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                }) || "18 May 2023"}
-              </>
-            )}
-            {!order?.source && "18 May 2023"}
+                }).toUpperCase() || "11 OCT 2024"
+              )}
+              {!order?.source && "11 OCT 2024"}
+            </span>
+          </div>
+        </div>
+
+        {/* Time Section */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-black mb-2">Time</h3>
+          <div className="bg-gray-200 rounded-lg p-3">
+            <span className="text-black">
+              {order?.wedsyPackageBooking?.time || order?.vendorPersonalPackageBooking?.time || "05:30 pm"}
+            </span>
           </div>
         </div>
 
@@ -255,43 +264,42 @@ export default function Packages({}) {
           </div>
         ))}
 
-        {/* Personal Package Section */}
+        {/* Personal Package Section - Same style as Wedsy Package */}
         {order?.source === "Personal-Package" && (
           <div className="px-6 py-4">
-            <div className="text-lg font-bold text-black mb-4">Event Details</div>
-            <div className="flex items-center gap-2 mb-4">
-              <MdOutlineLocationOn className="text-gray-600" size={20} />
-              <span className="text-black">
-                {order?.vendorPersonalPackageBooking?.address?.formatted_address || "Location not specified"}
-              </span>
+            {/* Address Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Address</h3>
+              <div className="bg-gray-200 rounded-lg p-3 flex items-center gap-2">
+                <MdOutlineLocationOn className="text-[#840032]" size={20} />
+                <span className="text-black font-medium">HOME</span>
+                <span className="text-black">{order?.vendorPersonalPackageBooking?.address?.formatted_address || "#2014, Prestige garden bay, Yelahan"}</span>
+              </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MdPersonOutline className="text-gray-600" size={20} />
+
+            {/* Date Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Date</h3>
+              <div className="bg-gray-200 rounded-lg p-3">
                 <span className="text-black">
-                  Date: {new Date(order?.vendorPersonalPackageBooking?.date).toLocaleDateString("en-GB", {
+                  {new Date(order?.vendorPersonalPackageBooking?.date)?.toLocaleDateString("en-GB", {
                     day: "2-digit",
                     month: "short",
                     year: "numeric",
-                  })}
+                  }).toUpperCase() || "11 OCT 2024"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <RxDashboard className="text-gray-600" size={20} />
-                <span className="text-black">
-                  Time: {order?.vendorPersonalPackageBooking?.time}
-                </span>
-              </div>
-              {order?.vendorPersonalPackageBooking?.personalPackages?.map((pkg, pkgIndex) => (
-                <div key={pkgIndex} className="flex items-center gap-2">
-                  <MdPersonOutline className="text-gray-600" size={20} />
-                  <span className="text-black">
-                    {pkg?.package?.name} x {pkg?.quantity}
-                  </span>
-                </div>
-              ))}
             </div>
-            <div className="border-t border-dashed border-gray-400 my-4"></div>
+
+            {/* Time Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-black mb-2">Time</h3>
+              <div className="bg-gray-200 rounded-lg p-3">
+                <span className="text-black">
+                  {order?.vendorPersonalPackageBooking?.time || "05:30 pm"}
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -337,23 +345,51 @@ export default function Packages({}) {
 
         {/* Payment Summary */}
         <div className="px-6 py-4">
+          <div className="text-lg font-bold text-black mb-4">Payment Summary</div>
+          
+          {/* Package Items */}
+          {order?.source === "Wedsy-Package" && order?.wedsyPackageBooking?.wedsyPackages?.map((pkg, index) => (
+            <div key={index} className="flex justify-between items-center mb-2">
+              <span className="text-black">{pkg?.package?.name} x {pkg?.quantity}</span>
+              <span className="text-black">{toPriceString(pkg?.package?.price * pkg?.quantity || 5850)}</span>
+            </div>
+          ))}
+          
+          {order?.source === "Personal-Package" && order?.vendorPersonalPackageBooking?.personalPackages?.map((pkg, index) => (
+            <div key={index} className="flex justify-between items-center mb-2">
+              <span className="text-black">{pkg?.package?.name} x {pkg?.quantity}</span>
+              <span className="text-black">{toPriceString(pkg?.package?.price * pkg?.quantity || 5850)}</span>
+            </div>
+          ))}
+          
+          {/* Default package items if no data */}
+          {(!order?.source || (!order?.wedsyPackageBooking?.wedsyPackages && !order?.vendorPersonalPackageBooking?.personalPackages)) && (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black">Basic Makeup Package x 1</span>
+                <span className="text-black">₹ 5,850</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-black">Draping x 1</span>
+                <span className="text-black">₹ 5,850</span>
+              </div>
+            </>
+          )}
+          
+          <div className="border-t border-gray-300 my-2"></div>
+          
           <div className="flex justify-between items-center mb-2">
-            <span className="text-black font-medium">Total amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+            <span className="text-black">Taxes and fare</span>
+            <span className="text-black">₹ 5,850</span>
           </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-black font-medium">Booking amount</span>
-            <span className="text-black font-medium">{toPriceString(order?.amount?.payableToWedsy || 5000)}</span>
-          </div>
+          
+          <div className="border-t border-gray-300 my-2"></div>
+          
           <div className="flex justify-between items-center mb-4">
-            <span className="text-black font-medium">Balance amount</span>
-            <span className="text-red-500 font-medium">{toPriceString(order?.amount?.due || 9000)}</span>
+            <span className="text-black font-bold">Total</span>
+            <span className="text-black font-bold">₹ 5,850</span>
           </div>
-          <div className="flex justify-start mb-4">
-            <span className="bg-[#840032] text-white px-3 py-1 rounded-lg text-sm font-medium">
-              Not paid
-            </span>
-          </div>
+          
           <div className="border-t border-gray-300 my-4"></div>
           
           {/* Wedsy Settlements */}
