@@ -620,8 +620,8 @@ const Signup = memo(() => {
             Sign In
           </Button>
           <div className="text-center mt-4">
-            <span className="text-gray-600">Not a member? </span>
-            <span className="text-rose-600 cursor-pointer hover:underline">Sign up</span>
+            <span className="text-gray-600">Already a member? </span>
+            <a href="/login" className="text-rose-600 cursor-pointer hover:underline">Sign in</a>
           </div>
         </div>
       </>

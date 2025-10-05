@@ -202,9 +202,9 @@ export default function Login({}) {
             )}
           </button>
 
-          {/* Sign In Link */}
+          {/* Switch to Sign Up */}
           <p className="text-center text-gray-600 text-sm mt-4">
-            Not a member?{" "}
+            New here?{" "}
             <Link href="/signup" className="text-[#8B0000] underline">
               Sign up
             </Link>
