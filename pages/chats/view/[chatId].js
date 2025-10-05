@@ -1,7 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   MdArrowForwardIos,
   MdCurrencyRupee,
@@ -1061,6 +1061,23 @@ export default function Home({}) {
     }
   }, [chatId]);
   console.log("chatId: last", chatId);
+
+  // Derive high-level status for UI color coding
+  const deriveStatus = useCallback(() => {
+    const dr = displayRequirements;
+    if (!dr) return { label: "ONGOING", color: "bg-yellow-100 text-yellow-800" };
+    if (dr?.other?.cancelled) return { label: "CANCELLED", color: "bg-red-100 text-red-800" };
+    const eventDateStr = dr?.other?.events?.[0]?.date || dr?.events?.[0]?.date;
+    const eventDate = eventDateStr ? new Date(eventDateStr) : null;
+    const now = new Date();
+    if (dr?.other?.order) {
+      if (!eventDate || eventDate >= now) {
+        return { label: "FINALIZED", color: "bg-green-100 text-green-800" };
+      }
+      return { label: "COMPLETED", color: "bg-green-100 text-green-800" };
+    }
+    return { label: "ONGOING", color: "bg-yellow-100 text-yellow-800" };
+  }, [displayRequirements]);
   
   useEffect(() => {
     const onFocus = () => { if (chatId) fetchChatMessages(false); };
@@ -1096,6 +1113,10 @@ export default function Home({}) {
           <p className="grow text-base sm:text-lg font-semibold text-custom-dark-blue truncate">
             {chat?.user?.name}
           </p>
+        {/* Status Chip */}
+        {(() => { const s = deriveStatus(); return (
+          <span className={`text-xs sm:text-sm px-2 py-1 rounded-md whitespace-nowrap ${s.color}`}>{s.label}</span>
+        ); })()}
         </div>
         {displayRequirements?._id && (
           <BiddingRequirement
