@@ -51,9 +51,9 @@ export default function Home({ user }) {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
-    loading: true,
-    order: null,
-    amount: 0
+    loading: false,
+    data: null,
+    error: null
   });
 
   // Comprehensive tour steps covering all pages
@@ -286,9 +286,7 @@ export default function Home({ user }) {
       if (followUpsData.followUps) {
         setFollowUps(followUpsData.followUps);
       }
-      if (ongoingData.message === "success" && ongoingData.ongoingOrder) {
-        setOngoingOrder(ongoingData.ongoingOrder);
-      }
+      setOngoingOrder(ongoingData.message === "success" ? ongoingData.ongoingOrder : null);
       if (ordersTodayData.ordersToday) {
         setOrdersToday(ordersTodayData.ordersToday);
       }
@@ -431,44 +429,49 @@ export default function Home({ user }) {
     });
   };
 
-  const fetchOrderDetails = () => {
-    setOrderDetails(prev => ({ ...prev, loading: true }));
-    
-    // Simulate API call with dummy data
-    setTimeout(() => {
-      const dummyOrder = {
-        id: "ORD-2024-001",
-        date: "16 May 2024",
-        location: "Taj MG Road, Bengaluru",
-        services: [
-          {
-            quantity: 1,
-            type: "Bridal",
-            details: "Hair styling, Saree draping"
+  const fetchOrderDetails = useCallback(async () => {
+    if (!ongoingOrder?.orderId) {
+      setOrderDetails({ loading: false, data: null, error: null });
+      return;
+    }
+
+    setOrderDetails(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/order/${ongoingOrder.orderId}?populate=true`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          {
-            quantity: 2,
-            type: "Party",
-            details: "Hair styling, Saree draping"
-          }
-        ],
-        client: {
-          name: "Priya Sharma",
-          phone: "+91 98765 43210",
-          email: "priya.sharma@email.com"
-        },
-        status: "In Progress",
-        startTime: "10:00 AM",
-        endTime: "6:00 PM"
-      };
-      
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/login");
+          return;
+        }
+        throw new Error(`Failed to fetch ongoing order details (${response.status})`);
+      }
+
+      const data = await response.json();
       setOrderDetails({
         loading: false,
-        order: dummyOrder,
-        amount: 14000
+        data,
+        error: null
       });
-    }, 1000);
-  };
+    } catch (error) {
+      console.error("Error fetching ongoing order details:", error);
+      setOrderDetails({
+        loading: false,
+        data: null,
+        error: "Unable to load order details"
+      });
+    }
+  }, [router, ongoingOrder?.orderId]);
 
   const formatEventDate = (dateTime) => {
     const date = new Date(dateTime);
@@ -533,13 +536,13 @@ export default function Home({ user }) {
   // Auto-advance tour with delay
   useEffect(() => {
     if (showTour && currentTourStep < tourSteps.length) {
-      const timer = setTimeout(() => {
-        nextTourStep();
-      }, 3000); // 3 seconds per step
+    const timer = setTimeout(() => {
+      nextTourStep();
+    }, 3000); // 3 seconds per step
 
-      return () => clearTimeout(timer);
-    }
-  }, [showTour, currentTourStep]);
+    return () => clearTimeout(timer);
+  }
+}, [showTour, currentTourStep]);
 
   // Check if user is first-time and should see tour
   useEffect(() => {
@@ -559,7 +562,7 @@ export default function Home({ user }) {
     if (showOrderDetails) {
       fetchOrderDetails();
     }
-  }, [showOrderDetails]);
+  }, [showOrderDetails, fetchOrderDetails]);
 
   return (
     <>
@@ -1062,12 +1065,38 @@ export default function Home({ user }) {
                   <div className="text-center py-8">
                     <p className="text-gray-500">Loading order details...</p>
                   </div>
-                ) : orderDetails.order ? (
+                ) : orderDetails.error ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">{orderDetails.error}</p>
+                  </div>
+                ) : orderDetails.data ? (
                   <div className="space-y-4">
                     {/* Day and Date */}
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800">Day 1</h3>
-                      <p className="text-gray-600">{orderDetails.order.date}</p>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800">{ongoingOrder?.eventName || "Upcoming Event"}</h3>
+                        <p className="text-sm text-gray-500">{ongoingOrder?.customerName || orderDetails.data?.user?.name || ""}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-gray-600">
+                          {(() => {
+                            const date = orderDetails.data?.wedsyPackageBooking?.date ||
+                              orderDetails.data?.vendorPersonalPackageBooking?.date ||
+                              orderDetails.data?.biddingBooking?.events?.[0]?.date ||
+                              ongoingOrder?.eventDateTime;
+                            return date ? formatDate(date) : "Date TBD";
+                          })()}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {(() => {
+                            const time = orderDetails.data?.wedsyPackageBooking?.time ||
+                              orderDetails.data?.vendorPersonalPackageBooking?.time ||
+                              orderDetails.data?.biddingBooking?.events?.[0]?.time ||
+                              (ongoingOrder?.eventDateTime ? new Date(ongoingOrder.eventDateTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : null);
+                            return time || "Time TBD";
+                          })()}
+                        </p>
+                      </div>
                     </div>
                     
                     {/* Location */}
@@ -1076,12 +1105,21 @@ export default function Home({ user }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <p className="text-gray-700">{orderDetails.order.location}</p>
+                      <p className="text-gray-700">
+                        {orderDetails.data.wedsyPackageBooking?.address?.formatted_address ||
+                          orderDetails.data.vendorPersonalPackageBooking?.address?.formatted_address ||
+                          orderDetails.data.biddingBooking?.events?.[0]?.location ||
+                          ongoingOrder?.location ||
+                          "Location not available"}
+                      </p>
                     </div>
                     
                     {/* Services */}
                     <div className="space-y-3">
-                      {orderDetails.order.services.map((service, index) => (
+                      {(orderDetails.data.wedsyPackageBooking?.wedsyPackages ||
+                        orderDetails.data.vendorPersonalPackageBooking?.personalPackages ||
+                        orderDetails.data.biddingBooking?.events?.[0]?.peoples ||
+                        []).map((service, index) => (
                         <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                           {/* People Icon */}
                           <div className="flex-shrink-0">
@@ -1091,7 +1129,7 @@ export default function Home({ user }) {
                           </div>
                           {/* Quantity */}
                           <div className="flex-shrink-0 w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {service.quantity}
+                            {service.quantity || service.noOfPeople || 1}
                           </div>
                           {/* Grid Icon */}
                           <div className="flex-shrink-0">
@@ -1101,7 +1139,9 @@ export default function Home({ user }) {
                           </div>
                           {/* Service Type */}
                           <div className="flex-1">
-                            <p className="font-semibold text-gray-800">{service.type}</p>
+                            <p className="font-semibold text-gray-800">
+                              {service.package?.name || service.preferredLook || service.type || "Service"}
+                            </p>
                           </div>
                           {/* Lines Icon */}
                           <div className="flex-shrink-0">
@@ -1111,7 +1151,9 @@ export default function Home({ user }) {
                           </div>
                           {/* Service Details */}
                           <div className="flex-1">
-                            <p className="text-gray-600 text-sm">{service.details}</p>
+                            <p className="text-gray-600 text-sm">
+                              {service.details || service.makeupStyle || service.package?.price ? `₹${service.package?.price}` : ""}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -1128,7 +1170,13 @@ export default function Home({ user }) {
             {/* Payment Section - Scrollable */}
             <div className="px-6 py-4 pb-2">
               <p className="text-white text-lg mb-2">Amount to be received</p>
-              <p className="text-white text-3xl font-bold mb-4">₹{orderDetails.amount.toLocaleString()}</p>
+              <p className="text-white text-3xl font-bold mb-4">
+                ₹{
+                  (orderDetails.data?.amount?.payableToVendor ||
+                    orderDetails.data?.amount?.total ||
+                    ongoingOrder?.amount || 0).toLocaleString()
+                }
+              </p>
               <button 
                 className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
                 onClick={() => {

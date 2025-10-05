@@ -18,6 +18,8 @@ export default function Home({}) {
   const [display, setDisplay] = useState("Pending");
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
+  const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [selectedSource, setSelectedSource] = useState("Wedsy");
   const [timeFilter, setTimeFilter] = useState("All"); // All | Upcoming | Completed
   const [biddingFilter, setBiddingFilter] = useState("All"); // All | Bidding Only
@@ -48,77 +50,17 @@ export default function Home({}) {
       }
 
       const data = await response.json();
-      // If API returns empty or invalid, load dummy data for testing
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setList(data);
+        setError(null);
       } else {
-        const dummy = [
-          {
-            _id: "pkg1",
-            order: { user: { name: "Aarav Sharma" } },
-            status: { accepted: false, rejected: false, completed: false },
-            source: selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package",
-            wedsyPackageBooking: {
-              date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-              address: { formatted_address: "Koramangala, Bengaluru, Karnataka" },
-              wedsyPackages: [
-                { package: { name: "Bridal Makeup", price: 8000 }, quantity: 1 },
-                { package: { name: "Engagement Look", price: 6000 }, quantity: 1 },
-              ],
-            },
-            amount: { total: 14000 },
-          },
-          {
-            _id: "pkg2",
-            order: { user: { name: "Ishita Verma" } },
-            status: { accepted: true, rejected: false, completed: false },
-            source: selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package",
-            wedsyPackageBooking: {
-              date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-              address: { formatted_address: "Indiranagar, Bengaluru, Karnataka" },
-              wedsyPackages: [
-                { package: { name: "Party Makeup", price: 11500 }, quantity: 2 },
-              ],
-            },
-            amount: { total: 23000 },
-          },
-          {
-            _id: "pkg3",
-            order: { user: { name: "Rohan Gupta" } },
-            status: { accepted: false, rejected: false, completed: true },
-            source: "Bidding",
-            wedsyPackageBooking: {
-              date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-              address: { formatted_address: "Whitefield, Bengaluru, Karnataka" },
-              wedsyPackages: [
-                { package: { name: "Hair Styling", price: 3000 }, quantity: 3 },
-              ],
-            },
-            amount: { total: 9000 },
-          },
-        ];
-        setList(dummy);
+        setList([]);
+        setError("Unexpected response format");
       }
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
-      // On error also load dummy for testing
-      const dummy = [
-        {
-          _id: "pkg4",
-          order: { user: { name: "Neha Singh" } },
-          status: { accepted: true, rejected: false, completed: false },
-          source: selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package",
-          wedsyPackageBooking: {
-            date: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
-            address: { formatted_address: "HSR Layout, Bengaluru, Karnataka" },
-            wedsyPackages: [
-              { package: { name: "Sangeet Makeup", price: 16000 }, quantity: 1 },
-            ],
-          },
-          amount: { total: 16000 },
-        },
-      ];
-      setList(dummy);
+      setList([]);
+      setError("Failed to load packages. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -361,6 +303,18 @@ export default function Home({}) {
             <LoadingSkeleton />
             <LoadingSkeleton />
           </>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="text-gray-500 text-center">
+              <p>{error}</p>
+              <button
+                className="mt-2 text-sm text-blue-600 underline"
+                onClick={() => fetchWedsyPackageBooking()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         ) : isEmpty ? (
           <div className="flex justify-center items-center py-8">
             <div className="text-gray-500">No {display.toLowerCase()} packages found</div>
@@ -405,9 +359,6 @@ export default function Home({}) {
                     <button
                       className="text-[10px] text-gray-500 underline"
                       onClick={() => {
-                        try {
-                          localStorage.setItem("selectedPackageItem", JSON.stringify(item));
-                        } catch (_) {}
                         const detailId = item?.wedsyPackageBooking?._id || item?._id;
                         router.push(`/chats/packages/${detailId}`);
                       }}
