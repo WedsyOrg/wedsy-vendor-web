@@ -50,6 +50,11 @@ export default function Home({ user }) {
   const [currentTourStep, setCurrentTourStep] = useState(0);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
+  const [orderDetails, setOrderDetails] = useState({
+    loading: true,
+    order: null,
+    amount: 0
+  });
 
   // Comprehensive tour steps covering all pages
   const tourSteps = [
@@ -426,6 +431,45 @@ export default function Home({ user }) {
     });
   };
 
+  const fetchOrderDetails = () => {
+    setOrderDetails(prev => ({ ...prev, loading: true }));
+    
+    // Simulate API call with dummy data
+    setTimeout(() => {
+      const dummyOrder = {
+        id: "ORD-2024-001",
+        date: "16 May 2024",
+        location: "Taj MG Road, Bengaluru",
+        services: [
+          {
+            quantity: 1,
+            type: "Bridal",
+            details: "Hair styling, Saree draping"
+          },
+          {
+            quantity: 2,
+            type: "Party",
+            details: "Hair styling, Saree draping"
+          }
+        ],
+        client: {
+          name: "Priya Sharma",
+          phone: "+91 98765 43210",
+          email: "priya.sharma@email.com"
+        },
+        status: "In Progress",
+        startTime: "10:00 AM",
+        endTime: "6:00 PM"
+      };
+      
+      setOrderDetails({
+        loading: false,
+        order: dummyOrder,
+        amount: 14000
+      });
+    }, 1000);
+  };
+
   const formatEventDate = (dateTime) => {
     const date = new Date(dateTime);
     return date.toLocaleDateString("en-GB", {
@@ -509,6 +553,13 @@ export default function Home({ user }) {
       startTour();
     }
   }, [user]);
+
+  // Fetch order details when modal opens
+  useEffect(() => {
+    if (showOrderDetails) {
+      fetchOrderDetails();
+    }
+  }, [showOrderDetails]);
 
   return (
     <>
@@ -961,15 +1012,12 @@ export default function Home({ user }) {
       </div>
       
 
-      {/* Bottom Navigation Bar */}
-      {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        {/* Ongoing Order Banner */}
-        {!showOrderDetails && (
-          <div 
-            className="px-6 py-3 cursor-pointer flex flex-col items-center bg-[#840032]"
-            onClick={() => setShowOrderDetails(true)}
-          >
+      {/* Ongoing Order Banner */}
+      {!showOrderDetails && (
+        <div 
+          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#840032]"
+          onClick={() => setShowOrderDetails(true)}
+        >
           {/* Handle */}
           <div className="mb-2">
             <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
@@ -981,58 +1029,7 @@ export default function Home({ user }) {
             <p className="text-white font-bold text-sm">{getCurrentTime()}</p>
           </div>
         </div>
-        )}
-        
-        {/* Navigation Bar */}
-        <div className="bg-white px-6 py-3 w-[393px] h-[91px] shadow-[0px_-1px_4px_0px_rgba(0,0,0,0.25)]">
-          <div className="flex justify-around items-center px-2">
-            {/* Dashboard */}
-            <div className="flex flex-col items-center w-[55px] h-[36px] border border-[#840032]">
-              <div className="w-8 h-8 flex items-center justify-center mb-2">
-                <img src="/assets/icons/wedsy.png" alt="WEDSY" className="h-5" />
-              </div>
-              <span className="text-xs text-[#840032] font-medium">Dashboard</span>
-            </div>
-
-            {/* Bids */}
-            <div className="flex flex-col items-center w-[22px] h-[36px] bg-black">
-              <div className="w-8 h-8 flex items-center justify-center mb-2">
-                <span className="text-white font-bold text-2xl">B</span>
-              </div>
-              <span className="text-xs text-gray-600">Bids</span>
-            </div>
-
-            {/* Create - Elevated Button that overlaps the banner */}
-            <div className="flex flex-col items-center -mt-4 w-[42px] h-[57px] border-[3px] border-[#2B3F6C]">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg border-2 border-gray-200">
-                <svg className="w-8 h-8 text-[#840032]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-              <span className="text-xs text-gray-600">Create</span>
-            </div>
-
-            {/* Packages */}
-            <div className="flex flex-col items-center w-[20px] h-[24px]">
-              <div className="w-8 h-8 flex items-center justify-center mb-2">
-                <span className="text-black font-bold text-2xl">P</span>
-              </div>
-              <span className="text-xs text-gray-600">Packages</span>
-            </div>
-
-            {/* Settings */}
-            <div className="flex flex-col items-center w-[41px] h-[39px]">
-              <div className="w-8 h-8 flex items-center justify-center mb-2">
-                <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <span className="text-xs text-gray-600">Settings</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Order Details Modal */}
       {showOrderDetails && (
@@ -1041,11 +1038,11 @@ export default function Home({ user }) {
           onClick={() => setShowOrderDetails(false)}
         >
           <div 
-            className="w-full rounded-t-3xl max-h-[calc(100vh-120px)] overflow-y-auto mb-20"
+            className="w-full h-[90vh] rounded-t-3xl overflow-y-auto bg-[#840032]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-6 py-4 flex flex-col items-center bg-[#840032]">
+            <div className="px-6 py-4 flex flex-col items-center sticky top-0 bg-[#840032] z-10">
               {/* Handle */}
               <div className="mb-3">
                 <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
@@ -1058,22 +1055,82 @@ export default function Home({ user }) {
               </div>
             </div>
             
-            {/* Order Details Card */}
-            <div className="p-6 bg-white">
-              <div className="bg-white p-6 mb-4">
-                {/* Order Details will be loaded from API */}
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Loading order details...</p>
-                </div>
+            {/* Scrollable Content */}
+            <div className="bg-white border border-red-300 mx-4 my-2 rounded-lg">
+              <div className="p-6">
+                {orderDetails.loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Loading order details...</p>
+                  </div>
+                ) : orderDetails.order ? (
+                  <div className="space-y-4">
+                    {/* Day and Date */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Day 1</h3>
+                      <p className="text-gray-600">{orderDetails.order.date}</p>
+                    </div>
+                    
+                    {/* Location */}
+                    <div className="flex items-center mb-4">
+                      <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <p className="text-gray-700">{orderDetails.order.location}</p>
+                    </div>
+                    
+                    {/* Services */}
+                    <div className="space-y-3">
+                      {orderDetails.order.services.map((service, index) => (
+                        <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                          {/* People Icon */}
+                          <div className="flex-shrink-0">
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                          </div>
+                          {/* Quantity */}
+                          <div className="flex-shrink-0 w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {service.quantity}
+                          </div>
+                          {/* Grid Icon */}
+                          <div className="flex-shrink-0">
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                          </div>
+                          {/* Service Type */}
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800">{service.type}</p>
+                          </div>
+                          {/* Lines Icon */}
+                          <div className="flex-shrink-0">
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                          </div>
+                          {/* Service Details */}
+                          <div className="flex-1">
+                            <p className="text-gray-600 text-sm">{service.details}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No order details available</p>
+                  </div>
+                )}
               </div>
             </div>
             
-            {/* Amount to be Received Section */}
-            <div className="px-6 py-6 bg-[#840032]">
+            {/* Payment Section - Scrollable */}
+            <div className="px-6 py-4 pb-2">
               <p className="text-white text-lg mb-2">Amount to be received</p>
-              <p className="text-white text-3xl font-bold mb-4">₹0</p>
+              <p className="text-white text-3xl font-bold mb-4">₹{orderDetails.amount.toLocaleString()}</p>
               <button 
-                className="w-full bg-white text-[#840032] font-bold py-3 px-6 rounded-xl"
+                className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
                 onClick={() => {
                   toast.success("Payment confirmation sent!", {
                     position: "top-right",
