@@ -14,7 +14,6 @@ import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { BsPlusCircle } from "react-icons/bs";
 import { MdArrowBackIos, MdCancel } from "react-icons/md";
-import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
 import { toast } from "react-toastify";
 
 export default function Settings({ user }) {
@@ -163,8 +162,6 @@ export default function Settings({ user }) {
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [googleInstance, setGoogleInstance] = useState(null);
   const [other, setOther] = useState({
     groomMakeup: false,
     lgbtqMakeup: false,
@@ -803,102 +800,7 @@ export default function Settings({ user }) {
         console.error("There was a problem with the fetch operation:", error);
       });
   };
-  const extractAddressComponents = (components) => {
-    const result = {
-      city: "",
-      postal_code: "",
-      state: "",
-      country: "",
-      locality: "",
-    };
 
-    components.forEach((component) => {
-      if (component.types.includes("locality")) {
-        result.city = component.long_name; // Locality usually represents the city
-      }
-      if (
-        component.types.includes("administrative_area_level_2") &&
-        !result.city
-      ) {
-        result.city = component.long_name; // Fallback if locality isn't available
-      }
-      if (component.types.includes("postal_code")) {
-        result.postal_code = component.long_name; // Extract postal code
-      }
-      if (component.types.includes("administrative_area_level_1")) {
-        result.state = component.long_name; // Extract state
-      }
-      if (component.types.includes("country")) {
-        result.country = component.long_name; // Extract country
-      }
-      if (
-        component.types.includes("sublocality") ||
-        component.types.includes("neighborhood")
-      ) {
-        result.locality = component.long_name; // More granular locality info
-      }
-    });
-
-    return result;
-  };
-
-  useEffect(() => {
-    const initializeAutocomplete = async () => {
-      try {
-        let google = null;
-        if (!isLoaded) {
-          google = await loadGoogleMaps(); // Load Google Maps API
-          setGoogleInstance(google);
-          setIsLoaded(true);
-        } else {
-          google = googleInstance;
-        }
-        if (!google?.maps) {
-          throw new Error("Google Maps library is not loaded properly.");
-        }
-        // Check if inputRef.current exists before initializing Autocomplete
-        if (inputRef.current) {
-          const autocomplete = new google.maps.places.Autocomplete(
-            inputRef.current,
-            {
-              types: ["geocode"], // Restrict results to addresses only
-            }
-          );
-          // Listen for place selection
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-              const { city, postal_code, state, country, locality } =
-                extractAddressComponents(place.address_components);
-              setAddress((prevItems) => {
-                return {
-                  ...prevItems,
-                  city,
-                  postal_code,
-                  state,
-                  country,
-                  locality,
-                  place_id: place.place_id,
-                  formatted_address: place.formatted_address,
-                  geometry: {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng(),
-                  },
-                };
-              });
-            }
-          });
-        } else {
-          // Input reference not available yet
-        }
-      } catch (error) {
-        // Handle error silently
-      }
-    };
-    if (display === "Profile") {
-      initializeAutocomplete();
-    }
-  }, [display]);
   useEffect(() => {
     fetchLocationData();
     fetchPrices();
@@ -1237,11 +1139,11 @@ export default function Settings({ user }) {
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Google maps address
+                  Address
                 </label>
                 <input
                   type="text"
-                  placeholder="Google maps address"
+                  placeholder="Enter your address"
                   disabled={loading}
                   className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
                 />

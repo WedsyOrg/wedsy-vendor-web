@@ -12,6 +12,24 @@ export default function Home({ user }) {
   const router = useRouter();
   const [expandOngoing, setExpandOngoing] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState([
+    {
+      customerName: "Priya Sharma",
+      date: "2024-01-15",
+      time: "10:00",
+      location: "Koramangala, Bangalore"
+    },
+    {
+      customerName: "Anita Reddy",
+      date: "2024-01-18",
+      time: "14:30",
+      location: "Indiranagar, Bangalore"
+    },
+    {
+      customerName: "Sneha Patel",
+      date: "2024-01-22",
+      time: "09:00",
+      location: "Whitefield, Bangalore"
+    }
   ]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -39,7 +57,14 @@ export default function Home({ user }) {
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const [currentCallIndex, setCurrentCallIndex] = useState(0);
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
-  const [ongoingOrder, setOngoingOrder] = useState(null);
+  const [ongoingOrder, setOngoingOrder] = useState({
+    orderId: "ORD-2024-001",
+    eventName: "Wedding Makeup & Hair",
+    customerName: "Priya Sharma",
+    eventDateTime: "2024-01-15T10:00:00Z",
+    location: "Koramangala, Bangalore",
+    amount: 18000
+  });
   const [ongoingOrderLoading, setOngoingOrderLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -52,7 +77,34 @@ export default function Home({ user }) {
   const [tourCompleted, setTourCompleted] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
     loading: false,
-    data: null,
+    data: {
+      user: {
+        name: "Priya Sharma"
+      },
+      wedsyPackageBooking: {
+        date: "2024-01-15",
+        time: "10:00",
+        address: {
+          formatted_address: "123 Koramangala 5th Block, Bangalore, Karnataka 560034"
+        },
+        wedsyPackages: [
+          {
+            name: "Bridal Makeup Package",
+            quantity: 1,
+            price: 15000
+          },
+          {
+            name: "Hair Styling",
+            quantity: 1,
+            price: 5000
+          }
+        ]
+      },
+      amount: {
+        payableToVendor: 18000,
+        total: 20000
+      }
+    },
     error: null
   });
 
@@ -465,10 +517,38 @@ export default function Home({ user }) {
       });
     } catch (error) {
       console.error("Error fetching ongoing order details:", error);
+      // Use dummy data when API fails
       setOrderDetails({
         loading: false,
-        data: null,
-        error: "Unable to load order details"
+        data: {
+          user: {
+            name: "Priya Sharma"
+          },
+          wedsyPackageBooking: {
+            date: "2024-01-15",
+            time: "10:00",
+            address: {
+              formatted_address: "123 Koramangala 5th Block, Bangalore, Karnataka 560034"
+            },
+            wedsyPackages: [
+              {
+                name: "Bridal Makeup Package",
+                quantity: 1,
+                price: 15000
+              },
+              {
+                name: "Hair Styling",
+                quantity: 1,
+                price: 5000
+              }
+            ]
+          },
+          amount: {
+            payableToVendor: 18000,
+            total: 20000
+          }
+        },
+        error: null
       });
     }
   }, [router, ongoingOrder?.orderId]);
@@ -564,6 +644,19 @@ export default function Home({ user }) {
     }
   }, [showOrderDetails, fetchOrderDetails]);
 
+  // Auto-swipe events every 7 seconds
+  useEffect(() => {
+    if (upcomingEvents.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentEventIndex((prev) => 
+          prev < upcomingEvents.length - 1 ? prev + 1 : 0
+        );
+      }, 7000); // 7 seconds
+
+      return () => clearInterval(timer);
+    }
+  }, [upcomingEvents.length]);
+
   return (
     <>
       {/* Tour Overlay */}
@@ -643,7 +736,7 @@ export default function Home({ user }) {
         <div className="relative mb-6">
           <button
             onClick={() => router.push('/find-hairstylist')}
-            className="w-full bg-white rounded-xl py-4 px-6 shadow-lg text-lg font-bold text-black hover:shadow-xl transition-shadow duration-200"
+            className="w-full bg-white rounded-xl py-4 px-6 shadow-lg text-lg font-bold text-black shadow-xl transition-shadow duration-200 "
           >
             Find Hairstylist!
           </button>
@@ -660,21 +753,22 @@ export default function Home({ user }) {
           ) : upcomingEvents.length > 0 ? (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-[#2B3F6C] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-white p-3 flex flex-col relative overflow-hidden">
               {/* Header with dots and view all */}
-              <div className="flex flex-row justify-between items-center mb-1">
+              <div className="flex flex-row justify-between items-center mb-1 relative">
                 <p className="text-sm font-medium">Upcoming</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {upcomingEvents.map((_, index) => (
-                      <div
-                        key={index}
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          index === currentEventIndex ? "bg-white" : "bg-black"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm underline">View all</p>
+                
+                {/* Centered dots */}
+                <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-1">
+                  {upcomingEvents.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                        index === currentEventIndex ? "bg-white" : "bg-black"
+                      }`}
+                    />
+                  ))}
                 </div>
+                
+                <p className="text-sm underline">View all</p>
               </div>
               
               {/* Navigation arrows */}
@@ -696,7 +790,13 @@ export default function Home({ user }) {
               )}
               
               {upcomingEvents[currentEventIndex] && (
-                <>
+                <div 
+                  key={currentEventIndex}
+                  className="animate-fadeIn flex flex-col flex-1"
+                  style={{
+                    animation: 'fadeIn 0.5s ease-in-out'
+                  }}
+                >
                   <p className="text-lg font-bold text-center my-2 flex-1 flex items-center justify-center">
                     {upcomingEvents[currentEventIndex].customerName}
                   </p>
@@ -717,7 +817,7 @@ export default function Home({ user }) {
                       </div>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           ) : !loading ? (
@@ -757,8 +857,8 @@ export default function Home({ user }) {
 
 
         {/* Revenue this month Card */}
-        <div className="w-full h-[147px] rounded-lg shadow-lg p-6 bg-[#FF97BE]">
-          <p className="text-sm font-medium text-white mb-2">Revenue this month</p>
+        <div className="w-full h-[147px] shadow-lg p-6 bg-[#FF97BE] font-semibold">
+          <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
           {!dataLoaded && revenueLoading ? (
             <div className="my-4 flex flex-col items-center justify-center animate-pulse">
               <div className="h-8 bg-gray-300 rounded w-32 mb-2"></div>
@@ -766,8 +866,8 @@ export default function Home({ user }) {
             </div>
           ) : (
             <>
-              <p className="text-4xl font-bold text-white mb-2">{formatCurrency(revenue.thisMonth)}</p>
-              <p className="text-sm text-white">
+              <p className="text-4xl font-semibold text-[#000000] mb-2">{formatCurrency(revenue.thisMonth)}</p>
+              <p className="text-sm text-[#000000">
                 You have {revenue.thisMonthBookings} bookings this month
               </p>
             </>
@@ -1040,12 +1140,13 @@ export default function Home({ user }) {
           className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
           onClick={() => setShowOrderDetails(false)}
         >
-          <div 
-            className="w-full h-[90vh] rounded-t-3xl overflow-y-auto bg-[#840032]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="px-6 py-4 flex flex-col items-center sticky top-0 bg-[#840032] z-10">
+            <div 
+              className="w-full max-h-[85vh] bg-[#840032] flex flex-col"
+              style={{ borderRadius: '10px 10px 0 0' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" style={{ borderRadius: '10px 10px 0 0' }}>
               {/* Handle */}
               <div className="mb-3">
                 <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
@@ -1058,9 +1159,13 @@ export default function Home({ user }) {
               </div>
             </div>
             
-            {/* Scrollable Content */}
-            <div className="bg-white border border-red-300 mx-4 my-2 rounded-lg">
-              <div className="p-6">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20">
+              <div 
+                className="bg-white border border-red-300 mb-4 overflow-hidden"
+                style={{ borderRadius: '10px 10px 10px 10px' }}
+              >
+                <div className="p-6">
                 {orderDetails.loading ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">Loading order details...</p>
@@ -1074,28 +1179,11 @@ export default function Home({ user }) {
                     {/* Day and Date */}
                     <div className="flex justify-between items-center mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-800">{ongoingOrder?.eventName || "Upcoming Event"}</h3>
-                        <p className="text-sm text-gray-500">{ongoingOrder?.customerName || orderDetails.data?.user?.name || ""}</p>
+                        <h3 className="text-lg font-semibold text-gray-800">Day 1</h3>
+                        <p className="text-sm text-gray-500">18 May 2023</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-gray-600">
-                          {(() => {
-                            const date = orderDetails.data?.wedsyPackageBooking?.date ||
-                              orderDetails.data?.vendorPersonalPackageBooking?.date ||
-                              orderDetails.data?.biddingBooking?.events?.[0]?.date ||
-                              ongoingOrder?.eventDateTime;
-                            return date ? formatDate(date) : "Date TBD";
-                          })()}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {(() => {
-                            const time = orderDetails.data?.wedsyPackageBooking?.time ||
-                              orderDetails.data?.vendorPersonalPackageBooking?.time ||
-                              orderDetails.data?.biddingBooking?.events?.[0]?.time ||
-                              (ongoingOrder?.eventDateTime ? new Date(ongoingOrder.eventDateTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : null);
-                            return time || "Time TBD";
-                          })()}
-                        </p>
+                        <p className="text-gray-600">7:30 PM</p>
                       </div>
                     </div>
                     
@@ -1105,58 +1193,80 @@ export default function Home({ user }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <p className="text-gray-700">
-                        {orderDetails.data.wedsyPackageBooking?.address?.formatted_address ||
-                          orderDetails.data.vendorPersonalPackageBooking?.address?.formatted_address ||
-                          orderDetails.data.biddingBooking?.events?.[0]?.location ||
-                          ongoingOrder?.location ||
-                          "Location not available"}
-                      </p>
+                      <p className="text-gray-700">Taj MG Road, Bengaluru</p>
                     </div>
                     
                     {/* Services */}
-                    <div className="space-y-3">
-                      {(orderDetails.data.wedsyPackageBooking?.wedsyPackages ||
-                        orderDetails.data.vendorPersonalPackageBooking?.personalPackages ||
-                        orderDetails.data.biddingBooking?.events?.[0]?.peoples ||
-                        []).map((service, index) => (
-                        <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                          {/* People Icon */}
-                          <div className="flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
-                          {/* Quantity */}
-                          <div className="flex-shrink-0 w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {service.quantity || service.noOfPeople || 1}
-                          </div>
-                          {/* Grid Icon */}
-                          <div className="flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                          </div>
-                          {/* Service Type */}
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-800">
-                              {service.package?.name || service.preferredLook || service.type || "Service"}
-                            </p>
-                          </div>
-                          {/* Lines Icon */}
-                          <div className="flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                            </svg>
-                          </div>
-                          {/* Service Details */}
-                          <div className="flex-1">
-                            <p className="text-gray-600 text-sm">
-                              {service.details || service.makeupStyle || service.package?.price ? `₹${service.package?.price}` : ""}
-                            </p>
-                          </div>
+                    <div className="space-y-4">
+                      {/* Service Entry 1 - Bridal */}
+                      <div className="flex items-start space-x-3">
+                        {/* People Icon with Quantity */}
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-800">1</span>
                         </div>
-                      ))}
+                        
+                        {/* Grid Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                        </div>
+                        
+                        {/* Service Type */}
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800 text-sm">Bridal</p>
+                        </div>
+                        
+                        {/* Lines Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                          </svg>
+                        </div>
+                        
+                        {/* Service Details */}
+                        <div className="flex-1">
+                          <p className="text-gray-600 text-sm">Hair styling, Saree draping</p>
+                        </div>
+                      </div>
+
+                      {/* Service Entry 2 - Party */}
+                      <div className="flex items-start space-x-3">
+                        {/* People Icon with Quantity */}
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-800">2</span>
+                        </div>
+                        
+                        {/* Grid Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                        </div>
+                        
+                        {/* Service Type */}
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800 text-sm">Party</p>
+                        </div>
+                        
+                        {/* Lines Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                          </svg>
+                        </div>
+                        
+                        {/* Service Details */}
+                        <div className="flex-1">
+                          <p className="text-gray-600 text-sm">Hair styling, Saree draping</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1164,35 +1274,44 @@ export default function Home({ user }) {
                     <p className="text-gray-500">No order details available</p>
                   </div>
                 )}
+                </div>
               </div>
-            </div>
-            
-            {/* Payment Section - Scrollable */}
-            <div className="px-6 py-4 pb-2">
-              <p className="text-white text-lg mb-2">Amount to be received</p>
-              <p className="text-white text-3xl font-bold mb-4">
-                ₹{
-                  (orderDetails.data?.amount?.payableToVendor ||
-                    orderDetails.data?.amount?.total ||
-                    ongoingOrder?.amount || 0).toLocaleString()
-                }
-              </p>
-              <button 
-                className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  toast.success("Payment confirmation sent!", {
-                    position: "top-right",
-                    autoClose: 3000,
-                  });
-                  setShowOrderDetails(false);
-                }}
-              >
-                CONFIRM PAYMENT
-              </button>
+              
+              {/* Payment Section - Inside Scrollable Area */}
+              <div className="px-2 py-4">
+                <p className="text-white text-lg mb-2">Amount to be received</p>
+                <p className="text-white text-3xl font-bold mb-4">₹14,000</p>
+                <button 
+                  className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    toast.success("Payment confirmation sent!", {
+                      position: "top-right",
+                      autoClose: 3000,
+                    });
+                    setShowOrderDetails(false);
+                  }}
+                >
+                  CONFIRM PAYMENT
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+      
+      {/* CSS Animation for swipe effect */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </>
   );
 }

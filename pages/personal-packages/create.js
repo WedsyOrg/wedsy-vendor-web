@@ -181,13 +181,13 @@ export default function Home({}) {
 
               <div>
                 <h3 className="font-semibold text-lg text-gray-900 mb-2">10. Dispute Resolution</h3>
-                <p>Any disputes will be resolved through the platform's dispute resolution process. You agree to cooperate fully with any investigations.</p>
+                <p>Any disputes will be resolved through the platform&apos;s dispute resolution process. You agree to cooperate fully with any investigations.</p>
               </div>
             </div>
 
             <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
               <p className="font-medium text-yellow-800">Agreement:</p>
-              <p className="text-yellow-700">By clicking "Accept & Continue", you acknowledge that you have read, understood, and agree to be bound by these terms and conditions.</p>
+              <p className="text-yellow-700">By clicking &quot;Accept &amp; Continue&quot;, you acknowledge that you have read, understood, and agree to be bound by these terms and conditions.</p>
             </div>
           </div>
 

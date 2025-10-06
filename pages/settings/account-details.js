@@ -1,5 +1,4 @@
 import BackIcon from "@/components/icons/BackIcon";
-import { loadGoogleMaps } from "@/utils/loadGoogleMaps";
 import { toProperCase } from "@/utils/text";
 import { Alert, Button, Label, Select, TextInput } from "flowbite-react";
 import Link from "next/link";
@@ -11,8 +10,6 @@ import { toast } from "react-toastify";
 export default function Settings({}) {
   const router = useRouter();
   const inputRef = useRef(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [googleInstance, setGoogleInstance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [razorPaySetupCompleted, setRazorPayStatusCompleted] = useState(null);
   const [accountCreated, setAccountCreated] = useState(null);
@@ -452,106 +449,6 @@ export default function Settings({}) {
       });
   };
 
-  const extractAddressComponents = (components) => {
-    const result = {
-      street1: "", // Primary street address
-      street2: "", // Secondary street address (e.g., apartment, suite)
-      city: "", // City or locality
-      state: "", // State or administrative area
-      postal_code: "", // Postal or ZIP code
-      country: "", // Country
-    };
-
-    components.forEach((component) => {
-      if (component.types.includes("street_number")) {
-        result.street1 = component.long_name; // Add street number
-      }
-      if (component.types.includes("route")) {
-        result.street1 += result.street1
-          ? ` ${component.long_name}`
-          : component.long_name; // Combine with street name
-      }
-      if (component.types.includes("subpremise")) {
-        result.street2 = component.long_name; // Secondary address info
-      }
-      if (component.types.includes("locality")) {
-        result.city = component.long_name; // City or locality
-      }
-      if (
-        component.types.includes("administrative_area_level_2") &&
-        !result.city
-      ) {
-        result.city = component.long_name; // Fallback if locality isn't available
-      }
-      if (component.types.includes("postal_code")) {
-        result.postal_code = component.long_name; // Postal or ZIP code
-      }
-      if (component.types.includes("administrative_area_level_1")) {
-        result.state = component.long_name; // State or province
-      }
-      if (component.types.includes("country")) {
-        result.country = component.short_name; // Country (short name like IN for India)
-      }
-    });
-
-    return result;
-  };
-  useEffect(() => {
-    const initializeAutocomplete = async () => {
-      try {
-        let google = null;
-        if (!isLoaded) {
-          google = await loadGoogleMaps(); // Load Google Maps API
-          setGoogleInstance(google);
-          setIsLoaded(true);
-        } else {
-          google = googleInstance;
-        }
-        if (!google?.maps) {
-          throw new Error("Google Maps library is not loaded properly.");
-        }
-        // Check if inputRef.current exists before initializing Autocomplete
-        if (inputRef.current) {
-          const autocomplete = new google.maps.places.Autocomplete(
-            inputRef.current,
-            {
-              types: ["geocode"], // Restrict results to addresses only
-            }
-          );
-          // Listen for place selection
-          autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-              const { street1, street2, city, state, postal_code, country } =
-                extractAddressComponents(place.address_components);
-              setAccountCreationData((prev) => ({
-                ...prev,
-                addresses: {
-                  ...prev?.addresses,
-                  registered: {
-                    ...prev?.addresses?.registered,
-                    street1,
-                    street2,
-                    city,
-                    state,
-                    postal_code,
-                    country,
-                  },
-                },
-              }));
-            }
-          });
-        } else {
-          console.warn("Input reference is not available yet.");
-        }
-      } catch (error) {
-        console.error("Error loading Google Maps:", error);
-      }
-    };
-    if (accountCreated === false) {
-      initializeAutocomplete();
-    }
-  }, [accountCreated]);
   useEffect(() => {
     // fetchAccountDetails();
     fetchAccount();

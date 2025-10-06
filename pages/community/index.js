@@ -224,7 +224,7 @@ export default function Community({}) {
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
         <BackIcon />
         <p className="grow text-lg font-semibold text-custom-dark-blue">
-          Community
+          COMMUNITY
         </p>
         <Link
           href="/community/create"
