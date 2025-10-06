@@ -64,7 +64,7 @@ export default function Packages({}) {
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
         <BackIcon backToSettings={true}/>
         <p className="grow text-lg font-semibold text-custom-dark-blue">
-          Packages
+          PACKAGES
         </p>
         <Link
           href="/personal-packages/create"

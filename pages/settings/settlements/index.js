@@ -96,7 +96,7 @@ export default function Packages({}) {
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 py-3 bg-white z-10">
         <BackIcon />
         <p className="grow text-lg font-semibold text-custom-dark-blue">
-          Settlements
+          SETTLEMENTS
         </p>
       </div>
       <div className="flex flex-col gap-4 px-6">
