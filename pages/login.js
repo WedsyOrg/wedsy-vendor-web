@@ -64,7 +64,6 @@ export default function Login({}) {
         if (response.message === "Login Successful" && response.token) {
           setData({
             ...data,
-            name: "",
             phone: "",
             loading: false,
             success: true,
@@ -95,6 +94,15 @@ export default function Login({}) {
       {/* Dark overlay */}
       <div className="absolute inset-0" style={{ backgroundColor: '#000000BF' }}></div>
       
+      {/* Custom CSS to override focus styles */}
+      <style jsx>{`
+        input:focus {
+          border-bottom: 1px solid #9CA3AF !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+      
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col justify-center items-center px-4">
         {/* Logo and Branding */}
@@ -116,81 +124,73 @@ export default function Login({}) {
 
         {/* Form Container */}
         <div 
-          className="bg-gray-100 p-6"
+          className="p-6"
           style={{
             width: '334px',
             height: '324px',
             borderRadius: '5px',
             border: '1px solid #9B9B9B',
-            opacity: 1
+            opacity: 1,
+            backgroundColor: '#FFFFFFBF'
           }}
         >
-          {/* Name Field */}
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-medium mb-1 uppercase">
-              NAME
-            </label>
-            <input
-              type="text"
-              placeholder="Makeup Artist"
-              value={data.name}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 focus:border-[#8B0000] focus:outline-none py-2 text-gray-700"
-            />
-          </div>
 
           {/* Phone Field */}
           <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-gray-700 text-sm font-medium uppercase">
+                Phone Number
+              </label>
+              {data.phone && data.phone.length > 0 && (
+                <button
+                  onClick={SendOTP}
+                  className="text-xs text-[#8B0000] underline hover:text-[#6B0000] transition-colors"
+                  disabled={data.loading}
+                >
+                  Send OTP
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="9876543210"
+              value={data.phone}
+              onChange={(e) => setData({ ...data, phone: e.target.value })}
+              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
+              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
+            />
+          </div>
+
+          {/* OTP Field - Always visible */}
+          <div className="mb-6">
             <label className="block text-gray-700 text-sm font-medium mb-1 uppercase">
-              PHONE NO.
+              OTP
             </label>
             <input
               type="text"
               placeholder="1234"
-              value={data.phone}
-              onChange={(e) => setData({ ...data, phone: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 focus:border-[#8B0000] focus:outline-none py-2 text-gray-700"
+              value={data.Otp}
+              onChange={(e) => setData({ ...data, Otp: e.target.value })}
+              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
+              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
             />
           </div>
-
-          {/* OTP Field - Only show when OTP is sent */}
-          {data.otpSent && (
-            <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-medium mb-1 uppercase">
-                OTP
-              </label>
-              <input
-                type="text"
-                placeholder="1234"
-                value={data.Otp}
-                onChange={(e) => setData({ ...data, Otp: e.target.value })}
-                className="w-full bg-transparent border-0 border-b border-gray-400 focus:border-[#8B0000] focus:outline-none py-2 text-gray-700"
-              />
-            </div>
-          )}
 
           {/* Error Message */}
           {data.message && (
             <p className="text-red-500 text-sm mb-4">{data.message}</p>
           )}
 
-          {/* Register Button */}
+          {/* Sign In Button */}
           <button
             onClick={() => {
-              if (data.otpSent) {
+              if (data.otpSent && data.Otp) {
                 handleLogin();
-              } else {
+              } else if (data.phone && !data.otpSent) {
                 SendOTP();
               }
             }}
-            disabled={
-              !data.name ||
-              !data.phone ||
-              !processMobileNumber(data.phone) ||
-              data.loading ||
-              (data.otpSent ? !data.Otp : false)
-            }
-            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
+            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm transition-colors text-base"
           >
             {data.loading ? (
               <div className="flex items-center justify-center">
@@ -204,7 +204,7 @@ export default function Login({}) {
 
           {/* Switch to Sign Up */}
           <p className="text-center text-gray-600 text-sm mt-4">
-            New here?{" "}
+            Not a member yet?{" "}
             <Link href="/signup" className="text-[#8B0000] underline">
               Sign up
             </Link>
