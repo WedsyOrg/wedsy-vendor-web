@@ -1608,13 +1608,11 @@ export default function Settings({ user }) {
                 }`}
               />
               <div className="flex justify-between items-center mt-1">
-                <div className={`text-xs ${other.usp.length < 500 ? 'text-red-500' : other.usp.length > 1000 ? 'text-red-500' : 'text-gray-500'}`}>
-                  {other.usp.length < 500 ? `Minimum 500 characters required (${other.usp.length}/500)` : 
-                   other.usp.length > 1000 ? `Maximum 1000 characters allowed (${other.usp.length}/1000)` :
-                   `${other.usp.length}/1000 characters`}
-            </div>
-                <div className={`text-xs ${other.usp.length >= 500 && other.usp.length <= 1000 ? 'text-green-600' : 'text-gray-400'}`}>
-                  {other.usp.length >= 500 && other.usp.length <= 1000 ? '✓ Valid' : 'Invalid'}
+                <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
+                  {other.usp.length > 500 ? `Maximum 500 characters allowed (${other.usp.length}/500)` : `${other.usp.length}/500 characters`}
+                </div>
+                <div className={`text-xs ${other.usp.length <= 500 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {other.usp.length <= 500 ? '✓ Valid' : 'Too long'}
                 </div>
               </div>
             </div>
@@ -1636,19 +1634,15 @@ export default function Settings({ user }) {
                     toast.error("Please describe how you're different from other artists.");
                     return;
                   }
-                  if (other.usp.length < 500) {
-                    toast.error("How are you different from other artist should have a minimum of 500 characters.");
-                    return;
-                  }
-                  if (other.usp.length > 1000) {
-                    toast.error("How are you different from other artist can have a maximum of 1000 characters.");
+                  if (other.usp.length > 500) {
+                    toast.error("How are you different from other artist can have a maximum of 500 characters.");
                     return;
                   }
                   
                   // All validations passed, proceed with update
                   updateOther();
                 }}
-                disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length < 500 || other.usp.length > 1000}
+                disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length > 500}
                 className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
