@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function StickFooter({}) {
   return (
     <>
-      <div className="z-50 sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-t-black p-2 px-4 justify-items-center bg-white">
+      <div className="z-50 sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-gray-300 p-2 px-4 justify-items-center bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.08)]">
         <Link href="/" className="flex flex-col items-center">
           <img src="/assets/icons/wedsy.png" className="w-8 h-8 mt-1" />
           <span className="text-xs text-gray-600 mt-2">Dashboard</span>
