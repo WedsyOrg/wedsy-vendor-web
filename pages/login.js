@@ -14,12 +14,21 @@ export default function Login({}) {
     Otp: "",
     ReferenceId: "",
     message: "",
+    otpMessage: "",
   });
   const SendOTP = () => {
+    // Prevent multiple OTP sends
+    if (data.loading || data.otpSent) {
+      return;
+    }
+    
     setData({
       ...data,
       loading: true,
+      message: "",
+      otpMessage: "",
     });
+    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
       method: "POST",
       headers: {
@@ -36,10 +45,16 @@ export default function Login({}) {
           loading: false,
           otpSent: true,
           ReferenceId: response.ReferenceId,
+          otpMessage: "OTP sent successfully!",
         });
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setData({
+          ...data,
+          loading: false,
+          message: "Failed to send OTP. Please try again.",
+        });
       });
   };
   
@@ -71,6 +86,7 @@ export default function Login({}) {
             Otp: "",
             ReferenceId: "",
             message: "",
+            otpMessage: "",
           });
           localStorage.setItem("token", response.token);
           router.push("/");
@@ -80,6 +96,7 @@ export default function Login({}) {
             loading: false,
             Otp: "",
             message: response.message,
+            otpMessage: "",
           });
         }
       })
@@ -127,7 +144,7 @@ export default function Login({}) {
           className="p-6"
           style={{
             width: '334px',
-            height: '324px',
+            minHeight: '380px',
             borderRadius: '5px',
             border: '1px solid #9B9B9B',
             opacity: 1,
@@ -153,7 +170,7 @@ export default function Login({}) {
             </div>
             <input
               type="text"
-              placeholder="9876543210"
+              placeholder="91XXXXXXXX"
               value={data.phone}
               onChange={(e) => setData({ ...data, phone: e.target.value })}
               className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
@@ -176,9 +193,18 @@ export default function Login({}) {
             />
           </div>
 
+          {/* Success Message for OTP */}
+          {data.otpMessage && (
+            <p className="text-[#840032] text-sm mb-4 bg-[#840032]/10 px-3 py-2 rounded border border-[#840032]/20">
+              {data.otpMessage}
+            </p>
+          )}
+
           {/* Error Message */}
           {data.message && (
-            <p className="text-red-500 text-sm mb-4">{data.message}</p>
+            <p className="text-red-500 text-sm mb-4 bg-red-50 px-3 py-2 rounded border border-red-200">
+              {data.message}
+            </p>
           )}
 
           {/* Sign In Button */}
@@ -203,9 +229,9 @@ export default function Login({}) {
           </button>
 
           {/* Switch to Sign Up */}
-          <p className="text-center text-gray-600 text-sm mt-4">
+          <p className="text-center text-gray-700 text-sm mt-4 font-medium">
             Not a member yet?{" "}
-            <Link href="/signup" className="text-[#8B0000] underline">
+            <Link href="/signup" className="text-[#840032] underline hover:text-[#840032]/80 transition-colors">
               Sign up
             </Link>
           </p>

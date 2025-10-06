@@ -114,6 +114,7 @@ function MyApp({ Component, pageProps }) {
               userLoggedIn={!logIn}
               user={user}
               CheckLogin={CheckLogin}
+              Logout={Logout}
             />
           </div>
           {router?.pathname !== "/login" && router?.pathname !== "/signup" && (

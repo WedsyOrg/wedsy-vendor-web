@@ -48,7 +48,7 @@ export default function Settings({ user }) {
         setDocumentBackUrl(uploadedUrl);
       }
     } catch (error) {
-      console.error('Error uploading document:', error);
+      // Handle error silently
       toast.error('Failed to upload document. Please try again.');
     } finally {
       setLoading(false);
@@ -117,7 +117,7 @@ export default function Settings({ user }) {
         toast.error('Failed to upload document. Please try again.');
       }
     } catch (error) {
-      console.error('Error uploading document:', error);
+      // Handle error silently
       toast.error('Failed to upload document. Please try again.');
     } finally {
       setLoading(false);
@@ -198,7 +198,7 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchOther = () => {
@@ -221,11 +221,19 @@ export default function Settings({ user }) {
       .then((response) => {
         if (response) {
           setLoading(false);
-          setOther(response.other);
+          setOther({
+            groomMakeup: response.other?.groomMakeup || false,
+            lgbtqMakeup: response.other?.lgbtqMakeup || false,
+            experience: response.other?.experience || "",
+            clients: response.other?.clients || "",
+            usp: response.other?.usp || "",
+            makeupProducts: response.other?.makeupProducts || [],
+            awards: response.other?.awards || [],
+          });
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchProfile = () => {
@@ -249,18 +257,21 @@ export default function Settings({ user }) {
         if (response) {
           setLoading(false);
           setProfile({
-            ...profile,
-            ...response,
+            businessName: response.businessName || response.contactName || "",
+            businessDescription: response.businessDescription || "",
+            speciality: response.speciality || "",
             servicesOffered:
               JSON.stringify(response.servicesOffered) ===
               JSON.stringify(["Hairstylist", "MUA"])
                 ? "Both"
-                : response.servicesOffered[0] || "",
+                : response.servicesOffered?.[0] || response.serviceOffered || "",
+            groomMakeup: response.groomMakeup || false,
+            onlyHairStyling: response.onlyHairStyling || false,
           });
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchAddress = () => {
@@ -286,11 +297,26 @@ export default function Settings({ user }) {
       .then((response) => {
         if (response) {
           setLoading(false);
-          setAddress({ ...address, ...response });
+          setAddress({
+            place_id: response.place_id || "",
+            formatted_address: response.formatted_address || response.address || "",
+            address_components: response.address_components || [],
+            city: response.city || "",
+            postal_code: response.postal_code || response.pincode || "",
+            locality: response.locality || "",
+            state: response.state || "",
+            country: response.country || "",
+            geometry: response.geometry || {
+              location: {
+                lat: 0,
+                lng: 0,
+              },
+            },
+          });
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchGallery = () => {
@@ -317,7 +343,7 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchLocationData = () => {
@@ -363,7 +389,7 @@ export default function Settings({ user }) {
         ).then((result) => setLocationData(result));
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const fetchPrices = () => {
@@ -390,7 +416,7 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
 
@@ -418,7 +444,7 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        // Handle error silently
       });
   };
   const updateOther = async () => {
@@ -582,7 +608,7 @@ export default function Settings({ user }) {
         toast.error("Error deleting cover photo.");
       }
     } catch (error) {
-      console.error("Error deleting cover photo:", error);
+        // Handle error silently
       toast.error("Failed to delete cover photo. Please try again.");
     } finally {
       setLoading(false);
@@ -732,7 +758,7 @@ export default function Settings({ user }) {
         toast.error("Error deleting photo.");
       }
     } catch (error) {
-      console.error("Error deleting photo:", error);
+        // Handle error silently
       toast.error("Failed to delete photo. Please try again.");
     } finally {
       setLoading(false);
@@ -863,10 +889,10 @@ export default function Settings({ user }) {
             }
           });
         } else {
-          console.warn("Input reference is not available yet.");
+          // Input reference not available yet
         }
       } catch (error) {
-        console.error("Error loading Google Maps:", error);
+        // Handle error silently
       }
     };
     if (display === "Profile") {
@@ -1476,7 +1502,7 @@ export default function Settings({ user }) {
                                   
                                   toast.success('Certificate uploaded successfully!');
                                 } catch (error) {
-                                  console.error('Error uploading certificate:', error);
+                                  // Handle error silently
                                   toast.error('Failed to upload certificate. Please try again.');
                                 } finally {
                                   setLoading(false);
