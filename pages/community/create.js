@@ -70,7 +70,7 @@ export default function Home({ user }) {
           Community
         </p>
       </div>
-      <div className="flex flex-col gap-6 py-4 px-6">
+      <div className="flex flex-col gap-6 py-4 px-6 max-w-sm mx-auto">
         {display === "Create" && (
           <>
             <div className="flex flex-col gap-4">
@@ -140,13 +140,13 @@ export default function Home({ user }) {
               </div>
             </div>
             
-            <div className="text-sm text-black space-y-1">
+            <div className="text-sm text-black space-y-1 text-center mt-4">
               <p>Be respectful. Do not use foul language or anything offensive.</p>
               <p>Thank you for keeping the community clean. Enjoy!</p>
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-4">
               <Button
-                className="px-8 py-3 rounded-lg text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
+                className="px-6 py-2 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
                 disabled={!community.title || !community.body}
                 onClick={() => {
                   setDisplay("Post");
@@ -197,7 +197,7 @@ export default function Home({ user }) {
             </div>
             <div className="flex justify-center">
               <Button
-                className="px-8 py-3 rounded-lg text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
+                className="px-6 py-2 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
                 disabled={loading}
                 onClick={handleSubmit}
               >
