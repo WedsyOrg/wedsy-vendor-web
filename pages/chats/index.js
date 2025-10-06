@@ -84,17 +84,98 @@ export default function Home({}) {
       .then((response) => {
         console.log("Vendor fetchChats - Response data:", response);
         setLoading(false);
-        let data = Array.isArray(response) ? response : [];
-        if (!data || data.length === 0) {
-          console.log("Vendor fetchChats - Using DUMMY_CHATS fallback");
-          data = DUMMY_CHATS;
+        const data = response || [];
+        
+        // Add dummy data if no chats are returned
+        if (data.length === 0) {
+          const dummyChats = [
+            {
+              _id: "chat1",
+              user: {
+                name: "Priya Sharma",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "Hi! I'm interested in your bridal makeup package. Can we discuss the pricing?",
+                createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 2
+            },
+            {
+              _id: "chat2",
+              user: {
+                name: "Anjali Patel",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "Thank you for the quote. I'll discuss with my family and get back to you.",
+                createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 0
+            },
+            {
+              _id: "chat3",
+              user: {
+                name: "Riya Singh",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "What time slots are available for next Saturday?",
+                createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 1
+            },
+            {
+              _id: "chat4",
+              user: {
+                name: "Sneha Gupta",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "Perfect! I'll book the package for my wedding day.",
+                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 0
+            },
+            {
+              _id: "chat5",
+              user: {
+                name: "Kavya Reddy",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "Can you show me some portfolio images of your work?",
+                createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 3
+            },
+            {
+              _id: "chat6",
+              user: {
+                name: "Meera Joshi",
+                profilePhoto: "/api/placeholder/40/40"
+              },
+              lastMessage: {
+                content: "I need makeup for my sister's engagement. What packages do you have?",
+                createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+              },
+              unreadCount: 0
+            }
+          ];
+          console.log("Vendor fetchChats - Using dummy data");
+          setChats(dummyChats);
+          // Cache dummy data
+          try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dummyChats));
+          } catch (_e) {}
+        } else {
+          console.log("Vendor fetchChats - Setting chats data:", data);
+          setChats(data);
+          // Cache latest list for instant back navigation
+          try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          } catch (_e) {}
         }
-        console.log("Vendor fetchChats - Setting chats data:", data);
-        setChats(data);
-        // Cache latest list for instant back navigation
-        try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        } catch (_e) {}
         setInitialLoad(false);
         hasLoadedRef.current = true;
       })
