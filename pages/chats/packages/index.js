@@ -19,7 +19,6 @@ export default function Home({}) {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [error, setError] = useState(null);
-  const [error, setError] = useState(null);
   const [selectedSource, setSelectedSource] = useState("Wedsy");
   const [timeFilter, setTimeFilter] = useState("All"); // All | Upcoming | Completed
   const [biddingFilter, setBiddingFilter] = useState("All"); // All | Bidding Only
