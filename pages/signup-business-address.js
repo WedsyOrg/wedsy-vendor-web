@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 
 export default function SignupBusinessAddress({}) {
   let router = useRouter();
@@ -152,16 +152,9 @@ export default function SignupBusinessAddress({}) {
 
           {/* Form Container */}
           <div className="space-y-8">
-            {/* Google Maps Status */}
-            {!isGoogleMapsLoaded && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded text-sm">
-                <strong>Note:</strong> Google Maps is loading. You can start typing your address or wait for autocomplete to become available.
-              </div>
-            )}
             {/* State */}
             <div>
               <input
-                ref={stateInputRef}
                 type="text"
                 placeholder="State"
                 value={data.state}
@@ -173,7 +166,6 @@ export default function SignupBusinessAddress({}) {
             {/* City */}
             <div>
               <input
-                ref={cityInputRef}
                 type="text"
                 placeholder="City"
                 value={data.city}
@@ -185,7 +177,6 @@ export default function SignupBusinessAddress({}) {
             {/* Area */}
             <div>
               <input
-                ref={areaInputRef}
                 type="text"
                 placeholder="Area"
                 value={data.area}
@@ -197,7 +188,6 @@ export default function SignupBusinessAddress({}) {
             {/* Address Textarea */}
             <div>
               <textarea
-                ref={addressInputRef}
                 placeholder="Address"
                 value={data.address}
                 onChange={(e) => setData(prev => ({ ...prev, address: e.target.value }))}
@@ -220,7 +210,6 @@ export default function SignupBusinessAddress({}) {
             {/* Pincode */}
             <div>
               <input
-                ref={pincodeInputRef}
                 type="number"
                 placeholder="Pincode"
                 value={data.pincode}

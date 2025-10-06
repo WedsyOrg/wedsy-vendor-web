@@ -195,7 +195,7 @@ export default function Login({}) {
 
           {/* Success Message for OTP */}
           {data.otpMessage && (
-            <p className="text-[#840032] text-sm mb-4 bg-[#840032]/10 px-3 py-2 rounded border border-[#840032]/20">
+            <p className="text-green-600 text-sm mb-4 bg-green-50 px-3 py-2 rounded border border-green-200">
               {data.otpMessage}
             </p>
           )}
