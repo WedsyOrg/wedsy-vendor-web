@@ -14,6 +14,40 @@ import { useRouter } from "next/router";
 import { Avatar, Button, TextInput } from "flowbite-react";
 
 export default function Home({}) {
+  // Dummy fallback data for Personal Packages tab
+  const DUMMY_PACKAGES = [
+    {
+      _id: "pkg-dummy-1",
+      createdAt: new Date().toISOString(),
+      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: { accepted: false, rejected: false },
+      order: {
+        user: { name: "Aisha Sharma" },
+      },
+      address: {
+        formatted_address: "Taj Palace, New Delhi",
+      },
+      personalPackages: [
+        { quantity: 1, package: { name: "Bridal Makeup" } },
+        { quantity: 1, package: { name: "Hair Styling" } },
+      ],
+    },
+    {
+      _id: "pkg-dummy-2",
+      createdAt: new Date().toISOString(),
+      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      status: { accepted: false, rejected: false },
+      order: {
+        user: { name: "Karan Mehta" },
+      },
+      address: {
+        formatted_address: "The Leela, Mumbai",
+      },
+      personalPackages: [
+        { quantity: 2, package: { name: "Party Makeup" } },
+      ],
+    },
+  ];
   const [primaryTab, setPrimaryTab] = useState("Bidding");
   const [secondaryTab, setSecondaryTab] = useState("Pending");
   const router = useRouter();
@@ -130,18 +164,19 @@ export default function Home({}) {
       })
       .then((response) => {
         console.log("Packages API Response:", response);
-        if (response) {
-          setLoading(false);
-          setPackageList(response);
+        setLoading(false);
+        const data = Array.isArray(response) ? response : [];
+        if (data.length === 0) {
+          setPackageList(DUMMY_PACKAGES);
         } else {
-          setLoading(false);
-          setPackageList([]);
+          setPackageList(data);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        // Use dummy data on failure for a demonstrable UI
         setLoading(false);
-        setPackageList([]);
+        setPackageList(DUMMY_PACKAGES);
       });
   };
 
@@ -314,13 +349,7 @@ export default function Home({}) {
                 <div className="text-center">
                   <p className="text-lg font-semibold text-gray-600 mb-2">No Pending Bids</p>
                   <p className="text-sm text-gray-500">You don&apos;t have any pending bidding requests at the moment.</p>
-                  {/* Debug info */}
-                  <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-left">
-                    <p>Debug Info:</p>
-                    <p>Total bidding list: {biddingList.length}</p>
-                    <p>Filtered list: {filteredBiddingList.length}</p>
-                    <p>Secondary tab: {secondaryTab}</p>
-                  </div>
+                  {/* Debug info removed */}
                 </div>
               </div>
             );

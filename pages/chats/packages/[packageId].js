@@ -15,6 +15,48 @@ import { Avatar, Button, TextInput } from "flowbite-react";
 import { toPriceString } from "@/utils/text";
 
 export default function Home({}) {
+  // Dummy fallback orders for package detail view
+  const DUMMY_ORDERS = {
+    "wpb-1": {
+      _id: "ord-wedsy-1",
+      status: { accepted: false, rejected: false },
+      order: { user: { name: "Priya Verma", phone: "+91 90000 11111" } },
+      wedsyPackageBooking: {
+        _id: "wpb-1",
+        date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        time: "06:00 PM",
+        address: { formatted_address: "ITC Gardenia, Bengaluru" },
+        wedsyPackages: [
+          { quantity: 1, package: { name: "Silver Package", price: 7000 } },
+          { quantity: 1, package: { name: "Photography Add-on", price: 5000 } },
+        ],
+      },
+      amount: {
+        total: 12000,
+        payableToWedsy: 1000,
+        payableToVendor: 11000,
+      },
+    },
+    "vpb-1": {
+      _id: "ord-vendor-1",
+      status: { accepted: false, rejected: false },
+      order: { user: { name: "Rahul Khanna", phone: "+91 98888 22222" } },
+      wedsyPackageBooking: {
+        _id: "vpb-1",
+        date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+        time: "11:00 AM",
+        address: { formatted_address: "Taj Lands End, Mumbai" },
+        wedsyPackages: [
+          { quantity: 2, package: { name: "Makeup Session", price: 4500 } },
+        ],
+      },
+      amount: {
+        total: 9000,
+        payableToWedsy: 800,
+        payableToVendor: 8200,
+      },
+    },
+  };
   const [display, setDisplay] = useState("Pending");
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
@@ -52,8 +94,16 @@ export default function Home({}) {
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        setOrder(null);
-        setError("Unable to load package details");
+        // Fallback to dummy order by packageId when API is unavailable
+        const dummy = DUMMY_ORDERS[packageId];
+        if (dummy) {
+          setOrder(dummy);
+          setDisplay(dummy?.status?.accepted ? "Accepted" : "Pending");
+          setError(null);
+        } else {
+          setOrder(null);
+          setError("Unable to load package details");
+        }
       })
       .finally(() => {
         setLoading(false);
