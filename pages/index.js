@@ -1141,7 +1141,7 @@ export default function Home({ user }) {
           onClick={() => setShowOrderDetails(false)}
         >
             <div 
-              className="w-full h-[65vh] bg-[#840032] flex flex-col"
+              className="w-full max-h-[85vh] bg-[#840032] flex flex-col"
               style={{ borderRadius: '10px 10px 0 0' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1160,7 +1160,7 @@ export default function Home({ user }) {
             </div>
             
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20">
               <div 
                 className="bg-white border border-red-300 mb-4 overflow-hidden"
                 style={{ borderRadius: '10px 10px 10px 10px' }}
