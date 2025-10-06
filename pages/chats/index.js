@@ -15,6 +15,34 @@ import { useRouter } from "next/router";
 import { Avatar, TextInput } from "flowbite-react";
 import { formatMessageTime } from "@/utils/chat";
 
+// Dummy fallback chats used when API is unavailable or returns empty
+const DUMMY_CHATS = [
+  {
+    _id: "dummy-1",
+    user: {
+      name: "Deepika Padukone",
+      profilePhoto: "",
+    },
+    lastMessage: {
+      content: "Hi! Is your team available on 12 Nov?",
+      createdAt: new Date().toISOString(),
+    },
+    unreadCount: 2,
+  },
+  {
+    _id: "dummy-2",
+    user: {
+      name: "Ranveer Singh",
+      profilePhoto: "",
+    },
+    lastMessage: {
+      content: "Please share your best quote for sangeet",
+      createdAt: new Date().toISOString(),
+    },
+    unreadCount: 0,
+  },
+];
+
 export default function Home({}) {
   const router = useRouter();
   const [chats, setChats] = useState([]);
@@ -56,7 +84,11 @@ export default function Home({}) {
       .then((response) => {
         console.log("Vendor fetchChats - Response data:", response);
         setLoading(false);
-        const data = response || [];
+        let data = Array.isArray(response) ? response : [];
+        if (!data || data.length === 0) {
+          console.log("Vendor fetchChats - Using DUMMY_CHATS fallback");
+          data = DUMMY_CHATS;
+        }
         console.log("Vendor fetchChats - Setting chats data:", data);
         setChats(data);
         // Cache latest list for instant back navigation
@@ -69,6 +101,11 @@ export default function Home({}) {
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
         setLoading(false);
+        // Use dummy data on network failure
+        setChats(DUMMY_CHATS);
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(DUMMY_CHATS));
+        } catch (_e) {}
         setInitialLoad(false);
       });
   };
@@ -170,9 +207,12 @@ export default function Home({}) {
                 <div className="flex items-center gap-3">
                   {/* User Avatar */}
                   <div className="relative">
-                    <Avatar 
-                      img={chat?.user?.profilePhoto || "/api/placeholder/40/40"} 
-                      rounded={true} 
+                    <Avatar
+                      img={
+                        chat?.user?.profilePhoto ||
+                        "https://www.clipartkey.com/mpngs/m/209-2095552_profile-picture-placeholder-png.png"
+                      }
+                      rounded={true}
                       size="md"
                     />
                   </div>
