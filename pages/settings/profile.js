@@ -128,10 +128,21 @@ export default function Settings({ user }) {
         'cropped-image.jpg'
       );
       
+      console.log('Cropped image blob:', croppedImageBlob);
+      
       if (cropType === 'cover') {
         setCoverPhoto(croppedImageBlob);
+        console.log('Set cover photo');
       } else if (cropType === 'gallery') {
-        setCropFiles(prev => [...prev, croppedImageBlob]);
+        setCropFiles(prev => {
+          const newFiles = [...prev, croppedImageBlob];
+          console.log('Added to crop files. Total files:', newFiles.length);
+          return newFiles;
+        });
+        
+        // Auto-upload the cropped photo immediately
+        console.log('Auto-uploading cropped photo...');
+        uploadSingleCroppedPhoto(croppedImageBlob);
       }
       
       setShowCropModal(false);
@@ -501,7 +512,7 @@ export default function Settings({ user }) {
       .then((response) => {
         if (response) {
           setLoading(false);
-          setGallery({ ...response.gallery, temp: response.temp });
+          setGallery({ ...response.gallery, temp: response.temp || 'default' });
         }
       })
       .catch((error) => {
@@ -812,8 +823,8 @@ export default function Settings({ user }) {
   };
 
   const handleMultiplePhotoUpload = async (files) => {
-    if (gallery.photos.length + files.length > 6) {
-      toast.error("Maximum 6 photos allowed. Please select fewer files.");
+    if (gallery.photos.length + files.length > 15) {
+      toast.error("Maximum 15 photos allowed. Please select fewer files.");
       return;
     }
 
@@ -858,27 +869,32 @@ export default function Settings({ user }) {
     }
   };
 
-  // Handle cropped files upload
-  const handleCroppedFilesUpload = async () => {
-    if (cropFiles.length === 0) return;
-    
-    if (gallery.photos.length + cropFiles.length > 6) {
-      toast.error("Maximum 6 photos allowed. Please select fewer files.");
+  // Handle single cropped photo upload
+  const uploadSingleCroppedPhoto = async (croppedFile) => {
+    if (gallery.photos.length >= 15) {
+      toast.error("Maximum 15 photos allowed.");
       return;
     }
 
+    console.log("Starting upload of single cropped photo");
+    console.log("Current gallery photos:", gallery.photos.length);
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("Token exists:", !!localStorage.getItem("token"));
+    
     setLoading(true);
-    const uploadPromises = cropFiles.map((file, index) => 
-      uploadFile({
-        file: file,
-        path: "vendor-gallery/",
-        id: `${new Date().getTime()}-${gallery.temp}-photo-${gallery.photos.length + index}`,
-      })
-    );
-
+    
     try {
-      const uploadedUrls = await Promise.all(uploadPromises);
-      const newPhotos = [...gallery.photos, ...uploadedUrls];
+      console.log("Uploading single file:", croppedFile);
+      
+      const uploadedUrl = await uploadFile({
+        file: croppedFile,
+        path: "vendor-gallery/",
+        id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length}`,
+      });
+      console.log("File uploaded successfully:", uploadedUrl);
+      
+      const newPhotos = [...gallery.photos, uploadedUrl];
+      console.log("New photos array:", newPhotos);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
@@ -891,21 +907,105 @@ export default function Settings({ user }) {
         }),
       });
 
+      console.log("API Response status:", response.status);
       const result = await response.json();
+      console.log("API Response:", result);
+      
+      if (result.message === "success") {
+        fetchGallery();
+        // Remove the uploaded photo from cropFiles
+        setCropFiles(prev => prev.filter(file => file !== croppedFile));
+        toast.success("Photo uploaded successfully!");
+      } else {
+        toast.error("Error uploading photo: " + (result.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("Failed to upload photo: " + error.message);
+    } finally {
+      setLoading(false);
+      if (photoRef.current) {
+        photoRef.current.value = null;
+      }
+    }
+  };
+
+  // Handle cropped files upload
+  const handleCroppedFilesUpload = async () => {
+    if (cropFiles.length === 0) {
+      toast.error("No photos to upload.");
+      return;
+    }
+    
+    if (gallery.photos.length + cropFiles.length > 15) {
+      toast.error("Maximum 15 photos allowed. Please select fewer files.");
+      return;
+    }
+
+    console.log("Starting upload of", cropFiles.length, "cropped photos");
+    console.log("Current gallery photos:", gallery.photos.length);
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("Token exists:", !!localStorage.getItem("token"));
+    
+    setLoading(true);
+    
+    try {
+      // Upload files one by one to better handle errors
+      const uploadedUrls = [];
+      for (let i = 0; i < cropFiles.length; i++) {
+        const file = cropFiles[i];
+        console.log(`Uploading file ${i + 1}/${cropFiles.length}:`, file);
+        
+        try {
+          const uploadedUrl = await uploadFile({
+            file: file,
+            path: "vendor-gallery/",
+            id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + i}`,
+          });
+          console.log(`File ${i + 1} uploaded successfully:`, uploadedUrl);
+          uploadedUrls.push(uploadedUrl);
+        } catch (fileError) {
+          console.error(`Error uploading file ${i + 1}:`, fileError);
+          toast.error(`Failed to upload photo ${i + 1}. Please try again.`);
+          throw fileError; // Stop the process if any file fails
+        }
+      }
+
+      console.log("All files uploaded successfully. URLs:", uploadedUrls);
+      
+      const newPhotos = [...gallery.photos, ...uploadedUrls];
+      console.log("New photos array:", newPhotos);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          gallery: { photos: newPhotos },
+        }),
+      });
+
+      console.log("API Response status:", response.status);
+      const result = await response.json();
+      console.log("API Response:", result);
       
       if (result.message === "success") {
         fetchGallery();
         setCropFiles([]);
-        toast.success(`${cropFiles.length} photo(s) uploaded successfully!`);
+        toast.success(`Photo uploaded successfully!`);
       } else {
-        toast.error("Error uploading photos.");
+        toast.error("Error uploading photos: " + (result.message || "Unknown error"));
       }
     } catch (error) {
       console.error("Error uploading photos:", error);
-      toast.error("Failed to upload photos. Please try again.");
+      toast.error("Failed to upload photos: " + error.message);
     } finally {
       setLoading(false);
-      photoRef.current.value = null;
+      if (photoRef.current) {
+        photoRef.current.value = null;
+      }
     }
   };
 
@@ -1131,7 +1231,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                 placeholder="Display name / Business Name"
-                value={profile.businessName}
+                value={profile.businessName || ""}
                 onChange={(e) => {
                   setProfile({
                     ...profile,
@@ -1150,7 +1250,7 @@ export default function Settings({ user }) {
                 <textarea
                   placeholder="Share a little about your passion for makeup and what drives you as an artist..."
                   rows={4}
-                value={profile.businessDescription}
+                value={profile.businessDescription || ""}
                 onChange={(e) => {
                     if (e.target.value.length <= 350) {
                   setProfile({
@@ -1339,7 +1439,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="City"
-                  value={address.city}
+                  value={address.city || ""}
                   onChange={(e) => {
                     setAddress({
                       ...address,
@@ -1394,7 +1494,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Flat no/House no"
-                  value={address.flat_house_number}
+                  value={address.flat_house_number || ""}
                   onChange={(e) => {
                     setAddress({
                       ...address,
@@ -1413,7 +1513,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Address Line 1"
-                  value={address.formatted_address}
+                  value={address.formatted_address || ""}
                   onChange={(e) => {
                     setAddress({
                       ...address,
@@ -1433,7 +1533,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Pincode"
-                  value={address.postal_code}
+                  value={address.postal_code || ""}
                   onChange={(e) => {
                     setAddress({
                       ...address,
@@ -1452,7 +1552,7 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Enter your address"
-                  value={address.full_address}
+                  value={address.full_address || ""}
                   onChange={(e) => {
                     setAddress({
                       ...address,
@@ -1579,7 +1679,7 @@ export default function Settings({ user }) {
               <input
                 type="number"
                 placeholder="5"
-                value={other.experience}
+                value={other.experience || ""}
                 onChange={(e) => {
                   setOther({
                     ...other,
@@ -1607,7 +1707,7 @@ export default function Settings({ user }) {
               <input
                 type="number"
                 placeholder="50"
-                value={other.clients}
+                value={other.clients || ""}
                 onChange={(e) => {
                   setOther({
                     ...other,
@@ -1773,7 +1873,7 @@ export default function Settings({ user }) {
                     <div key={index} className="relative">
                       <input
                         type="text"
-                        value={item}
+                        value={item || ""}
                         onChange={(e) => {
                           let temp = [...(other?.makeupProducts || [])];
                           temp[index] = e.target.value;
@@ -1886,7 +1986,7 @@ export default function Settings({ user }) {
               <textarea
                 placeholder="I specialize in creating customized bridal looks that enhance natural beauty while ensuring long-lasting results, using only high-quality, cruelty-free products. My signature style focuses on glowing, radiant skin and timeless elegance, making every client feel confident and camera-ready."
                 rows={4}
-                value={other.usp}
+                value={other.usp || ""}
                 onChange={(e) => {
                   if (e.target.value.length <= 1000) {
                   setOther({
@@ -1967,7 +2067,7 @@ export default function Settings({ user }) {
               <input
                 type="number"
                 placeholder="Bridal makeup Starting price"
-                value={prices.bridal}
+                value={prices.bridal || ""}
                 onChange={(e) => {
                   setPrices({
                     ...prices,
@@ -1987,7 +2087,7 @@ export default function Settings({ user }) {
               <input
                 type="number"
                 placeholder="Party makeup Starting price"
-                value={prices.party}
+                value={prices.party || ""}
                 onChange={(e) => {
                   setPrices({
                     ...prices,
@@ -2008,7 +2108,7 @@ export default function Settings({ user }) {
                 <input
                   type="number"
                 placeholder="Groom makeup Starting price"
-                value={prices.groom}
+                value={prices.groom || ""}
                 onChange={(e) => {
                   setPrices({
                     ...prices,
@@ -2171,20 +2271,20 @@ export default function Settings({ user }) {
                     Upload photos for gallery view
                   </label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Upload multiple images at once (max 6 photos)
+                    Upload multiple images at once (max 15 photos)
                   </p>
                 </div>
                 <button
                   onClick={() => {
                     photoRef.current?.click();
                   }}
-                  disabled={loading || gallery.photos.length >= 6}
+                  disabled={loading || gallery.photos.length >= 15}
                   className="px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  {gallery.photos.length >= 6 ? 'Max Reached' : 'Upload'}
+                  {gallery.photos.length >= 15 ? 'Max Reached' : 'Upload'}
                 </button>
               </div>
               
@@ -2203,7 +2303,7 @@ export default function Settings({ user }) {
                   }
                 }}
                 className="hidden"
-                disabled={loading || gallery.photos.length >= 6}
+                disabled={loading || gallery.photos.length >= 15}
               />
               
               {/* Upload Progress */}
@@ -2221,6 +2321,7 @@ export default function Settings({ user }) {
               
               {/* Gallery Grid */}
               <div className="grid grid-cols-2 gap-3">
+              {/* Show existing gallery photos */}
               {gallery.photos.map((item, index) => (
                 <div
                   key={index}
@@ -2247,9 +2348,38 @@ export default function Settings({ user }) {
                     </div>
                 </div>
               ))}
+              
+              {/* Show cropped photos before upload */}
+              {cropFiles.map((file, index) => (
+                <div
+                  key={`crop-${index}`}
+                  className="group relative w-full aspect-square rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50"
+                >
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Cropped photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Pending indicator */}
+                  <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                    Pending Upload
+                  </div>
+                  {/* Remove button */}
+                  <button
+                    onClick={() => {
+                      setCropFiles(prev => prev.filter((_, i) => i !== index));
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
                 
                 {/* Upload Placeholder */}
-                {gallery.photos.length < 6 && (
+                {gallery.photos.length + cropFiles.length < 15 && (
                   <div
                     onClick={() => photoRef.current?.click()}
                     className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors"
@@ -2261,7 +2391,7 @@ export default function Settings({ user }) {
                       Click to add photos
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {gallery.photos.length}/6
+                      {gallery.photos.length + cropFiles.length}/15
                     </p>
                   </div>
                 )}
@@ -2534,9 +2664,24 @@ export default function Settings({ user }) {
         </div>
       )}
 
-      {/* Cropped Files Preview and Upload */}
-      {cropFiles.length > 0 && (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm">
+      {/* Loading indicator for auto-upload */}
+      {loading && (
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
+          <div className="flex items-center gap-3">
+            <svg className="animate-spin h-4 w-4 text-[#840032]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-sm text-[#840032]">Uploading photo...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Cropped Files Preview and Upload - Only show if there are files and not loading */}
+      {cropFiles.length > 0 && !loading && (() => {
+        console.log("Rendering upload button for", cropFiles.length, "files");
+        return (
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-semibold text-black">
               Cropped Photos ({cropFiles.length})
@@ -2558,6 +2703,25 @@ export default function Settings({ user }) {
             ))}
           </div>
           
+          {/* Debug info */}
+          <div className="text-xs text-gray-500 mb-2">
+            Debug: {cropFiles.length} files, Gallery: {gallery.photos.length}/15
+          </div>
+          
+          {/* Test upload button */}
+          <button
+            onClick={() => {
+              console.log("Test upload clicked");
+              console.log("Crop files:", cropFiles);
+              console.log("Gallery temp:", gallery.temp);
+              console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+              console.log("Token:", localStorage.getItem("token") ? "Exists" : "Missing");
+            }}
+            className="w-full px-3 py-1 bg-blue-500 text-white rounded text-xs mb-2"
+          >
+            Test Debug Info
+          </button>
+          
           <button
             onClick={handleCroppedFilesUpload}
             disabled={loading}
@@ -2566,7 +2730,8 @@ export default function Settings({ user }) {
             {loading ? 'Uploading...' : `Upload ${cropFiles.length} Photo(s)`}
           </button>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }
