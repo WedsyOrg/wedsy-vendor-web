@@ -54,42 +54,42 @@ export default function Leads({}) {
           {
             _id: "1",
             name: "Lead name",
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           },
           {
             _id: "2", 
             name: "Lead name",
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           },
           {
             _id: "3",
             name: "Lead name", 
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           },
           {
             _id: "4",
             name: "Lead name",
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           },
           {
             _id: "5",
             name: "Lead name",
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           },
           {
             _id: "6",
             name: "Lead name",
-            payment: { total: "14000" },
+            payment: { total: "0" },
             eventInfo: [{ date: "2024-12-12" }],
             createdAt: new Date()
           }
@@ -202,7 +202,7 @@ export default function Leads({}) {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-2xl font-bold text-gray-900">
-                      {toPriceString(item?.payment?.total) || "₹14,000"}
+                      {toPriceString(item?.payment?.total ?? 0)}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <MdOutlineLocationOn size={14} />

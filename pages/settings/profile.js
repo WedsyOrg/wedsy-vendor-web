@@ -113,36 +113,43 @@ export default function Settings({ user }) {
     if (selectedPhotos.length === 0) return;
     
     setLoading(true);
-    const updatedPhotos = gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
+    const updatedPhotos = forceEmptyGallery ? [] : gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
 
     try {
+      const debugBody = { gallery: { photos: updatedPhotos } };
+      console.debug("[Gallery/BulkDelete] Request", { selected: selectedPhotos.length, forceEmptyGallery, body: debugBody });
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({
-          gallery: { photos: updatedPhotos },
-        }),
+        body: JSON.stringify(debugBody),
       });
 
-      const result = await response.json();
+      const raw = await response.text();
+      let result;
+      try { result = JSON.parse(raw); } catch { result = { raw }; }
+      console.debug("[Gallery/BulkDelete] Response", { status: response.status, ok: response.ok, result });
       
       if (result.message === "success") {
+        // Update UI immediately
+        setGallery((prev) => ({ ...prev, photos: updatedPhotos }));
         fetchGallery();
         toast.success(`${selectedPhotos.length} photo(s) deleted successfully!`);
         setSelectedPhotos([]);
         setIsMultiSelectMode(false);
+        setForceEmptyGallery(false);
       } else {
         toast.error("Error deleting photos.");
       }
     } catch (error) {
-      console.error("Error deleting photos:", error);
+      console.error("[Gallery/BulkDelete] Error", error);
       toast.error("Failed to delete photos.");
     } finally {
       setLoading(false);
       setShowBulkDeleteModal(false);
+      setForceEmptyGallery(false);
     }
   };
 
@@ -432,6 +439,7 @@ export default function Settings({ user }) {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [forceEmptyGallery, setForceEmptyGallery] = useState(false);
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
@@ -600,10 +608,15 @@ export default function Settings({ user }) {
   };
   const fetchGallery = () => {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=gallery`, {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=gallery&_=${Date.now()}`;
+    fetch(url, {
       method: "GET",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
         authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
@@ -618,7 +631,9 @@ export default function Settings({ user }) {
       .then((response) => {
         if (response) {
           setLoading(false);
-          setGallery({ ...response.gallery, temp: response.temp || 'default' });
+          const coverPhoto = response?.gallery?.coverPhoto || "";
+          const photos = Array.isArray(response?.gallery?.photos) ? response.gallery.photos : [];
+          setGallery({ coverPhoto, photos, temp: response.temp || 'default' });
         }
       })
       .catch((error) => {
@@ -835,20 +850,27 @@ export default function Settings({ user }) {
   const deleteCoverPhoto = async () => {
     setLoading(true);
     try {
+      const debugBody = { gallery: { coverPhoto: "" } };
+      console.debug("[Gallery/DeleteCover] Request", {
+        url: `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        body: debugBody,
+      });
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({
-          gallery: { coverPhoto: "" },
-        }),
+        body: JSON.stringify(debugBody),
       });
 
-      const result = await response.json();
+      const raw = await response.text();
+      let result;
+      try { result = JSON.parse(raw); } catch { result = { raw }; }
+      console.debug("[Gallery/DeleteCover] Response", { status: response.status, ok: response.ok, result });
       
       if (result.message === "success") {
+        setGallery((prev) => ({ ...prev, coverPhoto: "" }));
         fetchGallery();
         toast.success("Cover photo deleted successfully!");
       } else {
@@ -856,6 +878,7 @@ export default function Settings({ user }) {
       }
     } catch (error) {
         // Handle error silently
+      console.error("[Gallery/DeleteCover] Error", error);
       toast.error("Failed to delete cover photo. Please try again.");
     } finally {
       setLoading(false);
@@ -1093,20 +1116,24 @@ export default function Settings({ user }) {
     const updatedPhotos = gallery.photos.filter((_, i) => i !== index);
 
     try {
+      const debugBody = { gallery: { photos: updatedPhotos } };
+      console.debug("[Gallery/DeletePhoto] Request", { index, body: debugBody });
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({
-          gallery: { photos: updatedPhotos },
-        }),
+        body: JSON.stringify(debugBody),
       });
 
-      const result = await response.json();
+      const raw = await response.text();
+      let result;
+      try { result = JSON.parse(raw); } catch { result = { raw }; }
+      console.debug("[Gallery/DeletePhoto] Response", { status: response.status, ok: response.ok, result });
       
       if (result.message === "success") {
+        setGallery((prev) => ({ ...prev, photos: updatedPhotos }));
         fetchGallery();
         toast.success("Photo deleted successfully!");
       } else {
@@ -1114,6 +1141,7 @@ export default function Settings({ user }) {
       }
     } catch (error) {
         // Handle error silently
+      console.error("[Gallery/DeletePhoto] Error", error);
       toast.error("Failed to delete photo. Please try again.");
     } finally {
       setLoading(false);
@@ -2388,18 +2416,35 @@ export default function Settings({ user }) {
                         </>
                       )}
                     </div>
-                    
-                    {isMultiSelectMode && selectedPhotos.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      {isMultiSelectMode && selectedPhotos.length > 0 && (
+                        <button
+                          onClick={handleBulkDelete}
+                          className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete Selected ({selectedPhotos.length})
+                        </button>
+                      )}
+                      {/* Delete All button */}
                       <button
-                        onClick={handleBulkDelete}
-                        className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                        onClick={() => {
+                          // Select all photos and force empty on confirm
+                          setSelectedPhotos(gallery.photos.map((_, idx) => idx));
+                          setIsMultiSelectMode(true);
+                          setForceEmptyGallery(true);
+                          setShowBulkDeleteModal(true);
+                        }}
+                        className="px-4 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200 flex items-center gap-2 border border-red-300 shadow-sm hover:shadow-md"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Delete Selected ({selectedPhotos.length})
+                        Delete All
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}

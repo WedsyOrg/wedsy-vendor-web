@@ -11,80 +11,7 @@ import { toast } from "react-toastify";
 export default function Home({ user }) {
   const router = useRouter();
   const [expandOngoing, setExpandOngoing] = useState(false);
-  const [upcomingEvents, setUpcomingEvents] = useState([
-    {
-      id: 1,
-      customerName: "Priya Sharma",
-      date: "2024-01-15",
-      time: "10:00",
-      location: "Koramangala, Bangalore",
-      service: "Hair Cut & Styling",
-      duration: "2 hours",
-      price: "₹1,500",
-      phone: "+91 98765 43210",
-      email: "priya.sharma@email.com"
-    },
-    {
-      id: 2,
-      customerName: "Anita Reddy",
-      date: "2024-01-18",
-      time: "14:30",
-      location: "Indiranagar, Bangalore",
-      service: "Bridal Makeup",
-      duration: "4 hours",
-      price: "₹8,000",
-      phone: "+91 98765 43211",
-      email: "anita.reddy@email.com"
-    },
-    {
-      id: 3,
-      customerName: "Sneha Patel",
-      date: "2024-01-22",
-      time: "09:00",
-      location: "Whitefield, Bangalore",
-      service: "Hair Color & Treatment",
-      duration: "3 hours",
-      price: "₹3,500",
-      phone: "+91 98765 43212",
-      email: "sneha.patel@email.com"
-    },
-    {
-      id: 4,
-      customerName: "Riya Gupta",
-      date: "2024-01-25",
-      time: "11:30",
-      location: "JP Nagar, Bangalore",
-      service: "Facial & Skincare",
-      duration: "1.5 hours",
-      price: "₹2,200",
-      phone: "+91 98765 43213",
-      email: "riya.gupta@email.com"
-    },
-    {
-      id: 5,
-      customerName: "Meera Singh",
-      date: "2024-01-28",
-      time: "16:00",
-      location: "HSR Layout, Bangalore",
-      service: "Hair Spa & Massage",
-      duration: "2.5 hours",
-      price: "₹4,500",
-      phone: "+91 98765 43214",
-      email: "meera.singh@email.com"
-    },
-    {
-      id: 6,
-      customerName: "Kavya Nair",
-      date: "2024-01-30",
-      time: "13:00",
-      location: "Electronic City, Bangalore",
-      service: "Bridal Hair & Makeup",
-      duration: "5 hours",
-      price: "₹12,000",
-      phone: "+91 98765 43215",
-      email: "kavya.nair@email.com"
-    }
-  ]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
@@ -113,14 +40,7 @@ export default function Home({ user }) {
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const [currentCallIndex, setCurrentCallIndex] = useState(0);
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
-  const [ongoingOrder, setOngoingOrder] = useState({
-    orderId: "ORD-2024-001",
-    eventName: "Wedding Makeup & Hair",
-    customerName: "Priya Sharma",
-    eventDateTime: "2024-01-15T10:00:00Z",
-    location: "Koramangala, Bangalore",
-    amount: 18000
-  });
+  const [ongoingOrder, setOngoingOrder] = useState(null);
   const [ongoingOrderLoading, setOngoingOrderLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -394,7 +314,11 @@ export default function Home({ user }) {
       if (followUpsData.followUps) {
         setFollowUps(followUpsData.followUps);
       }
-      setOngoingOrder(ongoingData.message === "success" ? ongoingData.ongoingOrder : null);
+      if (ongoingData.message === "success" && ongoingData.ongoingOrder) {
+        setOngoingOrder(ongoingData.ongoingOrder);
+      } else {
+        setOngoingOrder(null);
+      }
       if (ordersTodayData.ordersToday) {
         setOrdersToday(ordersTodayData.ordersToday);
       }
@@ -586,38 +510,11 @@ export default function Home({ user }) {
       });
     } catch (error) {
       console.error("Error fetching ongoing order details:", error);
-      // Use dummy data when API fails
+      // No data when API fails
       setOrderDetails({
         loading: false,
-        data: {
-          user: {
-            name: "Priya Sharma"
-          },
-          wedsyPackageBooking: {
-            date: "2024-01-15",
-            time: "10:00",
-            address: {
-              formatted_address: "123 Koramangala 5th Block, Bangalore, Karnataka 560034"
-            },
-            wedsyPackages: [
-              {
-                name: "Bridal Makeup Package",
-                quantity: 1,
-                price: 15000
-              },
-              {
-                name: "Hair Styling",
-                quantity: 1,
-                price: 5000
-              }
-            ]
-          },
-          amount: {
-            payableToVendor: 18000,
-            total: 20000
-          }
-        },
-        error: null
+        data: null,
+        error: "Failed to load order details"
       });
     }
   }, [router, ongoingOrder?.orderId]);
@@ -825,16 +722,21 @@ export default function Home({ user }) {
               <div className="flex flex-row justify-between items-center mb-1 relative">
                 <p className="text-sm font-medium">Upcoming</p>
                 
-                {/* Centered dots */}
+                {/* Centered dots - always show 3 dots in cyclic manner */}
                 <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-1">
-                  {upcomingEvents.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
-                        index === currentEventIndex ? "bg-white" : "bg-black"
-                      }`}
-                    />
-                  ))}
+                  {Array.from({ length: 3 }, (_, index) => {
+                    // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                    const isActive = (currentEventIndex % 3) === index;
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                          isActive ? "bg-white" : "bg-black"
+                        }`}
+                      />
+                    );
+                  })}
                 </div>
                 
                 <button 
@@ -880,7 +782,7 @@ export default function Home({ user }) {
                         {formatDate(upcomingEvents[currentEventIndex].date)}, {getDayOfWeek(upcomingEvents[currentEventIndex].date)}
                       </p>
                       <p className="text-xs opacity-90">
-                        {formatTime(upcomingEvents[currentEventIndex].time)}
+                        {upcomingEvents[currentEventIndex]?.time ? formatTime(upcomingEvents[currentEventIndex].time) : ""}
                       </p>
                     </div>
                     <div className="flex flex-row items-end gap-1">
@@ -989,14 +891,19 @@ export default function Home({ user }) {
                     <div className="flex flex-row items-center justify-between">
                       <p className="text-xs text-gray-600">{stats.leads.breakdown[currentLeadIndex]?.type || "Packages/ Bookings"}</p>
                       <div className="flex flex-row justify-center gap-1 items-center">
-                        {stats.leads.breakdown.map((_, index) => (
-                          <div
-                            key={index}
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              index === currentLeadIndex ? "bg-black" : "bg-gray-300"
-                            }`}
-                          />
-                        ))}
+                        {Array.from({ length: 3 }, (_, index) => {
+                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                          const isActive = (currentLeadIndex % 3) === index;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isActive ? "bg-black" : "bg-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </>
@@ -1041,14 +948,19 @@ export default function Home({ user }) {
                     <div className="flex flex-row items-center justify-between">
                       <p className="text-xs text-gray-600">{stats.confirmedBookings.breakdown[currentBookingIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
                       <div className="flex flex-row justify-center gap-1 items-center">
-                        {stats.confirmedBookings.breakdown.map((_, index) => (
-                          <div
-                            key={index}
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              index === currentBookingIndex ? "bg-black" : "bg-gray-300"
-                            }`}
-                          />
-                        ))}
+                        {Array.from({ length: 3 }, (_, index) => {
+                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                          const isActive = (currentBookingIndex % 3) === index;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isActive ? "bg-black" : "bg-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </>
@@ -1118,14 +1030,19 @@ export default function Home({ user }) {
                     <div className="flex flex-row items-center justify-between">
                       <p className="text-xs text-gray-600">{followUps.chats.breakdown[currentChatIndex]?.type || "Packages/ Bookings"}</p>
                       <div className="flex flex-row justify-center gap-1 items-center">
-                        {followUps.chats.breakdown.map((_, index) => (
-                          <div
-                            key={index}
-                            className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                              index === currentChatIndex ? "bg-black" : "bg-gray-300"
-                            }`}
-                          />
-                        ))}
+                        {Array.from({ length: 3 }, (_, index) => {
+                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                          const isActive = (currentChatIndex % 3) === index;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                                isActive ? "bg-black" : "bg-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </>
@@ -1168,14 +1085,19 @@ export default function Home({ user }) {
                     <div className="flex flex-row items-center justify-between">
                       <p className="text-xs text-gray-600">{followUps.calls.breakdown[currentCallIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
                       <div className="flex flex-row justify-center gap-1 items-center">
-                        {followUps.calls.breakdown.map((_, index) => (
-                          <div
-                            key={index}
-                            className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                              index === currentCallIndex ? "bg-black" : "bg-gray-300"
-                            }`}
-                          />
-                        ))}
+                        {Array.from({ length: 3 }, (_, index) => {
+                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                          const isActive = (currentCallIndex % 3) === index;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                                isActive ? "bg-black" : "bg-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </>
@@ -1203,7 +1125,7 @@ export default function Home({ user }) {
           {/* Banner Content */}
           <div className="w-full flex justify-between items-center">
             <p className="text-white font-bold text-sm">ONGOING ORDER</p>
-            <p className="text-white font-bold text-sm">{getCurrentTime()}</p>
+            {ongoingOrder && <p className="text-white font-bold text-sm">{getCurrentTime()}</p>}
           </div>
         </div>
       )}
@@ -1229,7 +1151,7 @@ export default function Home({ user }) {
               {/* Header Content */}
               <div className="w-full flex justify-between items-center">
                 <p className="text-white font-bold text-lg">ONGOING ORDER</p>
-                <p className="text-white font-bold text-lg">{getCurrentTime()}</p>
+                {ongoingOrder && <p className="text-white font-bold text-lg">{getCurrentTime()}</p>}
               </div>
             </div>
             
@@ -1250,98 +1172,65 @@ export default function Home({ user }) {
                   </div>
                 ) : orderDetails.data ? (
                   <div className="space-y-4">
-                    {/* Day and Date */}
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800">Day 1</h3>
-                        <p className="text-sm text-gray-500">18 May 2023</p>
+                    {/* Day and Date - render only when data available */}
+                    {selectedEvent && (
+                      <div className="flex justify-between items-center mb-4">
+                        <div>
+                          {selectedEvent?.eventDateTime && (
+                            <>
+                              <h3 className="text-lg font-semibold text-gray-800">{getDayNumber(selectedEvent.eventDateTime)}</h3>
+                              <p className="text-sm text-gray-500">{formatEventDate(selectedEvent.eventDateTime)}</p>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {selectedEvent?.time && <p className="text-gray-600">{formatTime(selectedEvent.time)}</p>}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-gray-600">7:30 PM</p>
-                      </div>
-                    </div>
+                    )}
                     
-                    {/* Location */}
+                    {/* Location - only if provided */}
+                    {selectedEvent?.location && (
                     <div className="flex items-center mb-4">
                       <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <p className="text-gray-700">Taj MG Road, Bengaluru</p>
+                      <p className="text-gray-700">{selectedEvent.location}</p>
                     </div>
+                    )}
                     
-                    {/* Services */}
-                    <div className="space-y-4">
-                      {/* Service Entry 1 - Bridal */}
-                      <div className="flex items-start space-x-3">
-                        {/* People Icon with Quantity */}
-                        <div className="flex items-center space-x-2">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span className="text-sm font-medium text-gray-800">1</span>
-                        </div>
-                        
-                        {/* Grid Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                          </svg>
-                        </div>
-                        
-                        {/* Service Type */}
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800 text-sm">Bridal</p>
-                        </div>
-                        
-                        {/* Lines Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                          </svg>
-                        </div>
-                        
-                        {/* Service Details */}
-                        <div className="flex-1">
-                          <p className="text-gray-600 text-sm">Hair styling, Saree draping</p>
-                        </div>
+                    {/* Services - render only if available */}
+                    {orderDetails?.data?.services && orderDetails.data.services.length > 0 && (
+                      <div className="space-y-4">
+                        {orderDetails.data.services.map((svc, idx) => (
+                          <div key={idx} className="flex items-start space-x-3">
+                            <div className="flex items-center space-x-2">
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              <span className="text-sm font-medium text-gray-800">{svc.qty || 1}</span>
+                            </div>
+                            <div className="flex-shrink-0 mt-0.5">
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-800 text-sm">{svc.title || `Service ${idx + 1}`}</p>
+                            </div>
+                            <div className="flex-shrink-0 mt-0.5">
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-gray-600 text-sm">{svc.details || "Details coming soon"}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-
-                      {/* Service Entry 2 - Party */}
-                      <div className="flex items-start space-x-3">
-                        {/* People Icon with Quantity */}
-                        <div className="flex items-center space-x-2">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span className="text-sm font-medium text-gray-800">2</span>
-                        </div>
-                        
-                        {/* Grid Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                          </svg>
-                        </div>
-                        
-                        {/* Service Type */}
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800 text-sm">Party</p>
-                        </div>
-                        
-                        {/* Lines Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                          </svg>
-                        </div>
-                        
-                        {/* Service Details */}
-                        <div className="flex-1">
-                          <p className="text-gray-600 text-sm">Hair styling, Saree draping</p>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -1354,7 +1243,9 @@ export default function Home({ user }) {
               {/* Payment Section - Inside Scrollable Area */}
               <div className="px-2 py-4">
                 <p className="text-white text-lg mb-2">Amount to be received</p>
-                <p className="text-white text-3xl font-bold mb-4">₹14,000</p>
+                <p className="text-white text-3xl font-bold mb-4">
+                  {require("@/utils/text").toPriceString(stats?.amountToReceive ?? 0)}
+                </p>
                 <button 
                   className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
                   onClick={() => {
@@ -1429,7 +1320,7 @@ export default function Home({ user }) {
                           <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-xs text-gray-600">{formatTime(event.time)}</span>
+                          {event?.time && <span className="text-xs text-gray-600">{formatTime(event.time)}</span>}
                         </div>
                         <div className="flex items-center gap-1">
                           <MdLocationPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
@@ -1501,7 +1392,7 @@ export default function Home({ user }) {
                   <p className="text-gray-700">
                     {formatDate(selectedEvent.date)}, {getDayOfWeek(selectedEvent.date)}
                   </p>
-                  <p className="text-gray-700">{formatTime(selectedEvent.time)}</p>
+                  {selectedEvent?.time && <p className="text-gray-700">{formatTime(selectedEvent.time)}</p>}
                 </div>
 
                 {/* Location */}

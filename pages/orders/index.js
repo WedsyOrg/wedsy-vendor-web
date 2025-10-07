@@ -189,7 +189,7 @@ export default function Packages({}) {
                     {order?.user?.name || "Deepika Padukone"}
                   </div>
                   <div className="text-lg font-medium text-black">
-                    {toPriceString(order?.amount?.total || 14000)}
+                    {toPriceString(order?.amount?.total ?? 0)}
                   </div>
                 </div>
 
