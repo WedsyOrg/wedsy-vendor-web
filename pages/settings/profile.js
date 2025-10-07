@@ -19,7 +19,57 @@ import { toast } from "react-toastify";
 export default function Settings({ user }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [dropdowns, setDropdowns] = useState({
+    speciality: false,
+    servicesOffered: false,
+    state: false,
+    documentType: false
+  });
   const [specialityList, setSpecialityList] = useState([]);
+
+  const toggleDropdown = (dropdownName) => {
+    setDropdowns(prev => ({
+      ...prev,
+      [dropdownName]: !prev[dropdownName]
+    }));
+  };
+
+  const selectOption = (field, value, isAddress = false) => {
+    if (isAddress) {
+      setAddress(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    } else {
+      setProfile(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    setDropdowns(prev => ({
+      ...prev,
+      [field]: false
+    }));
+  };
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.select-field') && !event.target.closest('.dropdown-option')) {
+        setDropdowns({
+          speciality: false,
+          servicesOffered: false,
+          state: false,
+          documentType: false
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   const [display, setDisplay] = useState("Profile");
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentType, setDocumentType] = useState("Aadhar Card");
@@ -140,6 +190,8 @@ export default function Settings({ user }) {
     locality: "",
     state: "",
     country: "",
+    flat_house_number: "",
+    full_address: "",
     geometry: {
       location: {
         lat: 0,
@@ -813,6 +865,43 @@ export default function Settings({ user }) {
   }, []);
   return (
     <>
+      <style jsx>{`
+        .select-field {
+          background: #FFFFFF;
+          border: 1px solid #D1D5DB;
+          border-radius: 6px;
+          padding: 16px 20px;
+          padding-right: 50px;
+          font-size: 16px;
+          color: #374151;
+          cursor: pointer;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .select-field:focus {
+          outline: none !important;
+          border-color: #840032 !important;
+          box-shadow: none !important;
+        }
+        .select-field:hover {
+          border-color: #840032;
+        }
+        .dropdown-option {
+          padding: 12px 16px;
+          cursor: pointer;
+          color: #374151;
+          transition: background-color 0.2s;
+        }
+        .dropdown-option:hover {
+          background-color: #F3F4F6;
+        }
+        .dropdown-option.selected {
+          background-color: #FEF2F2;
+          color: #840032;
+        }
+      `}</style>
       <div className="flex flex-col py-4 pt-8 overflow-x-hidden">
         <div className="flex flex-row gap-3 items-center mb-4 px-8">
           <BackIcon />
@@ -886,7 +975,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
               />
             </div>
 
@@ -907,7 +996,7 @@ export default function Settings({ user }) {
                     }
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] resize-none"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] resize-none transition-colors"
               />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {profile.businessDescription.length}/350 characters
@@ -918,46 +1007,73 @@ export default function Settings({ user }) {
                 <label className="block text-sm font-medium text-black mb-2">
                   Speciality in (eg: south indian, muslim etc.)
                 </label>
-                <select
-                value={profile.speciality}
-                onChange={(e) => {
-                  setProfile({
-                    ...profile,
-                    speciality: e.target.value,
-                  });
-                }}
-                disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032]"
-              >
-                  <option value="">Select</option>
-                {specialityList?.map((t) => (
-                  <option key={t._id} value={t.title}>
-                    {t.title}
-                  </option>
-                ))}
-                </select>
+                <div className="relative">
+                  <div
+                    className="select-field"
+                    onClick={() => toggleDropdown('speciality')}
+                  >
+                    {profile.speciality ? specialityList.find(opt => opt.title === profile.speciality)?.title : 'Select Speciality'}
+                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                    </svg>
+                  </div>
+                  {dropdowns.speciality && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                      {specialityList?.map(option => (
+                        <div
+                          key={option._id}
+                          className={`dropdown-option ${profile.speciality === option.title ? 'selected' : ''}`}
+                          onClick={() => selectOption('speciality', option.title)}
+                        >
+                          {option.title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
             </div>
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   Services you provide
                 </label>
-                <select
-                value={profile.servicesOffered}
-                onChange={(e) => {
-                  setProfile({
-                    ...profile,
-                    servicesOffered: e.target.value,
-                  });
-                }}
-                disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032]"
-              >
-                <option value="">Select Option</option>
-                <option value={"Hairstylist"}>Hairstylist</option>
-                <option value={"MUA"}>MUA</option>
-                <option value={"Both"}>Both</option>
-                </select>
+                <div className="relative">
+                  <div
+                    className="select-field"
+                    onClick={() => toggleDropdown('servicesOffered')}
+                  >
+                    {profile.servicesOffered ? 
+                      (profile.servicesOffered === 'MUA' ? 'MUA' : 
+                       profile.servicesOffered === 'Hairstylist' ? 'Hairstylist' : 
+                       profile.servicesOffered === 'Both' ? 'Both' : 'Select Service') 
+                      : 'Select Service'}
+                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                    </svg>
+                  </div>
+                  {dropdowns.servicesOffered && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                      <div
+                        className={`dropdown-option ${profile.servicesOffered === 'Hairstylist' ? 'selected' : ''}`}
+                        onClick={() => selectOption('servicesOffered', 'Hairstylist')}
+                      >
+                        Hairstylist
+                      </div>
+                      <div
+                        className={`dropdown-option ${profile.servicesOffered === 'MUA' ? 'selected' : ''}`}
+                        onClick={() => selectOption('servicesOffered', 'MUA')}
+                      >
+                        MUA
+                      </div>
+                      <div
+                        className={`dropdown-option ${profile.servicesOffered === 'Both' ? 'selected' : ''}`}
+                        onClick={() => selectOption('servicesOffered', 'Both')}
+                      >
+                        Both
+                      </div>
+                    </div>
+                  )}
+                </div>
             </div>
 
               {profile.servicesOffered !== "Hairstylist" && (
@@ -1060,9 +1176,14 @@ export default function Settings({ user }) {
                   type="text"
                   placeholder="City"
                   value={address.city}
-                  readOnly
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      city: e.target.value,
+                    });
+                  }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-gray-50"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
                 />
               </div>
 
@@ -1071,23 +1192,34 @@ export default function Settings({ user }) {
                   State
                 </label>
                 <div className="relative">
-                  <select
-                    value={address.state}
-                    disabled={loading}
-                    className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032] appearance-none bg-gray-50"
+                  <div
+                    className="select-field"
+                    onClick={() => toggleDropdown('state')}
                   >
-                    <option value="">Select State</option>
-                    {locationData?.map((state) => (
-                      <option key={state._id} value={state.name}>
-                        {state.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    {address.state || 'Select State'}
+                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
                     </svg>
                   </div>
+                  {dropdowns.state && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      <div
+                        className={`dropdown-option ${address.state === 'Karnataka' ? 'selected' : ''}`}
+                        onClick={() => selectOption('state', 'Karnataka', true)}
+                      >
+                        Karnataka
+                      </div>
+                      {locationData?.map((state) => (
+                        <div
+                          key={state._id}
+                          className={`dropdown-option ${address.state === state.name ? 'selected' : ''}`}
+                          onClick={() => selectOption('state', state.name, true)}
+                        >
+                          {state.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1098,8 +1230,15 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Flat no/House no"
+                  value={address.flat_house_number}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      flat_house_number: e.target.value,
+                    });
+                  }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
                 />
               </div>
 
@@ -1119,7 +1258,7 @@ export default function Settings({ user }) {
                   }}
                   ref={inputRef}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
                 />
               </div>
 
@@ -1131,9 +1270,14 @@ export default function Settings({ user }) {
                   type="text"
                   placeholder="Pincode"
                   value={address.postal_code}
-                  readOnly
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      postal_code: e.target.value,
+                    });
+                  }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-gray-50"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
                 />
               </div>
 
@@ -1144,8 +1288,15 @@ export default function Settings({ user }) {
                 <input
                   type="text"
                   placeholder="Enter your address"
+                  value={address.full_address}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      full_address: e.target.value,
+                    });
+                  }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
                 />
               </div>
                 
@@ -1988,15 +2139,48 @@ export default function Settings({ user }) {
                   <label className="block text-sm font-medium text-black mb-2">
                     Document Type *
                   </label>
-                  <select
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#840032]"
-                  >
-                    <option value="Aadhar Card">Aadhar Card</option>
-                    <option value="Driving License">Driving License</option>
-                    <option value="Passport">Passport</option>
-                  </select>
+                  <div className="relative">
+                    <div
+                      className="select-field"
+                      onClick={() => toggleDropdown('documentType')}
+                    >
+                      {documentType || 'Select Document Type'}
+                      <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                      </svg>
+                    </div>
+                    {dropdowns.documentType && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                        <div
+                          className={`dropdown-option ${documentType === 'Aadhar Card' ? 'selected' : ''}`}
+                          onClick={() => {
+                            setDocumentType('Aadhar Card');
+                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                          }}
+                        >
+                          Aadhar Card
+                        </div>
+                        <div
+                          className={`dropdown-option ${documentType === 'Driving License' ? 'selected' : ''}`}
+                          onClick={() => {
+                            setDocumentType('Driving License');
+                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                          }}
+                        >
+                          Driving License
+                        </div>
+                        <div
+                          className={`dropdown-option ${documentType === 'Passport' ? 'selected' : ''}`}
+                          onClick={() => {
+                            setDocumentType('Passport');
+                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                          }}
+                        >
+                          Passport
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Front Image Upload */}
