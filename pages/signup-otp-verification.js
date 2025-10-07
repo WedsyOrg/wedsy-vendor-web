@@ -2,9 +2,12 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function SignupOtpVerification({}) {
   let router = useRouter();
+  const { isTransitioning, navigateWithTransition } = usePageTransition();
+  const [isVisible, setIsVisible] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,6 +19,15 @@ export default function SignupOtpVerification({}) {
   const otpInputs = useRef([]);
 
   useEffect(() => {
+    // Trigger slide-in animation
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     // Get mobile number from localStorage
     const step1Data = JSON.parse(localStorage.getItem("signup-step1") || "{}");
     if (step1Data.mobileNo) {
@@ -24,8 +36,8 @@ export default function SignupOtpVerification({}) {
       // Just start the resend timer
       setResendTimer(60);
     } else {
-      // If no mobile number, redirect to signup
-      router.push("/signup");
+      // If no mobile number, redirect to signup with transition
+      navigateWithTransition("/signup", 'right');
     }
   }, []);
 
@@ -206,9 +218,9 @@ export default function SignupOtpVerification({}) {
         localStorage.removeItem("signup-step2");
         localStorage.removeItem("otpReferenceId");
         
-        // Redirect to dashboard
+        // Redirect to dashboard with transition
         setTimeout(() => {
-          router.push("/");
+          navigateWithTransition("/", 'left');
         }, 2000);
       } else {
         console.log("OTP verification failed:", result);
@@ -254,13 +266,42 @@ export default function SignupOtpVerification({}) {
         <meta name="description" content="Verify your mobile number with OTP" />
       </Head>
 
-      <div className="min-h-screen bg-white flex flex-col">
+      <div 
+        className="min-h-screen bg-white flex flex-col transition-transform duration-300 ease-in-out"
+        style={{
+          transform: isTransitioning 
+            ? 'translateX(-100%)' 
+            : isVisible 
+              ? 'translateX(0)' 
+              : 'translateX(100%)'
+        }}
+      >
         {/* Purple Line */}
         <div className="w-full h-1 bg-purple-600"></div>
 
-        {/* Top Bar with Title */}
+        {/* Top Bar with Title and Back Button */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Vendor Sign up</h1>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigateWithTransition('/signup-business-address', 'right')}
+              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
+            >
+              <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Vendor Sign up</h1>
+            <div className="w-6"></div> {/* Spacer for centering */}
+          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-8">

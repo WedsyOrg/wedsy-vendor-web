@@ -1,9 +1,12 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function SignupBusinessAddress({}) {
   let router = useRouter();
+  const { isTransitioning, navigateWithTransition } = usePageTransition();
+  const [isVisible, setIsVisible] = useState(false);
   const [data, setData] = useState({
     state: "",
     city: "",
@@ -18,6 +21,15 @@ export default function SignupBusinessAddress({}) {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    // Trigger slide-in animation
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, []);
 
 
 
@@ -91,8 +103,8 @@ export default function SignupBusinessAddress({}) {
           // Store ReferenceId for OTP verification
           localStorage.setItem("otpReferenceId", response.ReferenceId);
           
-          // Navigate to OTP verification page immediately
-          router.push("/signup-otp-verification");
+          // Navigate to OTP verification page immediately with transition
+          navigateWithTransition("/signup-otp-verification", 'left');
         } else {
           setData(prev => ({
             ...prev,
@@ -120,8 +132,8 @@ export default function SignupBusinessAddress({}) {
           // Store demo ReferenceId for OTP verification
           localStorage.setItem("otpReferenceId", "demo-reference-id-12345");
           
-          // Navigate to OTP verification page immediately
-          router.push("/signup-otp-verification");
+          // Navigate to OTP verification page immediately with transition
+          navigateWithTransition("/signup-otp-verification", 'left');
         } else {
           setData(prev => ({
             ...prev,
@@ -140,14 +152,41 @@ export default function SignupBusinessAddress({}) {
         <meta name="description" content="Enter your business address details" />
       </Head>
 
-      <div className="min-h-screen bg-white flex flex-col">
+      <div 
+        className="min-h-screen bg-white flex flex-col transition-transform duration-300 ease-in-out"
+        style={{
+          transform: isTransitioning 
+            ? 'translateX(-100%)' 
+            : isVisible 
+              ? 'translateX(0)' 
+              : 'translateX(100%)'
+        }}
+      >
         {/* Purple Line */}
         <div className="w-full h-1 bg-purple-600"></div>
 
         <div className="flex-1 px-6 py-8 pb-8">
-          {/* Page Title */}
-          <div className="mb-8">
+          {/* Header with Back Button */}
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => navigateWithTransition('/signup', 'right')}
+              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
+            >
+              <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
             <h1 className="text-3xl font-bold text-gray-900">Business Address</h1>
+            <div className="w-6"></div> {/* Spacer for centering */}
           </div>
 
           {/* Form Container */}

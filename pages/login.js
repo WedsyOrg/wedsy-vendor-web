@@ -1,11 +1,13 @@
 import { processMobileNumber } from "@/utils/phoneNumber";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AnimatedInput from "@/components/AnimatedInput";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function Login({}) {
   let router = useRouter();
+  const { isTransitioning, navigateWithTransition } = usePageTransition();
   const [data, setData] = useState({
     name: "",
     phone: "",
@@ -17,6 +19,7 @@ export default function Login({}) {
     message: "",
     otpMessage: "",
   });
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const SendOTP = () => {
     // Prevent multiple OTP sends
     if (data.loading || data.otpSent) {
@@ -60,10 +63,12 @@ export default function Login({}) {
   };
   
   const handleLogin = () => {
+    setIsSigningIn(true);
     setData({
       ...data,
       loading: true,
     });
+    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
       method: "POST",
       headers: {
@@ -90,7 +95,12 @@ export default function Login({}) {
             otpMessage: "",
           });
           localStorage.setItem("token", response.token);
-          router.push("/");
+          
+          // Add a small delay to show the skeleton before navigation
+          setTimeout(() => {
+            setIsSigningIn(false);
+            router.push("/");
+          }, 1000);
         } else {
           setData({
             ...data,
@@ -99,18 +109,40 @@ export default function Login({}) {
             message: response.message,
             otpMessage: "",
           });
+          setIsSigningIn(false);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setIsSigningIn(false);
+        setData({
+          ...data,
+          loading: false,
+          message: "An error occurred. Please try again.",
+        });
       });
   };
 
   return (
-    <div className="min-h-screen relative bg-cover bg-center bg-no-repeat" 
-         style={{ backgroundImage: "url('/assets/background/login.png')" }}>
+    <div 
+      className="min-h-screen relative bg-cover bg-center bg-no-repeat transition-transform duration-300 ease-in-out"
+      style={{ 
+        backgroundImage: "url('/assets/background/login.png')",
+        transform: isTransitioning ? 'translateX(-100%)' : 'translateX(0)'
+      }}
+    >
       {/* Dark overlay */}
       <div className="absolute inset-0" style={{ backgroundColor: '#000000BF' }}></div>
+      
+      {/* Loading Overlay */}
+      {isSigningIn && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: '#000000BF' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white text-lg font-medium">Signing you in...</p>
+          </div>
+        </div>
+      )}
       
       {/* Custom CSS to override focus styles */}
       <style jsx>{`
@@ -220,9 +252,12 @@ export default function Login({}) {
           {/* Switch to Sign Up */}
           <p className="text-center text-gray-700 text-sm mt-4 font-medium">
             Not a member yet?{" "}
-            <Link href="/signup" className="text-[#840032] underline hover:text-[#840032]/80 transition-colors">
+            <button 
+              onClick={() => navigateWithTransition('/signup', 'left')}
+              className="text-[#840032] underline hover:text-[#840032]/80 transition-colors cursor-pointer"
+            >
               Sign up
-            </Link>
+            </button>
           </p>
         </div>
       </div>

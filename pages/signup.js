@@ -2,9 +2,11 @@ import { processMobileNumber } from "@/utils/phoneNumber";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect } from "react";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function Signup({}) {
   let router = useRouter();
+  const { isTransitioning, navigateWithTransition } = usePageTransition();
   const [data, setData] = useState({
     contactName: "",
     mobileNo: "",
@@ -80,12 +82,17 @@ export default function Signup({}) {
     
     localStorage.setItem("signup-step1", JSON.stringify(signupData));
     
-    // Navigate to business address page
-    router.push("/signup-business-address");
+    // Navigate to business address page with transition
+    navigateWithTransition("/signup-business-address", 'left');
   };
 
     return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div 
+      className="min-h-screen bg-white flex flex-col transition-transform duration-300 ease-in-out"
+      style={{
+        transform: isTransitioning ? 'translateX(100%)' : 'translateX(0)'
+      }}
+    >
       {/* Custom CSS */}
       <style jsx>{`
         .input-field {
@@ -157,7 +164,7 @@ export default function Signup({}) {
           background: #FFFFFF;
           border: 1px solid #D1D5DB;
           border-radius: 6px;
-          padding: 12px 16px;
+          padding: 14px 18px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -206,16 +213,79 @@ export default function Signup({}) {
             min-height: -webkit-fill-available;
           }
         }
+        
+        /* Mobile optimization for smaller screens */
+        @media screen and (max-height: 800px) {
+          .space-y-6 > * + * {
+            margin-top: 20px !important;
+          }
+          .space-y-3 > * + * {
+            margin-top: 12px !important;
+          }
+        }
+        
+        @media screen and (max-height: 700px) {
+          .flex-1 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+          }
+          .space-y-6 > * + * {
+            margin-top: 16px !important;
+          }
+          .space-y-3 > * + * {
+            margin-top: 10px !important;
+          }
+        }
+        
+        @media screen and (max-height: 600px) {
+          .flex-1 {
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
+          }
+          .space-y-6 > * + * {
+            margin-top: 12px !important;
+          }
+          .space-y-3 > * + * {
+            margin-top: 8px !important;
+          }
+          .mb-4 {
+            margin-bottom: 8px !important;
+          }
+          .mb-3 {
+            margin-bottom: 6px !important;
+          }
+          .mb-2 {
+            margin-bottom: 4px !important;
+          }
+        }
       `}</style>
 
-      <div className="flex-1 px-6 py-8 pb-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Vendor Sign up</h1>
+      <div className="flex-1 flex flex-col px-4 py-4 pb-4">
+        {/* Header with Back Button */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigateWithTransition('/login', 'right')}
+            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
+          >
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Vendor Sign up</h1>
+          <div className="w-6"></div> {/* Spacer for centering */}
         </div>
 
         {/* Form Container */}
-        <div className="space-y-8">
+        <div className="space-y-6 flex-grow">
           {/* Contact Name */}
           <div>
             <input
@@ -303,7 +373,7 @@ export default function Signup({}) {
 
           {/* Services You Offer */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Services you offer</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-4">Services you offer</h3>
             <div className="space-y-3">
               {serviceOptions.map(service => (
                 <div
@@ -330,7 +400,7 @@ export default function Signup({}) {
           )}
 
           {/* Sign Up Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center mt-auto pt-6">
             <button
               onClick={handleSignup}
               disabled={data.loading}
@@ -341,7 +411,7 @@ export default function Signup({}) {
                 background: '#840032',
                 opacity: 1
               }}
-              className="text-white font-medium hover:bg-[#6B0025] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+              className="text-white font-medium hover:bg-[#6B0025] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-base"
             >
               {data.loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -356,9 +426,12 @@ export default function Signup({}) {
         <div className="text-center mt-6">
           <p className="text-gray-600 text-sm">
             Already a member?{" "}
-            <Link href="/login" className="text-[#8B0000] underline">
+            <button 
+              onClick={() => navigateWithTransition('/login', 'right')}
+              className="text-[#8B0000] underline cursor-pointer"
+            >
               Sign in
-            </Link>
+            </button>
           </p>
         </div>
       </div>
