@@ -78,6 +78,78 @@ export default function Settings({ user }) {
     setDeleteIndex(null);
   };
 
+  // Multi-select functions
+  const toggleMultiSelectMode = () => {
+    setIsMultiSelectMode(!isMultiSelectMode);
+    if (isMultiSelectMode) {
+      setSelectedPhotos([]);
+    }
+  };
+
+  const togglePhotoSelection = (index) => {
+    setSelectedPhotos(prev => {
+      if (prev.includes(index)) {
+        return prev.filter(i => i !== index);
+      } else {
+        return [...prev, index];
+      }
+    });
+  };
+
+  const selectAllPhotos = () => {
+    setSelectedPhotos(gallery.photos.map((_, index) => index));
+  };
+
+  const deselectAllPhotos = () => {
+    setSelectedPhotos([]);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedPhotos.length === 0) return;
+    setShowBulkDeleteModal(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedPhotos.length === 0) return;
+    
+    setLoading(true);
+    const updatedPhotos = gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          gallery: { photos: updatedPhotos },
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.message === "success") {
+        fetchGallery();
+        toast.success(`${selectedPhotos.length} photo(s) deleted successfully!`);
+        setSelectedPhotos([]);
+        setIsMultiSelectMode(false);
+      } else {
+        toast.error("Error deleting photos.");
+      }
+    } catch (error) {
+      console.error("Error deleting photos:", error);
+      toast.error("Failed to delete photos.");
+    } finally {
+      setLoading(false);
+      setShowBulkDeleteModal(false);
+    }
+  };
+
+  const cancelBulkDelete = () => {
+    setShowBulkDeleteModal(false);
+  };
+
   // Crop utility functions
   const onImageLoad = (e) => {
     const { width, height } = e.currentTarget;
@@ -355,6 +427,11 @@ export default function Settings({ user }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState(''); // 'cover' or 'gallery'
   const [deleteIndex, setDeleteIndex] = useState(null); // For gallery photos
+  
+  // Multi-select states for gallery
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
@@ -2244,14 +2321,88 @@ export default function Settings({ user }) {
                     photoRef.current?.click();
                   }}
                   disabled={loading || gallery.photos.length >= 15}
-                  className="px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  {gallery.photos.length >= 15 ? 'Max Reached' : 'Upload'}
+                  {gallery.photos.length >= 15 ? 'Max Reached' : 'Upload Photos'}
                 </button>
               </div>
+              
+              {/* Multi-select Controls */}
+              {gallery.photos.length > 0 && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={toggleMultiSelectMode}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm ${
+                          isMultiSelectMode 
+                            ? 'bg-[#840032] text-white hover:bg-[#6d0028] shadow-md' 
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        {isMultiSelectMode ? (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Cancel Select
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Select Photos
+                          </>
+                        )}
+                      </button>
+                      
+                      {isMultiSelectMode && (
+                        <>
+                          <button
+                            onClick={selectAllPhotos}
+                            className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Select All
+                          </button>
+                          <button
+                            onClick={deselectAllPhotos}
+                            className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Deselect All
+                          </button>
+                          <div className="px-3 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
+                            <span className="text-sm font-medium text-gray-700">
+                              {selectedPhotos.length} selected
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {isMultiSelectMode && selectedPhotos.length > 0 && (
+                      <button
+                        onClick={handleBulkDelete}
+                        className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Selected ({selectedPhotos.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
               
               <input
               ref={photoRef}
@@ -2290,27 +2441,56 @@ export default function Settings({ user }) {
               {gallery.photos.map((item, index) => (
                 <div
                   key={index}
-                    className="group relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  className={`group relative w-full aspect-square rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all ${
+                    isMultiSelectMode && selectedPhotos.includes(index)
+                      ? 'border-[#840032] ring-2 ring-[#840032] ring-opacity-50'
+                      : 'border-gray-200'
+                  }`}
                 >
                   <img
                     src={item}
                     alt={`Gallery image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Delete Button */}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Multi-select Checkbox */}
+                  {isMultiSelectMode && (
+                    <div className="absolute top-3 left-3">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={selectedPhotos.includes(index)}
+                          onChange={() => togglePhotoSelection(index)}
+                          className="w-6 h-6 text-[#840032] bg-white border-2 border-white rounded-lg focus:ring-[#840032] focus:ring-2 shadow-lg cursor-pointer"
+                        />
+                        {selectedPhotos.includes(index) && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Delete Button - Only show when not in multi-select mode */}
+                  {!isMultiSelectMode && (
                     <button
                       onClick={() => handleDeletePhoto(index)}
                       disabled={loading}
-                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 disabled:opacity-50 shadow-lg"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-                    {/* Image Number */}
-                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                      {index + 1}
-                    </div>
+                  )}
+                  
+                  {/* Image Number */}
+                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                    {index + 1}
+                  </div>
                 </div>
               ))}
               
@@ -2726,16 +2906,87 @@ export default function Settings({ user }) {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleDeleteCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
               >
-                {loading ? 'Deleting...' : 'Delete'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Delete Selected Photos
+              </h3>
+              <button
+                onClick={cancelBulkDelete}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete {selectedPhotos.length} selected photo{selectedPhotos.length > 1 ? 's' : ''}? This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelBulkDelete}
+                className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBulkDelete}
+                disabled={loading}
+                className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete {selectedPhotos.length} Photo{selectedPhotos.length > 1 ? 's' : ''}
+                  </>
+                )}
               </button>
             </div>
           </div>
