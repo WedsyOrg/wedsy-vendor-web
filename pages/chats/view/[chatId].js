@@ -1038,11 +1038,29 @@ export default function Home({}) {
   const [hasVendorOffer, setHasVendorOffer] = useState(false);
   const [showMakeOffer, setShowMakeOffer] = useState(false);
   const [newPrice, setNewPrice] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const router = useRouter();
   const { chatId } = router.query;
   const activeControllerRef = useRef(null);
   const requestIdRef = useRef(0);
   const lastFetchTimeRef = useRef(0);
+
+  // Trigger slide-in animation when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle back navigation with slide-out animation
+  const handleBackClick = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      router.back(); // Go back to chat list
+    }, 300); // Match the animation duration
+  };
 
   const fetchChatMessages = (showSpinner = true) => {
     if (!chatId) return;
@@ -1227,9 +1245,17 @@ export default function Home({}) {
         pauseOnHover
         theme="light"
       />
-      <div className="flex flex-col h-full">
+      <div 
+        className="flex flex-col h-full transition-all duration-300 ease-out"
+        style={{
+          transform: isExiting ? 'translateX(100%)' : (isVisible ? 'translateX(0)' : 'translateX(100%)'),
+          opacity: isExiting ? 0 : (isVisible ? 1 : 0)
+        }}
+      >
         <div className="sticky top-0 w-full flex flex-row items-center gap-2 sm:gap-3 px-3 sm:px-6 border-b py-3 shadow-lg bg-white z-10">
-          <BackIcon />
+          <div onClick={handleBackClick} className="cursor-pointer">
+            <BackIcon />
+          </div>
           <Avatar
             size="sm"
             rounded

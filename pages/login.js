@@ -1,10 +1,13 @@
 import { processMobileNumber } from "@/utils/phoneNumber";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import AnimatedInput from "@/components/AnimatedInput";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function Login({}) {
   let router = useRouter();
+  const { isTransitioning, navigateWithTransition } = usePageTransition();
   const [data, setData] = useState({
     name: "",
     phone: "",
@@ -16,6 +19,7 @@ export default function Login({}) {
     message: "",
     otpMessage: "",
   });
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const SendOTP = () => {
     // Prevent multiple OTP sends
     if (data.loading || data.otpSent) {
@@ -59,10 +63,12 @@ export default function Login({}) {
   };
   
   const handleLogin = () => {
+    setIsSigningIn(true);
     setData({
       ...data,
       loading: true,
     });
+    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
       method: "POST",
       headers: {
@@ -89,7 +95,12 @@ export default function Login({}) {
             otpMessage: "",
           });
           localStorage.setItem("token", response.token);
-          router.push("/");
+          
+          // Add a small delay to show the skeleton before navigation
+          setTimeout(() => {
+            setIsSigningIn(false);
+            router.push("/");
+          }, 1000);
         } else {
           setData({
             ...data,
@@ -98,18 +109,40 @@ export default function Login({}) {
             message: response.message,
             otpMessage: "",
           });
+          setIsSigningIn(false);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        setIsSigningIn(false);
+        setData({
+          ...data,
+          loading: false,
+          message: "An error occurred. Please try again.",
+        });
       });
   };
 
   return (
-    <div className="min-h-screen relative bg-cover bg-center bg-no-repeat" 
-         style={{ backgroundImage: "url('/assets/background/login.png')" }}>
+    <div 
+      className="min-h-screen relative bg-cover bg-center bg-no-repeat transition-transform duration-300 ease-in-out"
+      style={{ 
+        backgroundImage: "url('/assets/background/login.png')",
+        transform: isTransitioning ? 'translateX(-100%)' : 'translateX(0)'
+      }}
+    >
       {/* Dark overlay */}
       <div className="absolute inset-0" style={{ backgroundColor: '#000000BF' }}></div>
+      
+      {/* Loading Overlay */}
+      {isSigningIn && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: '#000000BF' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white text-lg font-medium">Signing you in...</p>
+          </div>
+        </div>
+      )}
       
       {/* Custom CSS to override focus styles */}
       <style jsx>{`
@@ -141,11 +174,11 @@ export default function Login({}) {
 
         {/* Form Container */}
         <div 
-          className="p-6"
+          className="p-4"
           style={{
-            width: '334px',
-            minHeight: '380px',
-            borderRadius: '5px',
+            width: '100%',
+            maxWidth: '320px',
+            borderRadius: '8px',
             border: '1px solid #9B9B9B',
             opacity: 1,
             backgroundColor: '#FFFFFFBF'
@@ -153,11 +186,8 @@ export default function Login({}) {
         >
 
           {/* Phone Field */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-gray-700 text-sm font-medium uppercase">
-                Phone Number
-              </label>
+          <div className="mb-3">
+            <div className="flex items-center justify-end mb-1">
               {data.phone && data.phone.length > 0 && (
                 <button
                   onClick={SendOTP}
@@ -168,41 +198,32 @@ export default function Login({}) {
                 </button>
               )}
             </div>
-            <input
-              type="text"
-              placeholder="91XXXXXXXX"
+            <AnimatedInput
+              label="Phone Number"
               value={data.phone}
               onChange={(e) => setData({ ...data, phone: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
-              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
             />
           </div>
 
           {/* OTP Field - Always visible */}
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-1 uppercase">
-              OTP
-            </label>
-            <input
-              type="text"
-              placeholder="1234"
+          <div className="mb-4">
+            <AnimatedInput
+              label="OTP"
               value={data.Otp}
               onChange={(e) => setData({ ...data, Otp: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
-              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
             />
           </div>
 
           {/* Success Message for OTP */}
           {data.otpMessage && (
-            <p className="text-green-600 text-sm mb-4 bg-green-50 px-3 py-2 rounded border border-green-200">
+            <p className="text-green-600 text-sm mb-3 bg-green-50 px-3 py-2 rounded border border-green-200">
               {data.otpMessage}
             </p>
           )}
 
           {/* Error Message */}
           {data.message && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 px-3 py-2 rounded border border-red-200">
+            <p className="text-red-500 text-sm mb-3 bg-red-50 px-3 py-2 rounded border border-red-200">
               {data.message}
             </p>
           )}
@@ -231,9 +252,12 @@ export default function Login({}) {
           {/* Switch to Sign Up */}
           <p className="text-center text-gray-700 text-sm mt-4 font-medium">
             Not a member yet?{" "}
-            <Link href="/signup" className="text-[#840032] underline hover:text-[#840032]/80 transition-colors">
+            <button 
+              onClick={() => navigateWithTransition('/signup', 'left')}
+              className="text-[#840032] underline hover:text-[#840032]/80 transition-colors cursor-pointer"
+            >
               Sign up
-            </Link>
+            </button>
           </p>
         </div>
       </div>

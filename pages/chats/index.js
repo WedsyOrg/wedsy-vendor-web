@@ -4,6 +4,7 @@ import NotificationIcon from "@/components/icons/NotificationIcon";
 import { useEffect, useState, useRef } from "react";
 import { 
   MdArrowForwardIos, 
+  MdArrowBackIos,
   MdSearch, 
   MdCheck, 
   MdClear, 
@@ -49,6 +50,8 @@ export default function Home({}) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const hasLoadedRef = useRef(false);
   const STORAGE_KEY = "wv_chat_list_v1";
   const STORAGE_SCROLL_KEY = "wv_chat_scroll_y";
@@ -229,18 +232,47 @@ export default function Home({}) {
     };
   }, []);
 
+  // Trigger slide-in animation when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle back navigation with slide-out animation
+  const handleBackClick = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      router.push('/'); // Navigate directly to dashboard
+    }, 300); // Match the animation duration
+  };
+
   // Save scroll position before navigating to a chat
   const onOpenChat = (id) => {
     try {
       sessionStorage.setItem(STORAGE_SCROLL_KEY, String(window.scrollY || 0));
     } catch (_e) {}
-    router.push(`/chats/view/${id}`);
+    setIsExiting(true);
+    setTimeout(() => {
+      router.push(`/chats/view/${id}`);
+    }, 300); // Match the animation duration
   };
   return (
-    <>
+    <div 
+      className="min-h-screen bg-white transition-all duration-300 ease-out"
+      style={{
+        transform: isExiting ? 'translateX(100%)' : (isVisible ? 'translateX(0)' : 'translateX(100%)'),
+        opacity: isExiting ? 0 : (isVisible ? 1 : 0)
+      }}
+    >
       {/* Header */}
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
-        <BackIcon />
+        <MdArrowBackIos 
+          onClick={handleBackClick} 
+          className="cursor-pointer text-gray-600 hover:text-gray-800 transition-colors"
+          size={24}
+        />
         <p className="grow text-lg font-semibold text-custom-dark-blue">
           CHATS
         </p>
@@ -352,6 +384,6 @@ export default function Home({}) {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
