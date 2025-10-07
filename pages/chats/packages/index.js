@@ -373,7 +373,7 @@ export default function Home({}) {
             const qty = item?.wedsyPackageBooking?.wedsyPackages?.reduce((acc, rec) => acc + (rec?.quantity || 0), 0) || 1;
             const computedPrice = item?.amount?.total
               || item?.wedsyPackageBooking?.wedsyPackages?.reduce((sum, i) => sum + ((i?.package?.price || 7000) * (i?.quantity || 1)), 0)
-              || 14000;
+              || 0;
 
             return (
               <div key={item._id} className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">

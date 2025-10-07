@@ -488,7 +488,7 @@ export default function Packages({}) {
             <div className="bg-gray-100 rounded-lg p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-black font-medium">Booked Amount:</span>
-                <span className="text-black font-bold text-lg">{toPriceString(order?.amount?.total || 14000)}</span>
+                <span className="text-black font-bold text-lg">{toPriceString(order?.amount?.total ?? 0)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-black font-medium">Amount Paid:</span>
@@ -513,11 +513,11 @@ export default function Packages({}) {
             <div className="text-lg font-bold text-black mb-4">Wedsy Settlements</div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-black font-medium">Total amount</span>
-              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total ?? 0)}</span>
             </div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-black font-medium">Amount payable to wedsy</span>
-              <span className="text-black font-medium">{toPriceString(order?.amount?.total || 14000)}</span>
+              <span className="text-black font-medium">{toPriceString(order?.amount?.total ?? 0)}</span>
             </div>
           </div>
           <div className="border-t border-gray-300 my-4"></div>
