@@ -15,6 +15,8 @@ import { useEffect, useRef, useState } from "react";
 import { BsPlusCircle } from "react-icons/bs";
 import { MdArrowBackIos, MdCancel } from "react-icons/md";
 import { toast } from "react-toastify";
+import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 export default function Settings({ user }) {
   const router = useRouter();
@@ -50,6 +52,108 @@ export default function Settings({ user }) {
       ...prev,
       [field]: false
     }));
+  };
+
+  // Crop utility functions
+  const onImageLoad = (e) => {
+    const { width, height } = e.currentTarget;
+    const crop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        2.5 / 3.5, // Passport size aspect ratio (2.5" x 3.5")
+        width,
+        height
+      ),
+      width,
+      height
+    );
+    setCrop(crop);
+  };
+
+  const getCroppedImg = (image, crop, fileName) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const pixelRatio = window.devicePixelRatio;
+
+    canvas.width = crop.width * pixelRatio * scaleX;
+    canvas.height = crop.height * pixelRatio * scaleY;
+
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width * scaleX,
+      crop.height * scaleY
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            console.error('Canvas is empty');
+            return;
+          }
+          blob.name = fileName;
+          resolve(blob);
+        },
+        'image/jpeg',
+        0.95
+      );
+    });
+  };
+
+  const handleCropComplete = async () => {
+    if (!imgRef.current || !completedCrop) return;
+
+    try {
+      const croppedImageBlob = await getCroppedImg(
+        imgRef.current,
+        completedCrop,
+        'cropped-image.jpg'
+      );
+      
+      if (cropType === 'cover') {
+        setCoverPhoto(croppedImageBlob);
+      } else if (cropType === 'gallery') {
+        setCropFiles(prev => [...prev, croppedImageBlob]);
+      }
+      
+      setShowCropModal(false);
+      setImgSrc('');
+      setCrop(undefined);
+      setCompletedCrop(undefined);
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      toast.error('Error cropping image. Please try again.');
+    }
+  };
+
+  const handleFileSelect = (file, type) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setImgSrc(reader.result);
+        setCropType(type);
+        setShowCropModal(true);
+      });
+      reader.readAsDataURL(file);
+    }
   };
 
   // Close dropdowns when clicking outside
@@ -214,6 +318,15 @@ export default function Settings({ user }) {
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
+  
+  // Crop functionality states
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState();
+  const [imgSrc, setImgSrc] = useState('');
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropType, setCropType] = useState(''); // 'cover' or 'gallery'
+  const [cropFiles, setCropFiles] = useState([]);
+  const imgRef = useRef(null);
   const [other, setOther] = useState({
     groomMakeup: false,
     lgbtqMakeup: false,
@@ -733,6 +846,57 @@ export default function Settings({ user }) {
       if (result.message === "success") {
         fetchGallery();
         toast.success(`${files.length} photo(s) uploaded successfully!`);
+      } else {
+        toast.error("Error uploading photos.");
+      }
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+      toast.error("Failed to upload photos. Please try again.");
+    } finally {
+      setLoading(false);
+      photoRef.current.value = null;
+    }
+  };
+
+  // Handle cropped files upload
+  const handleCroppedFilesUpload = async () => {
+    if (cropFiles.length === 0) return;
+    
+    if (gallery.photos.length + cropFiles.length > 6) {
+      toast.error("Maximum 6 photos allowed. Please select fewer files.");
+      return;
+    }
+
+    setLoading(true);
+    const uploadPromises = cropFiles.map((file, index) => 
+      uploadFile({
+        file: file,
+        path: "vendor-gallery/",
+        id: `${new Date().getTime()}-${gallery.temp}-photo-${gallery.photos.length + index}`,
+      })
+    );
+
+    try {
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const newPhotos = [...gallery.photos, ...uploadedUrls];
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          gallery: { photos: newPhotos },
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.message === "success") {
+        fetchGallery();
+        setCropFiles([]);
+        toast.success(`${cropFiles.length} photo(s) uploaded successfully!`);
       } else {
         toast.error("Error uploading photos.");
       }
@@ -1934,7 +2098,10 @@ export default function Settings({ user }) {
                     type="file"
                     accept="image/*"
               onChange={(e) => {
-                setCoverPhoto(e.target.files[0]);
+                const file = e.target.files[0];
+                if (file) {
+                  handleFileSelect(file, 'cover');
+                }
               }}
                     className="hidden"
                     disabled={loading}
@@ -2029,7 +2196,10 @@ export default function Settings({ user }) {
               onChange={(e) => {
                   const files = Array.from(e.target.files);
                   if (files.length > 0) {
-                    handleMultiplePhotoUpload(files);
+                    // Process each file for cropping
+                    files.forEach(file => {
+                      handleFileSelect(file, 'gallery');
+                    });
                   }
                 }}
                 className="hidden"
@@ -2285,6 +2455,118 @@ export default function Settings({ user }) {
           </div>
         )}
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-black">
+                  Crop Image - Passport Size (2.5&quot; x 3.5&quot;)
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowCropModal(false);
+                    setImgSrc('');
+                    setCrop(undefined);
+                    setCompletedCrop(undefined);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <MdCancel size={24} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-auto">
+              {imgSrc && (
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <ReactCrop
+                      crop={crop}
+                      onChange={(_, percentCrop) => setCrop(percentCrop)}
+                      onComplete={(c) => setCompletedCrop(c)}
+                      aspect={2.5 / 3.5} // Passport size aspect ratio
+                      minWidth={100}
+                      minHeight={140}
+                    >
+                      <img
+                        ref={imgRef}
+                        alt="Crop me"
+                        src={imgSrc}
+                        onLoad={onImageLoad}
+                        className="max-w-full max-h-96"
+                      />
+                    </ReactCrop>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 text-center">
+                    <p>• Drag to move the crop area</p>
+                    <p>• Drag corners to resize</p>
+                    <p>• Aspect ratio is locked to passport size (2.5&quot; x 3.5&quot;)</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setImgSrc('');
+                  setCrop(undefined);
+                  setCompletedCrop(undefined);
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropComplete}
+                disabled={!completedCrop}
+                className="px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Crop & Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cropped Files Preview and Upload */}
+      {cropFiles.length > 0 && (
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-black">
+              Cropped Photos ({cropFiles.length})
+            </h4>
+            <button
+              onClick={() => setCropFiles([])}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <MdCancel size={16} />
+            </button>
+          </div>
+          
+          <div className="space-y-2 mb-3">
+            {cropFiles.map((file, index) => (
+              <div key={index} className="flex items-center space-x-2 text-xs text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Photo {index + 1} - Ready to upload</span>
+              </div>
+            ))}
+          </div>
+          
+          <button
+            onClick={handleCroppedFilesUpload}
+            disabled={loading}
+            className="w-full px-3 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {loading ? 'Uploading...' : `Upload ${cropFiles.length} Photo(s)`}
+          </button>
+        </div>
+      )}
     </>
   );
 }
