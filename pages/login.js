@@ -2,6 +2,7 @@ import { processMobileNumber } from "@/utils/phoneNumber";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import AnimatedInput from "@/components/AnimatedInput";
 
 export default function Login({}) {
   let router = useRouter();
@@ -141,11 +142,11 @@ export default function Login({}) {
 
         {/* Form Container */}
         <div 
-          className="p-6"
+          className="p-4"
           style={{
-            width: '334px',
-            minHeight: '380px',
-            borderRadius: '5px',
+            width: '100%',
+            maxWidth: '320px',
+            borderRadius: '8px',
             border: '1px solid #9B9B9B',
             opacity: 1,
             backgroundColor: '#FFFFFFBF'
@@ -153,11 +154,8 @@ export default function Login({}) {
         >
 
           {/* Phone Field */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-gray-700 text-sm font-medium uppercase">
-                Phone Number
-              </label>
+          <div className="mb-3">
+            <div className="flex items-center justify-end mb-1">
               {data.phone && data.phone.length > 0 && (
                 <button
                   onClick={SendOTP}
@@ -168,41 +166,32 @@ export default function Login({}) {
                 </button>
               )}
             </div>
-            <input
-              type="text"
-              placeholder="91XXXXXXXX"
+            <AnimatedInput
+              label="Phone Number"
               value={data.phone}
               onChange={(e) => setData({ ...data, phone: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
-              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
             />
           </div>
 
           {/* OTP Field - Always visible */}
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-1 uppercase">
-              OTP
-            </label>
-            <input
-              type="text"
-              placeholder="1234"
+          <div className="mb-4">
+            <AnimatedInput
+              label="OTP"
               value={data.Otp}
               onChange={(e) => setData({ ...data, Otp: e.target.value })}
-              className="w-full bg-transparent border-0 border-b border-gray-400 py-2 text-gray-700"
-              style={{ outline: 'none', boxShadow: 'none', borderBottom: '1px solid #9CA3AF !important' }}
             />
           </div>
 
           {/* Success Message for OTP */}
           {data.otpMessage && (
-            <p className="text-green-600 text-sm mb-4 bg-green-50 px-3 py-2 rounded border border-green-200">
+            <p className="text-green-600 text-sm mb-3 bg-green-50 px-3 py-2 rounded border border-green-200">
               {data.otpMessage}
             </p>
           )}
 
           {/* Error Message */}
           {data.message && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 px-3 py-2 rounded border border-red-200">
+            <p className="text-red-500 text-sm mb-3 bg-red-50 px-3 py-2 rounded border border-red-200">
               {data.message}
             </p>
           )}
