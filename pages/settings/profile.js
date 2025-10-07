@@ -220,7 +220,7 @@ export default function Settings({ user }) {
     experience: "",
     clients: "",
     usp: "",
-    makeupProducts: [],
+    makeupProducts: [""],
     awards: [],
   });
   const fetchSpecialityList = () => {
@@ -276,7 +276,7 @@ export default function Settings({ user }) {
             experience: response.other?.experience || "",
             clients: response.other?.clients || "",
             usp: response.other?.usp || "",
-            makeupProducts: response.other?.makeupProducts || [],
+            makeupProducts: response.other?.makeupProducts?.length > 0 ? response.other?.makeupProducts : [""],
             awards: response.other?.awards || [],
           });
         }
@@ -1604,79 +1604,61 @@ export default function Settings({ user }) {
               <div className="flex gap-4">
                 {/* Input Lines Section */}
                 <div className="flex-1 space-y-4">
-              {other?.makeupProducts?.map((item, index) => (
+                  {/* Show existing products */}
+                  {other?.makeupProducts?.map((item, index) => (
                     <div key={index} className="relative">
                       <input
                         type="text"
-                    value={item}
-                    onChange={(e) => {
+                        value={item}
+                        onChange={(e) => {
                           let temp = [...(other?.makeupProducts || [])];
-                      temp[index] = e.target.value;
-                      setOther({
-                        ...other,
-                        makeupProducts: temp,
-                      });
-                    }}
-                    disabled={loading}
+                          temp[index] = e.target.value;
+                          setOther({
+                            ...other,
+                            makeupProducts: temp,
+                          });
+                        }}
+                        disabled={loading}
                         className="w-full border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#840032] focus:ring-0 text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
-                  />
-                      <button
-                        type="button"
-                    onClick={() => {
-                          const newProducts = other?.makeupProducts?.filter((_, i) => i !== index) || [];
-                      setOther({
-                        ...other,
-                            makeupProducts: newProducts,
-                      });
-                    }}
-                        className="absolute right-0 top-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
-                      >
-                        ×
-                      </button>
-                </div>
-              ))}
-                  {/* Add empty lines if less than 3 products */}
-                  {other?.makeupProducts?.length < 3 && (
-                    Array.from({ length: 3 - (other?.makeupProducts?.length || 0) }).map((_, index) => (
-                      <div key={`empty-${index}`} className="relative">
-                        <input
-                          type="text"
-                          value=""
-                          onChange={(e) => {
-                            const newProducts = [...(other?.makeupProducts || [])];
-                            newProducts.push(e.target.value);
+                      />
+                      {/* Only show delete button if there's more than 1 product */}
+                      {(other?.makeupProducts?.length || 0) > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newProducts = other?.makeupProducts?.filter((_, i) => i !== index) || [];
                             setOther({
                               ...other,
                               makeupProducts: newProducts,
                             });
                           }}
-                          disabled={loading}
-                          className="w-full border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#840032] focus:ring-0 text-black placeholder-gray-400"
-                          placeholder={`Product ${(other?.makeupProducts?.length || 0) + index + 1}`}
-                        />
-                      </div>
-                    ))
-                  )}
+                          className="absolute right-0 top-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 
                 {/* Buttons Section */}
                 <div className="flex flex-col gap-4">
                   <button
                     type="button"
-                onClick={() => {
-                      if ((other?.makeupProducts?.length || 0) < 3) {
-                  setOther({
-                    ...other,
+                    onClick={() => {
+                      if ((other?.makeupProducts?.length || 0) < 5) {
+                        setOther({
+                          ...other,
                           makeupProducts: [...(other?.makeupProducts || []), ""],
                         });
                       } else {
-                        toast.error("Maximum 3 products allowed");
+                        toast.error("Maximum 5 products allowed");
                       }
                     }}
-                    disabled={(other?.makeupProducts?.length || 0) >= 3}
+                    disabled={(other?.makeupProducts?.length || 0) >= 5}
                     className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-1 ${
-                      (other?.makeupProducts?.length || 0) >= 3
+                      (other?.makeupProducts?.length || 0) >= 5
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-black hover:bg-gray-800"
                     }`}
@@ -1684,9 +1666,9 @@ export default function Settings({ user }) {
                     Add more <span className="text-lg">+</span>
                   </button>
                   <div className="text-xs text-gray-500 text-center">
-                    {(other?.makeupProducts?.length || 0)}/3 products
-              </div>
-            </div>
+                    {(other?.makeupProducts?.length || 0)}/5 products
+                  </div>
+                </div>
               </div>
             </div>
 
