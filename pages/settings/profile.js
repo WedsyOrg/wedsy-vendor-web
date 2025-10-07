@@ -54,6 +54,30 @@ export default function Settings({ user }) {
     }));
   };
 
+  // Delete confirmation functions
+  const showDeleteConfirmation = (type, index = null) => {
+    setDeleteType(type);
+    setDeleteIndex(index);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteType === 'cover') {
+      await deleteCoverPhoto();
+    } else if (deleteType === 'gallery' && deleteIndex !== null) {
+      await deletePhoto(deleteIndex);
+    }
+    setShowDeleteModal(false);
+    setDeleteType('');
+    setDeleteIndex(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setDeleteType('');
+    setDeleteIndex(null);
+  };
+
   // Crop utility functions
   const onImageLoad = (e) => {
     const { width, height } = e.currentTarget;
@@ -326,6 +350,11 @@ export default function Settings({ user }) {
   });
   const [coverPhoto, setCoverPhoto] = useState(null);
   const [photo, setPhoto] = useState(null);
+  
+  // Delete confirmation modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteType, setDeleteType] = useState(''); // 'cover' or 'gallery'
+  const [deleteIndex, setDeleteIndex] = useState(null); // For gallery photos
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
@@ -721,41 +750,9 @@ export default function Settings({ user }) {
       });
   };
 
-  const handleDeleteCoverPhoto = async () => {
+  const handleDeleteCoverPhoto = () => {
     if (loading) return;
-    
-    // Show confirmation toast with action buttons
-    const toastId = toast(
-      <div className="flex flex-col gap-3">
-        <p className="font-medium text-gray-900">Delete Cover Photo</p>
-        <p className="text-sm text-gray-600">Are you sure you want to delete the cover photo?</p>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={() => {
-              toast.dismiss(toastId);
-            }}
-            className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(toastId);
-              await deleteCoverPhoto();
-            }}
-            className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>,
-      {
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
-    );
+    showDeleteConfirmation('cover');
   };
 
   const deleteCoverPhoto = async () => {
@@ -1009,41 +1006,9 @@ export default function Settings({ user }) {
     }
   };
 
-  const handleDeletePhoto = async (index) => {
+  const handleDeletePhoto = (index) => {
     if (loading) return;
-    
-    // Show confirmation toast with action buttons
-    const toastId = toast(
-      <div className="flex flex-col gap-3">
-        <p className="font-medium text-gray-900">Delete Photo</p>
-        <p className="text-sm text-gray-600">Are you sure you want to delete this photo?</p>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={() => {
-              toast.dismiss(toastId);
-            }}
-            className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(toastId);
-              await deletePhoto(index);
-            }}
-            className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>,
-      {
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
-    );
+    showDeleteConfirmation('gallery', index);
   };
 
   const deletePhoto = async (index) => {
@@ -2732,6 +2697,50 @@ export default function Settings({ user }) {
         </div>
         );
       })()}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {deleteType === 'cover' ? 'Delete Cover Photo' : 'Delete Photo'}
+              </h3>
+              <button
+                onClick={handleDeleteCancel}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              {deleteType === 'cover' 
+                ? 'Are you sure you want to delete the cover photo?' 
+                : 'Are you sure you want to delete this photo?'
+              }
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
