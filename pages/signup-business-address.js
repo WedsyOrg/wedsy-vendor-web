@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePageTransition } from "@/hooks/usePageTransition";
 
 export default function SignupBusinessAddress({}) {
@@ -21,6 +21,39 @@ export default function SignupBusinessAddress({}) {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const autocompleteInputRef = useRef(null);
+  const googleInstanceRef = useRef(null);
+
+  // Lightweight Google Maps loader
+  const loadGoogleMaps = () => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") return resolve(null);
+      if (window.google && window.google.maps && window.google.maps.places) {
+        return resolve(window.google);
+      }
+      const existing = document.getElementById("gmaps-script");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.google));
+        existing.addEventListener("error", reject);
+        return;
+      }
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      const script = document.createElement("script");
+      script.id = "gmaps-script";
+      script.async = true;
+      script.defer = true;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+      script.onload = () => resolve(window.google);
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
+
+  // Helper to check if a place is within Bengaluru by inspecting address text
+  const isBengaluruAddress = (formattedAddress = "") => {
+    const a = formattedAddress.toLowerCase();
+    return a.includes("bengaluru") || a.includes("bangalore");
+  };
 
   useEffect(() => {
     // Trigger slide-in animation
@@ -29,6 +62,46 @@ export default function SignupBusinessAddress({}) {
     }, 10);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Initialize Google Places Autocomplete restricted to Bengaluru on Google Maps field only
+  useEffect(() => {
+    let autocomplete;
+    const init = async () => {
+      try {
+        const google = await loadGoogleMaps();
+        if (!google?.maps?.places || !autocompleteInputRef.current) return;
+        googleInstanceRef.current = google;
+        const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
+        const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
+        autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+          types: ["geocode"],
+          componentRestrictions: { country: "in" },
+          fields: ["address_components", "formatted_address", "place_id", "geometry"],
+          strictBounds: true,
+        });
+        autocomplete.setBounds(circle.getBounds());
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place) return;
+          const formatted = place.formatted_address || "";
+          if (!isBengaluruAddress(formatted)) {
+            setData(prev => ({ ...prev, message: "We currently support only Bengaluru addresses.", googleMaps: "" }));
+            if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
+            return;
+          }
+          // Only set the Google Maps field; other fields remain manual
+          setData(prev => ({ ...prev, googleMaps: formatted, message: "" }));
+        });
+      } catch (_) {}
+    };
+    init();
+    return () => {
+      if (autocomplete) {
+        try { googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete); } catch (_) {}
+      }
+    };
   }, []);
 
 
@@ -235,9 +308,10 @@ export default function SignupBusinessAddress({}) {
               />
             </div>
 
-            {/* Google Maps */}
+            {/* Google Maps (Autocomplete attached here; Bengaluru only) */}
             <div>
               <input
+                ref={autocompleteInputRef}
                 type="url"
                 placeholder="Google Maps"
                 value={data.googleMaps}
