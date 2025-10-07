@@ -253,7 +253,10 @@ export default function Home({}) {
     try {
       sessionStorage.setItem(STORAGE_SCROLL_KEY, String(window.scrollY || 0));
     } catch (_e) {}
-    router.push(`/chats/view/${id}`);
+    setIsExiting(true);
+    setTimeout(() => {
+      router.push(`/chats/view/${id}`);
+    }, 300); // Match the animation duration
   };
   return (
     <div 
