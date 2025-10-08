@@ -15,6 +15,9 @@ export default function SignupOtpVerification({}) {
   const [mobileNumber, setMobileNumber] = useState('');
   const [canEditMobile, setCanEditMobile] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [lastOtpTime, setLastOtpTime] = useState(0);
   
   const otpInputs = useRef([]);
 
@@ -71,6 +74,22 @@ export default function SignupOtpVerification({}) {
   }, []);
 
   const sendOtpToMobile = async (mobileNo) => {
+    // DoS Protection: Check rate limiting
+    const now = Date.now();
+    const timeSinceLastOtp = now - lastOtpTime;
+    
+    // Prevent more than 3 OTP requests in 5 minutes
+    if (otpAttempts >= 3 && timeSinceLastOtp < 300000) { // 5 minutes
+      setError('Too many OTP requests. Please wait 5 minutes before trying again.');
+      return;
+    }
+    
+    // Prevent OTP requests within 60 seconds (rate limiting)
+    if (timeSinceLastOtp < 60000) { // 60 seconds
+      setError('Please wait 60 seconds before requesting another OTP.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -91,6 +110,9 @@ export default function SignupOtpVerification({}) {
       if (result.ReferenceId) {
         // Success - store ReferenceId and reset timer
         setResendTimer(60);
+        setOtpSent(true);
+        setOtpAttempts(prev => prev + 1);
+        setLastOtpTime(now);
         
         // Store ReferenceId for verification
         localStorage.setItem("otpReferenceId", result.ReferenceId);
@@ -153,9 +175,6 @@ export default function SignupOtpVerification({}) {
     try {
       // Get ReferenceId from localStorage
       const referenceId = localStorage.getItem("otpReferenceId");
-      console.log("ReferenceId from localStorage:", referenceId);
-      console.log("OTP being verified:", otpString);
-      console.log("Mobile number:", mobileNumber);
       
       if (!referenceId) {
         setError("Session expired. Please request OTP again.");
@@ -184,7 +203,6 @@ export default function SignupOtpVerification({}) {
         pincode: step2Data.pincode
       };
       
-      console.log("Request body:", requestBody);
       
       // Use the vendor signup endpoint (not login endpoint)
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor`, {
@@ -196,7 +214,6 @@ export default function SignupOtpVerification({}) {
       });
 
       const result = await response.json();
-      console.log("API Response:", result);
 
       if (result.message === "success" && result.token) {
         setSuccess(true);
@@ -223,7 +240,6 @@ export default function SignupOtpVerification({}) {
           navigateWithTransition("/", 'left');
         }, 2000);
       } else {
-        console.log("OTP verification failed:", result);
         setError(result.message || "Invalid OTP. Please try again.");
       }
     } catch (error) {
@@ -236,6 +252,13 @@ export default function SignupOtpVerification({}) {
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
+    
+    // Additional DoS protection
+    const now = Date.now();
+    if (lastOtpTime && (now - lastOtpTime) < 60000) {
+      setError('Please wait 60 seconds before requesting another OTP.');
+      return;
+    }
     
     await sendOtpToMobile(mobileNumber);
   };
@@ -337,7 +360,11 @@ export default function SignupOtpVerification({}) {
               {/* Mobile Number Display/Edit */}
               {!canEditMobile ? (
                 <div className="text-center">
-                  <p className="text-lg font-medium text-gray-900 mb-2">+91 {mobileNumber}</p>
+                  <p className="text-lg font-medium text-gray-900 mb-2">
+                    {mobileNumber.startsWith('+91') ? mobileNumber : 
+                     mobileNumber.startsWith('91') ? `+${mobileNumber}` : 
+                     `+91 ${mobileNumber}`}
+                  </p>
                   <button
                     onClick={handleEditMobile}
                     className="text-sm text-[#840032] underline hover:no-underline"
