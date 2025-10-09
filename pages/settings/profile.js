@@ -21,6 +21,14 @@ import 'react-image-crop/dist/ReactCrop.css';
 export default function Settings({ user }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  
+  // Debug: Log user state and field states
+  console.log('Settings Component - User state:', {
+    profileCompleted: user?.profileCompleted,
+    loading: loading,
+    canEdit: !loading
+  });
+  
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
     servicesOffered: false,
@@ -164,7 +172,7 @@ export default function Settings({ user }) {
       makeAspectCrop(
         {
           unit: '%',
-          width: 90,
+          width: 95,
         },
         2.5 / 3.5, // Cover photo aspect ratio (2.5" x 3.5")
         width,
@@ -242,6 +250,9 @@ export default function Settings({ user }) {
       if (cropType === 'cover') {
         setCoverPhoto(croppedImageBlob);
         console.log('Set cover photo');
+        // Auto-upload the cropped cover photo immediately
+        console.log('Auto-uploading cropped cover photo...');
+        updateCoverPhoto(croppedImageBlob);
       } else if (cropType === 'gallery') {
         setCropFiles(prev => {
           const newFiles = [...prev, croppedImageBlob];
@@ -470,13 +481,6 @@ export default function Settings({ user }) {
     awards: [],
   });
 
-  // Progress tracking state
-  const [completedPages, setCompletedPages] = useState({
-    profile: false,
-    aboutYou: false,
-    prices: false,
-    gallery: false,
-  });
 
   // Functions to check completion status
   const checkProfileCompletion = () => {
@@ -577,18 +581,8 @@ export default function Settings({ user }) {
       }
     });
     
-    setCompletedPages({
-      profile: profileCompleted,
-      aboutYou: aboutYouCompleted,
-      prices: pricesCompleted,
-      gallery: galleryCompleted,
-    });
   };
 
-  // Get total completed pages count
-  const getCompletedCount = () => {
-    return Object.values(completedPages).filter(Boolean).length;
-  };
 
   const fetchSpecialityList = () => {
     setLoading(true);
@@ -940,40 +934,53 @@ export default function Settings({ user }) {
         console.error("There was a problem with the fetch operation:", error);
       });
   };
-  const updateCoverPhoto = async () => {
-    let tempImage = await uploadFile({
-      file: coverPhoto,
-      path: "vendor-gallery/",
-      id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
-    });
+  const updateCoverPhoto = async (imageBlob = null) => {
+    const imageToUpload = imageBlob || coverPhoto;
+    if (!imageToUpload) {
+      console.error('No image to upload');
+      toast.error('No image selected for upload');
+      return;
+    }
+    
+    console.log('Starting cover photo upload...');
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        gallery: { coverPhoto: tempImage },
-      }),
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        fetchGallery();
-        setCoverPhoto("");
-        coverPhotoRef.current.value = null;
-        setLoading(false);
-        if (response.message !== "success") {
-          toast.error("Error updating photo details.");
-        } else {
-          toast.success("Cover photo uploaded successfully!");
-        }
-      })
-      .catch((error) => {
-        setLoading(false);
-        console.error("There was a problem with the fetch operation:", error);
-        toast.error("Failed to upload cover photo. Please try again.");
+    
+    try {
+      let tempImage = await uploadFile({
+        file: imageToUpload,
+        path: "vendor-gallery/",
+        id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
       });
+      console.log('File uploaded to storage:', tempImage);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          gallery: { coverPhoto: tempImage },
+        }),
+      });
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      
+      if (result.message === "success") {
+        await fetchGallery();
+        setCoverPhoto("");
+        if (coverPhotoRef.current) coverPhotoRef.current.value = null;
+        toast.success("Cover photo uploaded successfully!");
+      } else {
+        toast.error("Error updating photo details.");
+      }
+    } catch (error) {
+      console.error("Error uploading cover photo:", error);
+      toast.error("Failed to upload cover photo. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteCoverPhoto = () => {
@@ -1329,19 +1336,35 @@ export default function Settings({ user }) {
   const loadGoogleMaps = () => {
     return new Promise((resolve, reject) => {
       if (typeof window === "undefined") return resolve(null);
+      
+      // Check if Google Maps is already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
+        console.log("Google Maps already loaded");
         return resolve(window.google);
       }
+      
+      // Check if script is already being loaded
       const existing = document.getElementById("gmaps-script");
       if (existing) {
-        existing.addEventListener("load", () => resolve(window.google));
-        existing.addEventListener("error", () => resolve(null));
+        console.log("Google Maps script already exists, waiting for load...");
+        existing.addEventListener("load", () => {
+          console.log("Existing script loaded");
+          resolve(window.google);
+        });
+        existing.addEventListener("error", () => {
+          console.error("Existing script failed to load");
+          resolve(null);
+        });
         return;
       }
+      
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      
+      console.log("Google Maps API Key:", apiKey ? "Found" : "Not found");
       
       if (!apiKey) {
         console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
+        console.warn("Please set NEXT_PUBLIC_GOOGLE_MAPS_KEY in your environment variables");
         return resolve(null);
       }
       
@@ -1350,11 +1373,31 @@ export default function Settings({ user }) {
       script.async = true;
       script.defer = true;
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
-      script.onload = () => resolve(window.google);
-      script.onerror = () => {
-        console.warn("Failed to load Google Maps API. Autocomplete will be disabled.");
+      // Add timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.error("Google Maps API loading timeout");
+        resolve(null);
+      }, 10000); // 10 second timeout
+      
+      script.onload = () => {
+        clearTimeout(timeout);
+        console.log("Google Maps script loaded successfully");
+        
+        // Double-check that everything is available
+        if (window.google && window.google.maps && window.google.maps.places) {
+          resolve(window.google);
+        } else {
+          console.error("Google Maps loaded but Places API not available");
+          resolve(null);
+        }
+      };
+      
+      script.onerror = (error) => {
+        clearTimeout(timeout);
+        console.error("Failed to load Google Maps API:", error);
         resolve(null);
       };
+      
       document.head.appendChild(script);
     });
   };
@@ -1371,20 +1414,33 @@ export default function Settings({ user }) {
     const init = async () => {
       try {
         const google = await loadGoogleMaps();
-        if (!google?.maps?.places || !autocompleteInputRef.current) {
-          console.log("Google Maps not available, autocomplete disabled");
+        
+        if (!google?.maps?.places) {
           return;
         }
+        
+        // Wait for the input ref to be available
+        if (!autocompleteInputRef.current) {
+          setTimeout(init, 100);
+          return;
+        }
+        
         googleInstanceRef.current = google;
         const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
         const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
-        autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
-          types: ["geocode"],
-          componentRestrictions: { country: "in" },
-          fields: ["address_components", "formatted_address", "place_id", "geometry"],
-          strictBounds: true,
-        });
-        autocomplete.setBounds(circle.getBounds());
+        
+        try {
+          autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+            types: ["geocode"],
+            componentRestrictions: { country: "in" },
+            fields: ["address_components", "formatted_address", "place_id", "geometry"],
+            strictBounds: true,
+          });
+          autocomplete.setBounds(circle.getBounds());
+        } catch (error) {
+          console.error("Error creating autocomplete instance:", error);
+          return;
+        }
 
         autocomplete.addListener("place_changed", () => {
           const place = autocomplete.getPlace();
@@ -1465,13 +1521,17 @@ export default function Settings({ user }) {
           }));
         });
       } catch (error) {
-        console.warn("Google Maps initialization failed:", error);
+        console.error("Google Maps initialization failed:", error);
       }
     };
     init();
     return () => {
       if (autocomplete) {
-        try { googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete); } catch (_) {}
+        try { 
+          googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete);
+        } catch (e) {
+          console.warn("Error clearing autocomplete listeners:", e);
+        }
       }
     };
   }, []);
@@ -1501,6 +1561,25 @@ export default function Settings({ user }) {
   return (
     <>
       <style jsx>{`
+        .pac-container {
+          z-index: 9999 !important;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .pac-item {
+          padding: 8px 12px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .pac-item:hover {
+          background-color: #f3f4f6;
+        }
+        .pac-item-query {
+          font-size: 14px;
+          color: #374151;
+        }
+        .pac-matched {
+          font-weight: 600;
+        }
         .select-field {
           background: #FFFFFF;
           border: 1px solid #D1D5DB;
@@ -1537,12 +1616,12 @@ export default function Settings({ user }) {
           color: #840032;
         }
       `}</style>
-      <div className="flex flex-col py-4 pt-8 overflow-x-hidden">
+      <div className="flex flex-col overflow-x-hidden">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
           <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
             <BackIcon />
           </div>
-          <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
+          <div className="flex flex-row items-center border-b border-gray-200 overflow-x-hidden">
           <div
             className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
               display === "Profile" 
@@ -1596,6 +1675,13 @@ export default function Settings({ user }) {
         {display === "Profile" && (
           <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Profile Details Section */}
+            {user?.profileCompleted && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  ✓ Account setup complete! You can edit your details below.
+                </p>
+              </div>
+            )}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
@@ -1805,19 +1891,19 @@ export default function Settings({ user }) {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-black">Address details</h3>
               
-              {/* Google Maps Autocomplete - MOVED TO TOP */}
+              
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Google Maps Address <span className="text-gray-500 text-xs">(Search and auto-fill below fields)</span>
+                  Address
                 </label>
                 <input
                   ref={autocompleteInputRef}
                   type="text"
-                  placeholder="Search your address on Google Maps"
+                  placeholder="Search your address"
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors autocomplete-input"
                 />
               </div>
 
@@ -2010,11 +2096,7 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
+            <div className="pt-6 relative mb-8">
               <button
                   onClick={() => {
                     if (profile.businessDescription.length > 350) {
@@ -2061,11 +2143,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
-                  !other.experience || other.experience.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
               {(!other.experience || other.experience.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2089,11 +2167,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
-                  !other.clients || other.clients.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
               {(!other.clients || other.clients.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2124,7 +2198,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="flex-1 px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
                   />
                       <button
                         type="button"
@@ -2257,7 +2331,7 @@ export default function Settings({ user }) {
                           });
                         }}
                         disabled={loading}
-                        className="w-full border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#840032] focus:ring-0 text-black placeholder-gray-400"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#840032] text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
                       />
                       {/* Only show delete button if there's more than 1 product */}
@@ -2370,30 +2444,17 @@ export default function Settings({ user }) {
                   }
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 resize-none ${
-                  !other.usp || other.usp.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : other.usp.length < 500 
-                    ? 'border-yellow-300 focus:border-yellow-500'
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#840032] resize-none bg-transparent"
               />
-              <div className="flex justify-between items-center mt-1">
+              <div className="mt-1">
                 <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
                   {other.usp.length > 500 ? `Maximum 500 characters allowed (${other.usp.length}/500)` : `${other.usp.length}/500 characters`}
-                </div>
-                <div className={`text-xs ${other.usp.length <= 500 ? 'text-green-600' : 'text-gray-400'}`}>
-                  {other.usp.length <= 500 ? '✓ Valid' : 'Too long'}
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
+            <div className="pt-6 relative mb-8">
               <button
                 onClick={() => {
                   // Validate all fields
@@ -2453,7 +2514,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
 
@@ -2473,7 +2534,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
 
@@ -2494,17 +2555,13 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
             )}
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
+            <div className="pt-6 relative mb-8">
               <button
                 onClick={() => {
                   updatePrices();
@@ -2536,7 +2593,7 @@ export default function Settings({ user }) {
               </label>
               <p className="text-xs text-gray-500 mb-4">Portrait photo preferable (3:4 aspect ratio)</p>
               
-              <div className="flex items-start gap-6">
+              <div className="flex justify-center">
                 {/* Cover Photo Upload Area */}
                 <div className="relative group">
                   {gallery.coverPhoto ? (
@@ -2589,54 +2646,6 @@ export default function Settings({ user }) {
                     disabled={loading}
                   />
                 </div>
-                
-                  {/* Info Panel */}
-                  <div className="flex-1">
-                   <div className="bg-gray-50 rounded-lg p-4">
-                     <h4 className="text-sm font-medium text-gray-900 mb-2">Cover Image</h4>
-                     <p className="text-xs text-gray-600">
-                       Upload your cover image here.
-                       Make sure you upload the best quality picture of yourself.
-                       The image should be in the format of 3:4 aspect ratio.
-                       
-                     </p>
-                   </div>
-                  
-            {coverPhoto && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-sm text-green-800">Ready to upload</span>
-                      </div>
-                      <button
-                onClick={() => {
-                  updateCoverPhoto();
-                }}
-                        disabled={loading}
-                        className="w-full px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {loading ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            Upload Cover Photo
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -2684,6 +2693,18 @@ export default function Settings({ user }) {
                    ) : (
                      /* Show Delete button when in select mode */
                      <div className="flex items-center justify-between gap-4">
+                       <button
+                         onClick={() => {
+                           setIsMultiSelectMode(false);
+                           setSelectedPhotos([]);
+                         }}
+                         className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                         </svg>
+                         Back
+                       </button>
                        <span className="text-sm font-medium text-gray-700">
                          {selectedPhotos.length} selected
                        </span>
@@ -3080,28 +3101,33 @@ export default function Settings({ user }) {
             <div className="p-4 max-h-[60vh] overflow-auto">
               {imgSrc && (
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ width: '300px', height: '400px' }}>
+                  <div className="relative rounded-lg overflow-hidden">
                     <ReactCrop
                       crop={crop}
-                      onChange={(_, percentCrop) => setCrop(percentCrop)}
+                      onChange={(_, percentCrop) => {
+                        // Preserve the scale when crop position changes
+                        setCrop(prev => ({
+                          ...percentCrop,
+                          scale: prev?.scale || 1
+                        }));
+                      }}
                       onComplete={(c) => setCompletedCrop(c)}
                       aspect={2.5 / 3.5} // Cover photo aspect ratio
-                      minWidth={100}
-                      minHeight={140}
+                      minWidth={50}
+                      minHeight={70}
                       locked={true} // Fixed crop area
-                      disabled={false} // Allow panning within crop
+                      disabled={false} // Allow crop tool movement
                     >
                       <img
                         ref={imgRef}
                         alt="Crop me"
                         src={imgSrc}
                         onLoad={onImageLoad}
-                        className="block w-full h-full object-cover"
+                        className="block max-w-full max-h-[50vh] object-contain"
                         style={{ 
-                          minWidth: '100%', 
-                          minHeight: '100%',
-                          transform: `scale(${crop?.scale || 1}) translate(${crop?.x || 0}px, ${crop?.y || 0}px)` 
+                          transform: `scale(${crop?.scale || 1})` 
                         }}
+                        draggable={false}
                       />
                     </ReactCrop>
                   </div>
@@ -3113,9 +3139,9 @@ export default function Settings({ user }) {
                         const newScale = Math.max(0.5, (crop?.scale || 1) - 0.1);
                         setCrop(prev => ({ ...prev, scale: newScale }));
                       }}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
-                      Zoom Out
+                      -
                     </button>
                     <span className="text-sm text-gray-600">
                       {Math.round((crop?.scale || 1) * 100)}%
@@ -3125,16 +3151,10 @@ export default function Settings({ user }) {
                         const newScale = Math.min(3, (crop?.scale || 1) + 0.1);
                         setCrop(prev => ({ ...prev, scale: newScale }));
                       }}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
-                      Zoom In
+                      +
                     </button>
-                  </div>
-                  
-                  <div className="text-xs text-gray-500 text-center">
-                    <p>• Drag to move the image within the crop area</p>
-                    <p>• Use zoom controls to adjust size</p>
-                    <p>• Crop area is fixed for cover photo (3:4 ratio)</p>
                   </div>
                 </div>
               )}
