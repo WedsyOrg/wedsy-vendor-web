@@ -2632,8 +2632,8 @@ export default function Settings({ user }) {
             </div>
 
             {/* Gallery Photos Section */}
-            <div className="flex flex-col items-center">
-               <div className="w-full max-w-md mb-4">
+            <div className="w-full">
+               <div className="w-full mb-4">
                  <div className="mb-4 text-center">
                    <label className="text-sm font-medium text-black">
                      Upload photos for gallery view
@@ -2838,15 +2838,15 @@ export default function Settings({ user }) {
                       {item.type === 'placeholder' && (
                         <div
                           onClick={() => photoRef.current?.click()}
-                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors"
+                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors aspect-[3/4]"
                         >
-                          <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                           </svg>
-                          <p className="text-xs text-gray-500 text-center">
+                          <p className="text-sm text-gray-500 text-center font-medium">
                             Click to add photos
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-gray-400 mt-2">
                             {gallery.photos.length + cropFiles.length}/15
                           </p>
                         </div>
