@@ -443,6 +443,8 @@ export default function Settings({ user }) {
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
+  const autocompleteInputRef = useRef(null);
+  const googleInstanceRef = useRef(null);
   
   // Crop functionality states
   const [crop, setCrop] = useState();
@@ -1187,6 +1189,157 @@ export default function Settings({ user }) {
       });
   };
 
+  // Google Maps Autocomplete functionality
+  const loadGoogleMaps = () => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") return resolve(null);
+      if (window.google && window.google.maps && window.google.maps.places) {
+        return resolve(window.google);
+      }
+      const existing = document.getElementById("gmaps-script");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.google));
+        existing.addEventListener("error", () => resolve(null));
+        return;
+      }
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      
+      if (!apiKey) {
+        console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
+        return resolve(null);
+      }
+      
+      const script = document.createElement("script");
+      script.id = "gmaps-script";
+      script.async = true;
+      script.defer = true;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+      script.onload = () => resolve(window.google);
+      script.onerror = () => {
+        console.warn("Failed to load Google Maps API. Autocomplete will be disabled.");
+        resolve(null);
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  // Helper to check if a place is within Bengaluru
+  const isBengaluruAddress = (formattedAddress = "") => {
+    const a = formattedAddress.toLowerCase();
+    return a.includes("bengaluru") || a.includes("bangalore");
+  };
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    let autocomplete;
+    const init = async () => {
+      try {
+        const google = await loadGoogleMaps();
+        if (!google?.maps?.places || !autocompleteInputRef.current) {
+          console.log("Google Maps not available, autocomplete disabled");
+          return;
+        }
+        googleInstanceRef.current = google;
+        const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
+        const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
+        autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+          types: ["geocode"],
+          componentRestrictions: { country: "in" },
+          fields: ["address_components", "formatted_address", "place_id", "geometry"],
+          strictBounds: true,
+        });
+        autocomplete.setBounds(circle.getBounds());
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place) return;
+          const formatted = place.formatted_address || "";
+          
+          if (!isBengaluruAddress(formatted)) {
+            toast.error("We currently support only Bengaluru addresses.");
+            if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
+            return;
+          }
+          
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          let state = "";
+          let city = "";
+          let area = "";
+          let pincode = "";
+          
+          // Parse address components
+          addressComponents.forEach(component => {
+            const types = component.types;
+            if (types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            } else if (types.includes("locality") || types.includes("administrative_area_level_2")) {
+              city = component.long_name;
+            } else if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+              area = component.long_name;
+            } else if (types.includes("postal_code")) {
+              pincode = component.long_name;
+            }
+          });
+          
+          // Additional check for pincode
+          if (!pincode) {
+            addressComponents.forEach(component => {
+              const name = component.long_name || component.short_name || "";
+              if (/^\d{6}$/.test(name)) {
+                pincode = name;
+              }
+            });
+          }
+          
+          // If pincode is not found, try to extract from formatted address
+          if (!pincode) {
+            const pincodePatterns = [
+              /\b\d{6}\b/g,
+              /\b\d{5,6}\b/g,
+              /pincode[:\s]*(\d{6})/i,
+              /pin[:\s]*(\d{6})/i,
+            ];
+            
+            for (const pattern of pincodePatterns) {
+              const match = formatted.match(pattern);
+              if (match) {
+                pincode = match[1] || match[0];
+                break;
+              }
+            }
+          }
+          
+          // Auto-fill address fields
+          setAddress(prev => ({ 
+            ...prev, 
+            formatted_address: formatted,
+            state: state || prev.state,
+            city: city || prev.city,
+            locality: area || prev.locality,
+            postal_code: pincode || prev.postal_code,
+            full_address: formatted,
+            place_id: place.place_id || "",
+            geometry: {
+              location: {
+                lat: place.geometry?.location?.lat() || 0,
+                lng: place.geometry?.location?.lng() || 0,
+              },
+            }
+          }));
+        });
+      } catch (error) {
+        console.warn("Google Maps initialization failed:", error);
+      }
+    };
+    init();
+    return () => {
+      if (autocomplete) {
+        try { googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete); } catch (_) {}
+      }
+    };
+  }, []);
+
   useEffect(() => {
     fetchLocationData();
     fetchPrices();
@@ -1504,6 +1657,61 @@ export default function Settings({ user }) {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-black">Address details</h3>
               
+              {/* Google Maps Autocomplete - MOVED TO TOP */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Google Maps Address <span className="text-gray-500 text-xs">(Search and auto-fill below fields)</span>
+                </label>
+                <input
+                  ref={autocompleteInputRef}
+                  type="text"
+                  placeholder="Search your address on Google Maps"
+                  value={address.formatted_address || ""}
+                  onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Flat no/House no
+                </label>
+                <input
+                  type="text"
+                  placeholder="Flat no/House no"
+                  value={address.flat_house_number || ""}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      flat_house_number: e.target.value,
+                    });
+                  }}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Address Line 1
+                </label>
+                <input
+                  type="text"
+                  placeholder="Address Line 1"
+                  value={address.full_address || ""}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      full_address: e.target.value,
+                    });
+                  }}
+                  ref={inputRef}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   City
@@ -1561,45 +1769,6 @@ export default function Settings({ user }) {
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Flat no/House no
-                </label>
-                <input
-                  type="text"
-                  placeholder="Flat no/House no"
-                  value={address.flat_house_number || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      flat_house_number: e.target.value,
-                    });
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Address Line 1
-                </label>
-                <input
-                  type="text"
-                  placeholder="Address Line 1"
-                  value={address.formatted_address || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      formatted_address: e.target.value,
-                    });
-                  }}
-                  ref={inputRef}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
                   Pincode
                 </label>
                 <input
@@ -1610,25 +1779,6 @@ export default function Settings({ user }) {
                     setAddress({
                       ...address,
                       postal_code: e.target.value,
-                    });
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your address"
-                  value={address.full_address || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      full_address: e.target.value,
                     });
                   }}
                   disabled={loading}
