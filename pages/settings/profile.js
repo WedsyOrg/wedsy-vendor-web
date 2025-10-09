@@ -2724,104 +2724,136 @@ export default function Settings({ user }) {
               )}
               
               {/* Gallery Grid */}
-              <div className="grid grid-cols-2 gap-3">
-              {/* Show existing gallery photos */}
-              {gallery.photos.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => isMultiSelectMode && togglePhotoSelection(index)}
-                  className={`group relative w-full aspect-square overflow-hidden transition-all ${
-                    isMultiSelectMode ? 'cursor-pointer' : ''
-                  } ${
-                    isMultiSelectMode && selectedPhotos.includes(index)
-                      ? 'ring-2 ring-[#840032] ring-opacity-50'
-                      : ''
-                  }`}
-                >
-                  <img
-                    src={item}
-                    alt={`Gallery image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                {/* Combine all photos and placeholder into a single array for proper ordering */}
+                {(() => {
+                  const allItems = [];
                   
-                  {/* Selection Checkbox - Only show in multi-select mode */}
-                  {isMultiSelectMode && (
-                    <div className="absolute top-3 left-3">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        selectedPhotos.includes(index)
-                          ? 'bg-[#840032] border-[#840032]'
-                          : 'bg-white border-gray-300'
-                      }`}>
-                        {selectedPhotos.includes(index) && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  // Add existing gallery photos
+                  gallery.photos.forEach((item, index) => {
+                    allItems.push({
+                      type: 'photo',
+                      data: item,
+                      index: index,
+                      key: `photo-${index}`
+                    });
+                  });
+                  
+                  // Add cropped photos
+                  cropFiles.forEach((file, index) => {
+                    allItems.push({
+                      type: 'crop',
+                      data: file,
+                      index: index,
+                      key: `crop-${index}`
+                    });
+                  });
+                  
+                  // Add upload placeholder if needed
+                  if (allItems.length < 15) {
+                    allItems.push({
+                      type: 'placeholder',
+                      data: null,
+                      index: allItems.length,
+                      key: 'placeholder'
+                    });
+                  }
+                  
+                  return allItems.map((item, gridIndex) => (
+                    <div key={item.key} className="w-full aspect-square">
+                      {item.type === 'photo' && (
+                        <div
+                          onClick={() => isMultiSelectMode && togglePhotoSelection(item.index)}
+                          className={`group relative w-full h-full overflow-hidden rounded-lg transition-all ${
+                            isMultiSelectMode ? 'cursor-pointer' : ''
+                          } ${
+                            isMultiSelectMode && selectedPhotos.includes(item.index)
+                              ? 'ring-2 ring-[#840032] ring-opacity-50'
+                              : ''
+                          }`}
+                        >
+                          <img
+                            src={item.data}
+                            alt={`Gallery image ${item.index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {/* Selection Checkbox - Only show in multi-select mode */}
+                          {isMultiSelectMode && (
+                            <div className="absolute top-3 left-3">
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                selectedPhotos.includes(item.index)
+                                  ? 'bg-[#840032] border-[#840032]'
+                                  : 'bg-white border-gray-300'
+                              }`}>
+                                {selectedPhotos.includes(item.index) && (
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Delete Button - Only show when not in multi-select mode */}
+                          {!isMultiSelectMode && (
+                            <button
+                              onClick={() => handleDeletePhoto(item.index)}
+                              disabled={loading}
+                              className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      
+                      {item.type === 'crop' && (
+                        <div className="group relative w-full h-full rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50">
+                          <img
+                            src={URL.createObjectURL(item.data)}
+                            alt={`Cropped photo ${item.index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Pending indicator */}
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                            Pending Upload
+                          </div>
+                          {/* Remove button */}
+                          <button
+                            onClick={() => {
+                              setCropFiles(prev => prev.filter((_, i) => i !== item.index));
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                      
+                      {item.type === 'placeholder' && (
+                        <div
+                          onClick={() => photoRef.current?.click()}
+                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors"
+                        >
+                          <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                           </svg>
-                        )}
-                      </div>
+                          <p className="text-xs text-gray-500 text-center">
+                            Click to add photos
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {gallery.photos.length + cropFiles.length}/15
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Delete Button - Only show when not in multi-select mode */}
-                  {!isMultiSelectMode && (
-                    <button
-                      onClick={() => handleDeletePhoto(index)}
-                      disabled={loading}
-                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {/* Show cropped photos before upload */}
-              {cropFiles.map((file, index) => (
-                <div
-                  key={`crop-${index}`}
-                  className="group relative w-full aspect-square rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50"
-                >
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Cropped photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Pending indicator */}
-                  <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                    Pending Upload
-                  </div>
-                  {/* Remove button */}
-                  <button
-                    onClick={() => {
-                      setCropFiles(prev => prev.filter((_, i) => i !== index));
-                    }}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-                
-                {/* Upload Placeholder */}
-                {gallery.photos.length + cropFiles.length < 15 && (
-                  <div
-                    onClick={() => photoRef.current?.click()}
-                    className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors"
-                  >
-                    <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <p className="text-xs text-gray-500 text-center">
-                      Click to add photos
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {gallery.photos.length + cropFiles.length}/15
-                    </p>
-                  </div>
-                )}
+                  ));
+                })()}
               </div>
             </div>
           </div>
