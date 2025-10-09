@@ -21,6 +21,13 @@ import 'react-image-crop/dist/ReactCrop.css';
 export default function Settings({ user }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  
+  // Debug: Log user state and field states
+  console.log('Settings Component - User state:', {
+    profileCompleted: user?.profileCompleted,
+    loading: loading,
+    canEdit: !loading
+  });
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
     servicesOffered: false,
@@ -1330,6 +1337,7 @@ export default function Settings({ user }) {
     return new Promise((resolve, reject) => {
       if (typeof window === "undefined") return resolve(null);
       if (window.google && window.google.maps && window.google.maps.places) {
+        console.log("Google Maps already loaded");
         return resolve(window.google);
       }
       const existing = document.getElementById("gmaps-script");
@@ -1338,7 +1346,9 @@ export default function Settings({ user }) {
         existing.addEventListener("error", () => resolve(null));
         return;
       }
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      
+      console.log("Google Maps API Key:", apiKey ? "Found" : "Not found");
       
       if (!apiKey) {
         console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
@@ -1370,11 +1380,24 @@ export default function Settings({ user }) {
     let autocomplete;
     const init = async () => {
       try {
+        console.log("Initializing Google Places Autocomplete...");
         const google = await loadGoogleMaps();
-        if (!google?.maps?.places || !autocompleteInputRef.current) {
+        console.log("Google Maps loaded:", !!google);
+        console.log("Autocomplete input ref:", !!autocompleteInputRef.current);
+        
+        if (!google?.maps?.places) {
           console.log("Google Maps not available, autocomplete disabled");
           return;
         }
+        
+        // Wait for the input ref to be available
+        if (!autocompleteInputRef.current) {
+          console.log("Input ref not available yet, retrying in 100ms");
+          setTimeout(init, 100);
+          return;
+        }
+        
+        console.log("Creating autocomplete instance...");
         googleInstanceRef.current = google;
         const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
         const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
@@ -1385,13 +1408,18 @@ export default function Settings({ user }) {
           strictBounds: true,
         });
         autocomplete.setBounds(circle.getBounds());
+        console.log("Autocomplete instance created successfully");
 
         autocomplete.addListener("place_changed", () => {
+          console.log("Place changed event triggered");
           const place = autocomplete.getPlace();
+          console.log("Selected place:", place);
           if (!place) return;
           const formatted = place.formatted_address || "";
+          console.log("Formatted address:", formatted);
           
           if (!isBengaluruAddress(formatted)) {
+            console.log("Address not in Bengaluru, rejecting");
             toast.error("We currently support only Bengaluru addresses.");
             if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
             return;
@@ -1471,7 +1499,12 @@ export default function Settings({ user }) {
     init();
     return () => {
       if (autocomplete) {
-        try { googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete); } catch (_) {}
+        try { 
+          googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete);
+          console.log("Autocomplete listeners cleared");
+        } catch (e) {
+          console.warn("Error clearing autocomplete listeners:", e);
+        }
       }
     };
   }, []);
@@ -1596,6 +1629,13 @@ export default function Settings({ user }) {
         {display === "Profile" && (
           <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Profile Details Section */}
+            {user?.profileCompleted && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  ✓ Account setup complete! You can edit your details below.
+                </p>
+              </div>
+            )}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
@@ -1817,7 +1857,7 @@ export default function Settings({ user }) {
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors autocomplete-input"
                 />
               </div>
 
