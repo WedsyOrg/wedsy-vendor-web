@@ -166,14 +166,20 @@ export default function Settings({ user }) {
           unit: '%',
           width: 90,
         },
-        2.5 / 3.5, // Passport size aspect ratio (2.5" x 3.5")
+        2.5 / 3.5, // Cover photo aspect ratio (2.5" x 3.5")
         width,
         height
       ),
       width,
       height
     );
-    setCrop(crop);
+    // Initialize with Facebook-style properties
+    setCrop({
+      ...crop,
+      scale: 1,
+      x: 0,
+      y: 0
+    });
   };
 
   const getCroppedImg = (image, crop, fileName) => {
@@ -3052,7 +3058,7 @@ export default function Settings({ user }) {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-black">
-                  Crop Image - Passport Size (2.5&quot; x 3.5&quot;)
+                  Cover Photo
                 </h3>
                 <button
                   onClick={() => {
@@ -3070,30 +3076,62 @@ export default function Settings({ user }) {
             
             <div className="p-4 max-h-[60vh] overflow-auto">
               {imgSrc && (
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ width: '300px', height: '400px' }}>
                     <ReactCrop
                       crop={crop}
                       onChange={(_, percentCrop) => setCrop(percentCrop)}
                       onComplete={(c) => setCompletedCrop(c)}
-                      aspect={2.5 / 3.5} // Passport size aspect ratio
+                      aspect={2.5 / 3.5} // Cover photo aspect ratio
                       minWidth={100}
                       minHeight={140}
+                      locked={true} // Fixed crop area
+                      disabled={false} // Allow panning within crop
                     >
                       <img
                         ref={imgRef}
                         alt="Crop me"
                         src={imgSrc}
                         onLoad={onImageLoad}
-                        className="max-w-full max-h-96"
+                        className="block w-full h-full object-cover"
+                        style={{ 
+                          minWidth: '100%', 
+                          minHeight: '100%',
+                          transform: `scale(${crop?.scale || 1}) translate(${crop?.x || 0}px, ${crop?.y || 0}px)` 
+                        }}
                       />
                     </ReactCrop>
                   </div>
                   
-                  <div className="text-sm text-gray-600 text-center">
-                    <p>• Drag to move the crop area</p>
-                    <p>• Drag corners to resize</p>
-                    <p>• Aspect ratio is locked to passport size (2.5&quot; x 3.5&quot;)</p>
+                  {/* Zoom Controls */}
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => {
+                        const newScale = Math.max(0.5, (crop?.scale || 1) - 0.1);
+                        setCrop(prev => ({ ...prev, scale: newScale }));
+                      }}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Zoom Out
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      {Math.round((crop?.scale || 1) * 100)}%
+                    </span>
+                    <button
+                      onClick={() => {
+                        const newScale = Math.min(3, (crop?.scale || 1) + 0.1);
+                        setCrop(prev => ({ ...prev, scale: newScale }));
+                      }}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Zoom In
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 text-center">
+                    <p>• Drag to move the image within the crop area</p>
+                    <p>• Use zoom controls to adjust size</p>
+                    <p>• Crop area is fixed for cover photo (3:4 ratio)</p>
                   </div>
                 </div>
               )}
