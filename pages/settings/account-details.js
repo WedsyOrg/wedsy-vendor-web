@@ -274,7 +274,7 @@ export default function Settings({}) {
       addresses: {
         registered: {
           street1: accountCreationData.addresses?.registered?.street1,
-          street2: accountCreationData.addresses?.registered?.street2,
+          street2: accountCreationData.addresses?.registered?.street2 || "N/A",
           city: accountCreationData.addresses?.registered?.city,
           state: accountCreationData.addresses?.registered?.state,
           postal_code: accountCreationData.addresses?.registered?.postal_code,
@@ -981,7 +981,7 @@ export default function Settings({}) {
             
             <div className="flex justify-center mt-8">
               <Button
-                className="px-8 py-3 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-full transition-colors"
+                className="px-6 py-2 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-full transition-colors"
                 disabled={
                   loading ||
                   !accountCreationData?.legal_business_name ||
