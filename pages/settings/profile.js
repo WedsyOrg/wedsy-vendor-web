@@ -166,14 +166,20 @@ export default function Settings({ user }) {
           unit: '%',
           width: 90,
         },
-        2.5 / 3.5, // Passport size aspect ratio (2.5" x 3.5")
+        2.5 / 3.5, // Cover photo aspect ratio (2.5" x 3.5")
         width,
         height
       ),
       width,
       height
     );
-    setCrop(crop);
+    // Initialize with Facebook-style properties
+    setCrop({
+      ...crop,
+      scale: 1,
+      x: 0,
+      y: 0
+    });
   };
 
   const getCroppedImg = (image, crop, fileName) => {
@@ -443,6 +449,8 @@ export default function Settings({ user }) {
   const coverPhotoRef = useRef();
   const photoRef = useRef();
   const inputRef = useRef(null);
+  const autocompleteInputRef = useRef(null);
+  const googleInstanceRef = useRef(null);
   
   // Crop functionality states
   const [crop, setCrop] = useState();
@@ -461,6 +469,127 @@ export default function Settings({ user }) {
     makeupProducts: [""],
     awards: [],
   });
+
+  // Progress tracking state
+  const [completedPages, setCompletedPages] = useState({
+    profile: false,
+    aboutYou: false,
+    prices: false,
+    gallery: false,
+  });
+
+  // Functions to check completion status
+  const checkProfileCompletion = () => {
+    // Check all required text fields with strict validation
+    const businessName = profile.businessName?.trim();
+    const businessDescription = profile.businessDescription?.trim();
+    const speciality = profile.speciality?.trim();
+    const servicesOffered = profile.servicesOffered?.trim();
+    const city = address.city?.trim();
+    const state = address.state?.trim();
+    const formattedAddress = address.formatted_address?.trim();
+    const postalCode = address.postal_code?.trim();
+    
+    // All fields must have meaningful content (at least 2 characters for most fields)
+    const textFieldsValid = 
+      businessName && businessName.length >= 2 &&
+      businessDescription && businessDescription.length >= 10 &&
+      speciality && speciality.length >= 2 &&
+      servicesOffered && servicesOffered.length >= 2 &&
+      city && city.length >= 2 &&
+      state && state.length >= 2 &&
+      formattedAddress && formattedAddress.length >= 10 &&
+      postalCode && postalCode.length >= 6;
+    
+    const hasDocuments = documents && documents.length > 0;
+    
+    // Only return true if ALL conditions are met
+    return textFieldsValid && hasDocuments;
+  };
+
+  const checkAboutYouCompletion = () => {
+    const experience = other.experience?.trim();
+    const clients = other.clients?.trim();
+    const usp = other.usp?.trim();
+    
+    // Only return true if ALL fields have meaningful content
+    return experience && experience.length >= 1 &&
+           clients && clients.length >= 1 &&
+           usp && usp.length >= 10;
+  };
+
+  const checkPricesCompletion = () => {
+    // Only return true if ALL prices are greater than 0
+    return prices && 
+           typeof prices.party === 'number' && prices.party > 0 &&
+           typeof prices.bridal === 'number' && prices.bridal > 0 &&
+           typeof prices.groom === 'number' && prices.groom > 0;
+  };
+
+  const checkGalleryCompletion = () => {
+    // Only return true if both cover photo and gallery photos exist
+    return gallery && 
+           gallery.coverPhoto && 
+           typeof gallery.coverPhoto === 'string' && 
+           gallery.coverPhoto.length > 0 &&
+           gallery.photos && 
+           Array.isArray(gallery.photos) && 
+           gallery.photos.length > 0;
+  };
+
+  // Update completion status
+  const updateCompletionStatus = () => {
+    const profileCompleted = checkProfileCompletion();
+    const aboutYouCompleted = checkAboutYouCompletion();
+    const pricesCompleted = checkPricesCompletion();
+    const galleryCompleted = checkGalleryCompletion();
+    
+    console.log('Completion Check Results:', {
+      profile: profileCompleted,
+      aboutYou: aboutYouCompleted,
+      prices: pricesCompleted,
+      gallery: galleryCompleted,
+      totalCompleted: [profileCompleted, aboutYouCompleted, pricesCompleted, galleryCompleted].filter(Boolean).length,
+      currentData: {
+        profile: {
+          businessName: profile.businessName,
+          businessDescription: profile.businessDescription,
+          speciality: profile.speciality,
+          servicesOffered: profile.servicesOffered
+        },
+        address: {
+          city: address.city,
+          state: address.state,
+          formatted_address: address.formatted_address,
+          postal_code: address.postal_code
+        },
+        documents: documents.length,
+        prices: prices,
+        gallery: {
+          coverPhoto: gallery.coverPhoto,
+          photos: gallery.photos.length
+        },
+        other: {
+          experience: other.experience,
+          clients: other.clients,
+          usp: other.usp
+        }
+      }
+    });
+    
+    setCompletedPages({
+      profile: profileCompleted,
+      aboutYou: aboutYouCompleted,
+      prices: pricesCompleted,
+      gallery: galleryCompleted,
+    });
+  };
+
+  // Get total completed pages count
+  const getCompletedCount = () => {
+    return Object.values(completedPages).filter(Boolean).length;
+  };
+
   const fetchSpecialityList = () => {
     setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-speciality`, {
@@ -755,10 +884,11 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchOther();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
+          // Only refetch data if there was an error
+          fetchOther();
         } else {
           toast.success("Details Updated");
           if (!user?.profileCompleted) {
@@ -793,12 +923,16 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchPrices();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating photo details.");
-        } else if (!user?.profileCompleted) {
-          setDisplay("Gallery");
+          // Only refetch data if there was an error
+          fetchPrices();
+        } else {
+          toast.success("Details Updated");
+          if (!user?.profileCompleted) {
+            setDisplay("Gallery");
+          }
         }
       })
       .catch((error) => {
@@ -1172,13 +1306,17 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchAddress();
-        fetchProfile();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
-        } else if (!user?.profileCompleted) {
-          setDisplay("About you");
+          // Only refetch data if there was an error
+          fetchAddress();
+          fetchProfile();
+        } else {
+          toast.success("Details Updated");
+          if (!user?.profileCompleted) {
+            setDisplay("About you");
+          }
         }
       })
       .catch((error) => {
@@ -1186,6 +1324,157 @@ export default function Settings({ user }) {
         console.error("There was a problem with the fetch operation:", error);
       });
   };
+
+  // Google Maps Autocomplete functionality
+  const loadGoogleMaps = () => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") return resolve(null);
+      if (window.google && window.google.maps && window.google.maps.places) {
+        return resolve(window.google);
+      }
+      const existing = document.getElementById("gmaps-script");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.google));
+        existing.addEventListener("error", () => resolve(null));
+        return;
+      }
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      
+      if (!apiKey) {
+        console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
+        return resolve(null);
+      }
+      
+      const script = document.createElement("script");
+      script.id = "gmaps-script";
+      script.async = true;
+      script.defer = true;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+      script.onload = () => resolve(window.google);
+      script.onerror = () => {
+        console.warn("Failed to load Google Maps API. Autocomplete will be disabled.");
+        resolve(null);
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  // Helper to check if a place is within Bengaluru
+  const isBengaluruAddress = (formattedAddress = "") => {
+    const a = formattedAddress.toLowerCase();
+    return a.includes("bengaluru") || a.includes("bangalore");
+  };
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    let autocomplete;
+    const init = async () => {
+      try {
+        const google = await loadGoogleMaps();
+        if (!google?.maps?.places || !autocompleteInputRef.current) {
+          console.log("Google Maps not available, autocomplete disabled");
+          return;
+        }
+        googleInstanceRef.current = google;
+        const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
+        const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
+        autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+          types: ["geocode"],
+          componentRestrictions: { country: "in" },
+          fields: ["address_components", "formatted_address", "place_id", "geometry"],
+          strictBounds: true,
+        });
+        autocomplete.setBounds(circle.getBounds());
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place) return;
+          const formatted = place.formatted_address || "";
+          
+          if (!isBengaluruAddress(formatted)) {
+            toast.error("We currently support only Bengaluru addresses.");
+            if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
+            return;
+          }
+          
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          let state = "";
+          let city = "";
+          let area = "";
+          let pincode = "";
+          
+          // Parse address components
+          addressComponents.forEach(component => {
+            const types = component.types;
+            if (types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            } else if (types.includes("locality") || types.includes("administrative_area_level_2")) {
+              city = component.long_name;
+            } else if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+              area = component.long_name;
+            } else if (types.includes("postal_code")) {
+              pincode = component.long_name;
+            }
+          });
+          
+          // Additional check for pincode
+          if (!pincode) {
+            addressComponents.forEach(component => {
+              const name = component.long_name || component.short_name || "";
+              if (/^\d{6}$/.test(name)) {
+                pincode = name;
+              }
+            });
+          }
+          
+          // If pincode is not found, try to extract from formatted address
+          if (!pincode) {
+            const pincodePatterns = [
+              /\b\d{6}\b/g,
+              /\b\d{5,6}\b/g,
+              /pincode[:\s]*(\d{6})/i,
+              /pin[:\s]*(\d{6})/i,
+            ];
+            
+            for (const pattern of pincodePatterns) {
+              const match = formatted.match(pattern);
+              if (match) {
+                pincode = match[1] || match[0];
+                break;
+              }
+            }
+          }
+          
+          // Auto-fill address fields
+          setAddress(prev => ({ 
+            ...prev, 
+            formatted_address: formatted,
+            state: state || prev.state,
+            city: city || prev.city,
+            locality: area || prev.locality,
+            postal_code: pincode || prev.postal_code,
+            full_address: formatted,
+            place_id: place.place_id || "",
+            geometry: {
+              location: {
+                lat: place.geometry?.location?.lat() || 0,
+                lng: place.geometry?.location?.lng() || 0,
+              },
+            }
+          }));
+        });
+      } catch (error) {
+        console.warn("Google Maps initialization failed:", error);
+      }
+    };
+    init();
+    return () => {
+      if (autocomplete) {
+        try { googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete); } catch (_) {}
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchLocationData();
@@ -1197,6 +1486,18 @@ export default function Settings({ user }) {
     fetchSpecialityList();
     fetchDocuments();
   }, []);
+
+  // Update completion status after initial data loads
+  useEffect(() => {
+    if (loading === false) {
+      updateCompletionStatus();
+    }
+  }, [loading]);
+
+  // Update completion status whenever relevant data changes
+  useEffect(() => {
+    updateCompletionStatus();
+  }, [profile, address, other, prices, gallery, documents]);
   return (
     <>
       <style jsx>{`
@@ -1204,8 +1505,8 @@ export default function Settings({ user }) {
           background: #FFFFFF;
           border: 1px solid #D1D5DB;
           border-radius: 6px;
-          padding: 16px 20px;
-          padding-right: 50px;
+          padding: 12px 16px;
+          padding-right: 40px;
           font-size: 16px;
           color: #374151;
           cursor: pointer;
@@ -1237,10 +1538,11 @@ export default function Settings({ user }) {
         }
       `}</style>
       <div className="flex flex-col py-4 pt-8 overflow-x-hidden">
-        <div className="flex flex-row gap-3 items-center mb-4 px-8">
-          <BackIcon />
-        </div>
-        <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+          <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
+            <BackIcon />
+          </div>
+          <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
           <div
             className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
               display === "Profile" 
@@ -1289,9 +1591,10 @@ export default function Settings({ user }) {
           >
             Gallery
           </div>
+          </div>
         </div>
         {display === "Profile" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Profile Details Section */}
             <div className="space-y-6">
               <div>
@@ -1502,6 +1805,61 @@ export default function Settings({ user }) {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-black">Address details</h3>
               
+              {/* Google Maps Autocomplete - MOVED TO TOP */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Google Maps Address <span className="text-gray-500 text-xs">(Search and auto-fill below fields)</span>
+                </label>
+                <input
+                  ref={autocompleteInputRef}
+                  type="text"
+                  placeholder="Search your address on Google Maps"
+                  value={address.formatted_address || ""}
+                  onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Flat no/House no
+                </label>
+                <input
+                  type="text"
+                  placeholder="Flat no/House no"
+                  value={address.flat_house_number || ""}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      flat_house_number: e.target.value,
+                    });
+                  }}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">
+                  Address Line 1
+                </label>
+                <input
+                  type="text"
+                  placeholder="Address Line 1"
+                  value={address.full_address || ""}
+                  onChange={(e) => {
+                    setAddress({
+                      ...address,
+                      full_address: e.target.value,
+                    });
+                  }}
+                  ref={inputRef}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   City
@@ -1559,45 +1917,6 @@ export default function Settings({ user }) {
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Flat no/House no
-                </label>
-                <input
-                  type="text"
-                  placeholder="Flat no/House no"
-                  value={address.flat_house_number || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      flat_house_number: e.target.value,
-                    });
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Address Line 1
-                </label>
-                <input
-                  type="text"
-                  placeholder="Address Line 1"
-                  value={address.formatted_address || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      formatted_address: e.target.value,
-                    });
-                  }}
-                  ref={inputRef}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
                   Pincode
                 </label>
                 <input
@@ -1608,25 +1927,6 @@ export default function Settings({ user }) {
                     setAddress({
                       ...address,
                       postal_code: e.target.value,
-                    });
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your address"
-                  value={address.full_address || ""}
-                  onChange={(e) => {
-                    setAddress({
-                      ...address,
-                      full_address: e.target.value,
                     });
                   }}
                   disabled={loading}
@@ -1710,7 +2010,11 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                   onClick={() => {
                     if (profile.businessDescription.length > 350) {
@@ -1740,7 +2044,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "About you" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Experience Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2085,7 +2389,11 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                 onClick={() => {
                   // Validate all fields
@@ -2128,7 +2436,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Prices" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Bridal Makeup Price */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2192,7 +2500,11 @@ export default function Settings({ user }) {
             )}
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                 onClick={() => {
                   updatePrices();
@@ -2216,7 +2528,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Gallery" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Cover Photo Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2278,22 +2590,17 @@ export default function Settings({ user }) {
                   />
                 </div>
                 
-                {/* Info Panel */}
-                <div className="flex-1">
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-900">Cover Photo Guidelines</span>
-                    </div>
-                    <ul className="text-xs text-gray-600 space-y-1">
-                      <li>• Recommended size: 3:4 aspect ratio</li>
-                      <li>• Portrait orientation preferred</li>
-                      <li>• High quality, well-lit photo</li>
-                      <li>• Professional appearance</li>
-                    </ul>
-                  </div>
+                  {/* Info Panel */}
+                  <div className="flex-1">
+                   <div className="bg-gray-50 rounded-lg p-4">
+                     <h4 className="text-sm font-medium text-gray-900 mb-2">Cover Image</h4>
+                     <p className="text-xs text-gray-600">
+                       Upload your cover image here.
+                       Make sure you upload the best quality picture of yourself.
+                       The image should be in the format of 3:4 aspect ratio.
+                       
+                     </p>
+                   </div>
                   
             {coverPhoto && (
                     <div className="mt-4">
@@ -2334,120 +2641,65 @@ export default function Settings({ user }) {
             </div>
 
             {/* Gallery Photos Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <label className="text-sm font-medium text-black">
-                    Upload photos for gallery view
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload multiple images at once (max 15 photos)
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    photoRef.current?.click();
-                  }}
-                  disabled={loading || gallery.photos.length >= 15}
-                  className="px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  {gallery.photos.length >= 15 ? 'Max Reached' : 'Upload Photos'}
-                </button>
-              </div>
+            <div className="w-full">
+               <div className="w-full mb-4">
+                 <div className="mb-4 text-center">
+                   <label className="text-sm font-medium text-black">
+                     Upload photos for gallery view
+                   </label>
+                   <p className="text-xs text-gray-500 mt-1">
+                     Upload multiple images at once (max 15 photos)
+                   </p>
+                 </div>
+                 <button
+                   onClick={() => {
+                     photoRef.current?.click();
+                   }}
+                   disabled={loading || gallery.photos.length >= 15}
+                   className="w-full px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+                 >
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                   </svg>
+                   {gallery.photos.length >= 15 ? 'Max Reached' : 'Add Photos'}
+                 </button>
+               </div>
               
-              {/* Multi-select Controls */}
-              {gallery.photos.length > 0 && (
-                <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={toggleMultiSelectMode}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm ${
-                          isMultiSelectMode 
-                            ? 'bg-[#840032] text-white hover:bg-[#6d0028] shadow-md' 
-                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        {isMultiSelectMode ? (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Cancel Select
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Select Photos
-                          </>
-                        )}
-                      </button>
-                      
-                      {isMultiSelectMode && (
-                        <>
-                          <button
-                            onClick={selectAllPhotos}
-                            className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Select All
-                          </button>
-                          <button
-                            onClick={deselectAllPhotos}
-                            className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Deselect All
-                          </button>
-                          <div className="px-3 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
-                            <span className="text-sm font-medium text-gray-700">
-                              {selectedPhotos.length} selected
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {isMultiSelectMode && selectedPhotos.length > 0 && (
-                        <button
-                          onClick={handleBulkDelete}
-                          className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Delete Selected ({selectedPhotos.length})
-                        </button>
-                      )}
-                      {/* Delete All button */}
-                      <button
-                        onClick={() => {
-                          // Select all photos and force empty on confirm
-                          setSelectedPhotos(gallery.photos.map((_, idx) => idx));
-                          setIsMultiSelectMode(true);
-                          setForceEmptyGallery(true);
-                          setShowBulkDeleteModal(true);
-                        }}
-                        className="px-4 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200 flex items-center gap-2 border border-red-300 shadow-sm hover:shadow-md"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete All
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+               {/* Gallery Controls */}
+               {gallery.photos.length > 0 && (
+                 <div className="mb-4">
+                   {!isMultiSelectMode ? (
+                     /* Show Select button when not in select mode */
+                     <div className="flex items-center justify-center">
+                       <button
+                         onClick={() => setIsMultiSelectMode(true)}
+                         className="px-4 py-2 text-sm font-medium bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         Select
+                       </button>
+                     </div>
+                   ) : (
+                     /* Show Delete button when in select mode */
+                     <div className="flex items-center justify-between gap-4">
+                       <span className="text-sm font-medium text-gray-700">
+                         {selectedPhotos.length} selected
+                       </span>
+                       <button
+                         onClick={handleBulkDelete}
+                         className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                         </svg>
+                         Delete ({selectedPhotos.length})
+                       </button>
+                     </div>
+                   )}
+                 </div>
+               )}
               
               <input
               ref={photoRef}
@@ -2481,110 +2733,136 @@ export default function Settings({ user }) {
               )}
               
               {/* Gallery Grid */}
-              <div className="grid grid-cols-2 gap-3">
-              {/* Show existing gallery photos */}
-              {gallery.photos.map((item, index) => (
-                <div
-                  key={index}
-                  className={`group relative w-full aspect-square rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all ${
-                    isMultiSelectMode && selectedPhotos.includes(index)
-                      ? 'border-[#840032] ring-2 ring-[#840032] ring-opacity-50'
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <img
-                    src={item}
-                    alt={`Gallery image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                {/* Combine all photos and placeholder into a single array for proper ordering */}
+                {(() => {
+                  const allItems = [];
                   
-                  {/* Multi-select Checkbox */}
-                  {isMultiSelectMode && (
-                    <div className="absolute top-3 left-3">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={selectedPhotos.includes(index)}
-                          onChange={() => togglePhotoSelection(index)}
-                          className="w-6 h-6 text-[#840032] bg-white border-2 border-white rounded-lg focus:ring-[#840032] focus:ring-2 shadow-lg cursor-pointer"
-                        />
-                        {selectedPhotos.includes(index) && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                  // Add existing gallery photos
+                  gallery.photos.forEach((item, index) => {
+                    allItems.push({
+                      type: 'photo',
+                      data: item,
+                      index: index,
+                      key: `photo-${index}`
+                    });
+                  });
+                  
+                  // Add cropped photos
+                  cropFiles.forEach((file, index) => {
+                    allItems.push({
+                      type: 'crop',
+                      data: file,
+                      index: index,
+                      key: `crop-${index}`
+                    });
+                  });
+                  
+                  // Add upload placeholder if needed
+                  if (allItems.length < 15) {
+                    allItems.push({
+                      type: 'placeholder',
+                      data: null,
+                      index: allItems.length,
+                      key: 'placeholder'
+                    });
+                  }
+                  
+                  return allItems.map((item, gridIndex) => (
+                    <div key={item.key} className="w-full aspect-square">
+                      {item.type === 'photo' && (
+                        <div
+                          onClick={() => isMultiSelectMode && togglePhotoSelection(item.index)}
+                          className={`group relative w-full h-full overflow-hidden rounded-lg transition-all ${
+                            isMultiSelectMode ? 'cursor-pointer' : ''
+                          } ${
+                            isMultiSelectMode && selectedPhotos.includes(item.index)
+                              ? 'ring-2 ring-[#840032] ring-opacity-50'
+                              : ''
+                          }`}
+                        >
+                          <img
+                            src={item.data}
+                            alt={`Gallery image ${item.index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {/* Selection Checkbox - Only show in multi-select mode */}
+                          {isMultiSelectMode && (
+                            <div className="absolute top-3 left-3">
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                selectedPhotos.includes(item.index)
+                                  ? 'bg-[#840032] border-[#840032]'
+                                  : 'bg-white border-gray-300'
+                              }`}>
+                                {selectedPhotos.includes(item.index) && (
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Delete Button - Only show when not in multi-select mode */}
+                          {!isMultiSelectMode && (
+                            <button
+                              onClick={() => handleDeletePhoto(item.index)}
+                              disabled={loading}
+                              className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      
+                      {item.type === 'crop' && (
+                        <div className="group relative w-full h-full rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50">
+                          <img
+                            src={URL.createObjectURL(item.data)}
+                            alt={`Cropped photo ${item.index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Pending indicator */}
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                            Pending Upload
                           </div>
-                        )}
-                      </div>
+                          {/* Remove button */}
+                          <button
+                            onClick={() => {
+                              setCropFiles(prev => prev.filter((_, i) => i !== item.index));
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                      
+                      {item.type === 'placeholder' && (
+                        <div
+                          onClick={() => photoRef.current?.click()}
+                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors aspect-[3/4]"
+                        >
+                          <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <p className="text-sm text-gray-500 text-center font-medium">
+                            Click to add photos
+                          </p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            {gallery.photos.length + cropFiles.length}/15
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Delete Button - Only show when not in multi-select mode */}
-                  {!isMultiSelectMode && (
-                    <button
-                      onClick={() => handleDeletePhoto(index)}
-                      disabled={loading}
-                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 disabled:opacity-50 shadow-lg"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
-                  
-                  {/* Image Number */}
-                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    {index + 1}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Show cropped photos before upload */}
-              {cropFiles.map((file, index) => (
-                <div
-                  key={`crop-${index}`}
-                  className="group relative w-full aspect-square rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50"
-                >
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Cropped photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Pending indicator */}
-                  <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                    Pending Upload
-                  </div>
-                  {/* Remove button */}
-                  <button
-                    onClick={() => {
-                      setCropFiles(prev => prev.filter((_, i) => i !== index));
-                    }}
-                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-                
-                {/* Upload Placeholder */}
-                {gallery.photos.length + cropFiles.length < 15 && (
-                  <div
-                    onClick={() => photoRef.current?.click()}
-                    className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors"
-                  >
-                    <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <p className="text-xs text-gray-500 text-center">
-                      Click to add photos
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {gallery.photos.length + cropFiles.length}/15
-                    </p>
-                  </div>
-                )}
+                  ));
+                })()}
               </div>
             </div>
           </div>
@@ -2783,7 +3061,7 @@ export default function Settings({ user }) {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-black">
-                  Crop Image - Passport Size (2.5&quot; x 3.5&quot;)
+                  Crop Photo
                 </h3>
                 <button
                   onClick={() => {
@@ -2801,30 +3079,62 @@ export default function Settings({ user }) {
             
             <div className="p-4 max-h-[60vh] overflow-auto">
               {imgSrc && (
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ width: '300px', height: '400px' }}>
                     <ReactCrop
                       crop={crop}
                       onChange={(_, percentCrop) => setCrop(percentCrop)}
                       onComplete={(c) => setCompletedCrop(c)}
-                      aspect={2.5 / 3.5} // Passport size aspect ratio
+                      aspect={2.5 / 3.5} // Cover photo aspect ratio
                       minWidth={100}
                       minHeight={140}
+                      locked={true} // Fixed crop area
+                      disabled={false} // Allow panning within crop
                     >
                       <img
                         ref={imgRef}
                         alt="Crop me"
                         src={imgSrc}
                         onLoad={onImageLoad}
-                        className="max-w-full max-h-96"
+                        className="block w-full h-full object-cover"
+                        style={{ 
+                          minWidth: '100%', 
+                          minHeight: '100%',
+                          transform: `scale(${crop?.scale || 1}) translate(${crop?.x || 0}px, ${crop?.y || 0}px)` 
+                        }}
                       />
                     </ReactCrop>
                   </div>
                   
-                  <div className="text-sm text-gray-600 text-center">
-                    <p>• Drag to move the crop area</p>
-                    <p>• Drag corners to resize</p>
-                    <p>• Aspect ratio is locked to passport size (2.5&quot; x 3.5&quot;)</p>
+                  {/* Zoom Controls */}
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => {
+                        const newScale = Math.max(0.5, (crop?.scale || 1) - 0.1);
+                        setCrop(prev => ({ ...prev, scale: newScale }));
+                      }}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Zoom Out
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      {Math.round((crop?.scale || 1) * 100)}%
+                    </span>
+                    <button
+                      onClick={() => {
+                        const newScale = Math.min(3, (crop?.scale || 1) + 0.1);
+                        setCrop(prev => ({ ...prev, scale: newScale }));
+                      }}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Zoom In
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 text-center">
+                    <p>• Drag to move the image within the crop area</p>
+                    <p>• Use zoom controls to adjust size</p>
+                    <p>• Crop area is fixed for cover photo (3:4 ratio)</p>
                   </div>
                 </div>
               )}

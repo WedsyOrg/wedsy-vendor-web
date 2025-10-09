@@ -20,9 +20,61 @@ export default function Login({}) {
     otpMessage: "",
   });
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [lastOtpTime, setLastOtpTime] = useState(0);
+
+  // Timer management for resend OTP
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [resendTimer]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setResendTimer(0);
+    };
+  }, []);
+
   const SendOTP = () => {
     // Prevent multiple OTP sends
     if (data.loading || data.otpSent) {
+      return;
+    }
+
+    // Rate limiting - prevent more than 3 OTP requests in 5 minutes
+    const now = Date.now();
+    const timeSinceLastOtp = now - lastOtpTime;
+    
+    if (otpAttempts >= 3 && timeSinceLastOtp < 300000) { // 5 minutes
+      setData({
+        ...data,
+        message: "Too many OTP requests. Please wait 5 minutes before trying again.",
+      });
+      return;
+    }
+    
+    // Prevent OTP requests within 60 seconds (rate limiting)
+    if (timeSinceLastOtp < 60000) {
+      setData({
+        ...data,
+        message: "Please wait 60 seconds before requesting another OTP.",
+      });
       return;
     }
     
@@ -51,6 +103,10 @@ export default function Login({}) {
           ReferenceId: response.ReferenceId,
           otpMessage: "OTP sent successfully!",
         });
+        // Start resend timer and update attempts
+        setResendTimer(60);
+        setOtpAttempts(prev => prev + 1);
+        setLastOtpTime(now);
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -58,6 +114,66 @@ export default function Login({}) {
           ...data,
           loading: false,
           message: "Failed to send OTP. Please try again.",
+        });
+      });
+  };
+
+  const handleResendOtp = () => {
+    if (resendTimer > 0) return;
+    
+    // Additional rate limiting check
+    const now = Date.now();
+    const timeSinceLastOtp = now - lastOtpTime;
+    
+    if (timeSinceLastOtp < 60000) {
+      setData({
+        ...data,
+        message: "Please wait 60 seconds before requesting another OTP.",
+      });
+      return;
+    }
+    
+    // Reset OTP field and resend
+    setData({
+      ...data,
+      Otp: "",
+      message: "",
+      otpMessage: "",
+      loading: true,
+    });
+    
+    // Send OTP directly without calling SendOTP (to bypass otpSent check)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone: processMobileNumber(data.phone),
+      }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        setData({
+          ...data,
+          loading: false,
+          otpSent: true,
+          ReferenceId: response.ReferenceId,
+          otpMessage: "OTP resent successfully!",
+          Otp: "",
+          message: "",
+        });
+        // Start resend timer and update attempts
+        setResendTimer(60);
+        setOtpAttempts(prev => prev + 1);
+        setLastOtpTime(now);
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+        setData({
+          ...data,
+          loading: false,
+          message: "Failed to resend OTP. Please try again.",
         });
       });
   };
@@ -207,6 +323,17 @@ export default function Login({}) {
 
           {/* OTP Field - Always visible */}
           <div className="mb-4">
+            <div className="flex items-center justify-end mb-1">
+              {data.otpSent && (
+                <button
+                  onClick={handleResendOtp}
+                  disabled={resendTimer > 0 || data.loading}
+                  className="text-xs text-[#8B0000] underline hover:text-[#6B0000] transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                </button>
+              )}
+            </div>
             <AnimatedInput
               label="OTP"
               value={data.Otp}
