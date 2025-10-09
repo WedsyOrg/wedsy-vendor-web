@@ -1537,12 +1537,12 @@ export default function Settings({ user }) {
           color: #840032;
         }
       `}</style>
-      <div className="flex flex-col py-4 pt-8 overflow-x-hidden">
+      <div className="flex flex-col overflow-x-hidden">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
           <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
             <BackIcon />
           </div>
-          <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
+          <div className="flex flex-row items-center border-b border-gray-200 overflow-x-hidden">
           <div
             className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
               display === "Profile" 
@@ -1805,15 +1805,15 @@ export default function Settings({ user }) {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-black">Address details</h3>
               
-              {/* Google Maps Autocomplete - MOVED TO TOP */}
+              
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
-                  Google Maps Address <span className="text-gray-500 text-xs">(Search and auto-fill below fields)</span>
+                  Address
                 </label>
                 <input
                   ref={autocompleteInputRef}
                   type="text"
-                  placeholder="Search your address on Google Maps"
+                  placeholder="Search your address"
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   disabled={loading}
