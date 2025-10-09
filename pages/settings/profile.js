@@ -2593,9 +2593,12 @@ export default function Settings({ user }) {
                   {/* Info Panel */}
                   <div className="flex-1">
                    <div className="bg-gray-50 rounded-lg p-4">
-                     <h4 className="text-sm font-medium text-gray-900 mb-2">Gallery Photos</h4>
+                     <h4 className="text-sm font-medium text-gray-900 mb-2">Cover Image</h4>
                      <p className="text-xs text-gray-600">
-                       Maximum 15 photos allowed for your gallery. Upload high-quality images to showcase your work.
+                       Upload your cover image here.
+                       Make sure you upload the best quality picture of yourself.
+                       The image should be in the format of 3:4 aspect ratio.
+                       
                      </p>
                    </div>
                   
