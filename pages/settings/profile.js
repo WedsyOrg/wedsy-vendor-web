@@ -2584,22 +2584,14 @@ export default function Settings({ user }) {
                   />
                 </div>
                 
-                {/* Info Panel */}
-                <div className="flex-1">
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-900">Cover Photo Guidelines</span>
-                    </div>
-                    <ul className="text-xs text-gray-600 space-y-1">
-                      <li>• Recommended size: 3:4 aspect ratio</li>
-                      <li>• Portrait orientation preferred</li>
-                      <li>• High quality, well-lit photo</li>
-                      <li>• Professional appearance</li>
-                    </ul>
-                  </div>
+                  {/* Info Panel */}
+                  <div className="flex-1">
+                   <div className="bg-gray-50 rounded-lg p-4">
+                     <h4 className="text-sm font-medium text-gray-900 mb-2">Gallery Photos</h4>
+                     <p className="text-xs text-gray-600">
+                       Maximum 15 photos allowed for your gallery. Upload high-quality images to showcase your work.
+                     </p>
+                   </div>
                   
             {coverPhoto && (
                     <div className="mt-4">
@@ -2640,120 +2632,65 @@ export default function Settings({ user }) {
             </div>
 
             {/* Gallery Photos Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <label className="text-sm font-medium text-black">
-                    Upload photos for gallery view
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload multiple images at once (max 15 photos)
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    photoRef.current?.click();
-                  }}
-                  disabled={loading || gallery.photos.length >= 15}
-                  className="px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  {gallery.photos.length >= 15 ? 'Max Reached' : 'Upload Photos'}
-                </button>
-              </div>
+            <div className="flex flex-col items-center">
+               <div className="w-full max-w-md mb-4">
+                 <div className="mb-4 text-center">
+                   <label className="text-sm font-medium text-black">
+                     Upload photos for gallery view
+                   </label>
+                   <p className="text-xs text-gray-500 mt-1">
+                     Upload multiple images at once (max 15 photos)
+                   </p>
+                 </div>
+                 <button
+                   onClick={() => {
+                     photoRef.current?.click();
+                   }}
+                   disabled={loading || gallery.photos.length >= 15}
+                   className="w-full px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+                 >
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                   </svg>
+                   {gallery.photos.length >= 15 ? 'Max Reached' : 'Add Photos'}
+                 </button>
+               </div>
               
-              {/* Multi-select Controls */}
-              {gallery.photos.length > 0 && (
-                <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={toggleMultiSelectMode}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm ${
-                          isMultiSelectMode 
-                            ? 'bg-[#840032] text-white hover:bg-[#6d0028] shadow-md' 
-                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        {isMultiSelectMode ? (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Cancel Select
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Select Photos
-                          </>
-                        )}
-                      </button>
-                      
-                      {isMultiSelectMode && (
-                        <>
-                          <button
-                            onClick={selectAllPhotos}
-                            className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Select All
-                          </button>
-                          <button
-                            onClick={deselectAllPhotos}
-                            className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Deselect All
-                          </button>
-                          <div className="px-3 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
-                            <span className="text-sm font-medium text-gray-700">
-                              {selectedPhotos.length} selected
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {isMultiSelectMode && selectedPhotos.length > 0 && (
-                        <button
-                          onClick={handleBulkDelete}
-                          className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Delete Selected ({selectedPhotos.length})
-                        </button>
-                      )}
-                      {/* Delete All button */}
-                      <button
-                        onClick={() => {
-                          // Select all photos and force empty on confirm
-                          setSelectedPhotos(gallery.photos.map((_, idx) => idx));
-                          setIsMultiSelectMode(true);
-                          setForceEmptyGallery(true);
-                          setShowBulkDeleteModal(true);
-                        }}
-                        className="px-4 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200 flex items-center gap-2 border border-red-300 shadow-sm hover:shadow-md"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete All
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+               {/* Gallery Controls */}
+               {gallery.photos.length > 0 && (
+                 <div className="mb-4">
+                   {!isMultiSelectMode ? (
+                     /* Show Select button when not in select mode */
+                     <div className="flex items-center justify-center">
+                       <button
+                         onClick={() => setIsMultiSelectMode(true)}
+                         className="px-4 py-2 text-sm font-medium bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         Select
+                       </button>
+                     </div>
+                   ) : (
+                     /* Show Delete button when in select mode */
+                     <div className="flex items-center justify-between gap-4">
+                       <span className="text-sm font-medium text-gray-700">
+                         {selectedPhotos.length} selected
+                       </span>
+                       <button
+                         onClick={handleBulkDelete}
+                         className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                         </svg>
+                         Delete ({selectedPhotos.length})
+                       </button>
+                     </div>
+                   )}
+                 </div>
+               )}
               
               <input
               ref={photoRef}
@@ -2792,10 +2729,13 @@ export default function Settings({ user }) {
               {gallery.photos.map((item, index) => (
                 <div
                   key={index}
-                  className={`group relative w-full aspect-square rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all ${
+                  onClick={() => isMultiSelectMode && togglePhotoSelection(index)}
+                  className={`group relative w-full aspect-square overflow-hidden transition-all ${
+                    isMultiSelectMode ? 'cursor-pointer' : ''
+                  } ${
                     isMultiSelectMode && selectedPhotos.includes(index)
-                      ? 'border-[#840032] ring-2 ring-[#840032] ring-opacity-50'
-                      : 'border-gray-200'
+                      ? 'ring-2 ring-[#840032] ring-opacity-50'
+                      : ''
                   }`}
                 >
                   <img
@@ -2804,22 +2744,18 @@ export default function Settings({ user }) {
                     className="w-full h-full object-cover"
                   />
                   
-                  {/* Multi-select Checkbox */}
+                  {/* Selection Checkbox - Only show in multi-select mode */}
                   {isMultiSelectMode && (
                     <div className="absolute top-3 left-3">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={selectedPhotos.includes(index)}
-                          onChange={() => togglePhotoSelection(index)}
-                          className="w-6 h-6 text-[#840032] bg-white border-2 border-white rounded-lg focus:ring-[#840032] focus:ring-2 shadow-lg cursor-pointer"
-                        />
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        selectedPhotos.includes(index)
+                          ? 'bg-[#840032] border-[#840032]'
+                          : 'bg-white border-gray-300'
+                      }`}>
                         {selectedPhotos.includes(index) && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
                         )}
                       </div>
                     </div>
@@ -2830,18 +2766,13 @@ export default function Settings({ user }) {
                     <button
                       onClick={() => handleDeletePhoto(index)}
                       disabled={loading}
-                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 disabled:opacity-50 shadow-lg"
+                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
                   )}
-                  
-                  {/* Image Number */}
-                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    {index + 1}
-                  </div>
                 </div>
               ))}
               
