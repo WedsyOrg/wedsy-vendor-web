@@ -463,6 +463,127 @@ export default function Settings({ user }) {
     makeupProducts: [""],
     awards: [],
   });
+
+  // Progress tracking state
+  const [completedPages, setCompletedPages] = useState({
+    profile: false,
+    aboutYou: false,
+    prices: false,
+    gallery: false,
+  });
+
+  // Functions to check completion status
+  const checkProfileCompletion = () => {
+    // Check all required text fields with strict validation
+    const businessName = profile.businessName?.trim();
+    const businessDescription = profile.businessDescription?.trim();
+    const speciality = profile.speciality?.trim();
+    const servicesOffered = profile.servicesOffered?.trim();
+    const city = address.city?.trim();
+    const state = address.state?.trim();
+    const formattedAddress = address.formatted_address?.trim();
+    const postalCode = address.postal_code?.trim();
+    
+    // All fields must have meaningful content (at least 2 characters for most fields)
+    const textFieldsValid = 
+      businessName && businessName.length >= 2 &&
+      businessDescription && businessDescription.length >= 10 &&
+      speciality && speciality.length >= 2 &&
+      servicesOffered && servicesOffered.length >= 2 &&
+      city && city.length >= 2 &&
+      state && state.length >= 2 &&
+      formattedAddress && formattedAddress.length >= 10 &&
+      postalCode && postalCode.length >= 6;
+    
+    const hasDocuments = documents && documents.length > 0;
+    
+    // Only return true if ALL conditions are met
+    return textFieldsValid && hasDocuments;
+  };
+
+  const checkAboutYouCompletion = () => {
+    const experience = other.experience?.trim();
+    const clients = other.clients?.trim();
+    const usp = other.usp?.trim();
+    
+    // Only return true if ALL fields have meaningful content
+    return experience && experience.length >= 1 &&
+           clients && clients.length >= 1 &&
+           usp && usp.length >= 10;
+  };
+
+  const checkPricesCompletion = () => {
+    // Only return true if ALL prices are greater than 0
+    return prices && 
+           typeof prices.party === 'number' && prices.party > 0 &&
+           typeof prices.bridal === 'number' && prices.bridal > 0 &&
+           typeof prices.groom === 'number' && prices.groom > 0;
+  };
+
+  const checkGalleryCompletion = () => {
+    // Only return true if both cover photo and gallery photos exist
+    return gallery && 
+           gallery.coverPhoto && 
+           typeof gallery.coverPhoto === 'string' && 
+           gallery.coverPhoto.length > 0 &&
+           gallery.photos && 
+           Array.isArray(gallery.photos) && 
+           gallery.photos.length > 0;
+  };
+
+  // Update completion status
+  const updateCompletionStatus = () => {
+    const profileCompleted = checkProfileCompletion();
+    const aboutYouCompleted = checkAboutYouCompletion();
+    const pricesCompleted = checkPricesCompletion();
+    const galleryCompleted = checkGalleryCompletion();
+    
+    console.log('Completion Check Results:', {
+      profile: profileCompleted,
+      aboutYou: aboutYouCompleted,
+      prices: pricesCompleted,
+      gallery: galleryCompleted,
+      totalCompleted: [profileCompleted, aboutYouCompleted, pricesCompleted, galleryCompleted].filter(Boolean).length,
+      currentData: {
+        profile: {
+          businessName: profile.businessName,
+          businessDescription: profile.businessDescription,
+          speciality: profile.speciality,
+          servicesOffered: profile.servicesOffered
+        },
+        address: {
+          city: address.city,
+          state: address.state,
+          formatted_address: address.formatted_address,
+          postal_code: address.postal_code
+        },
+        documents: documents.length,
+        prices: prices,
+        gallery: {
+          coverPhoto: gallery.coverPhoto,
+          photos: gallery.photos.length
+        },
+        other: {
+          experience: other.experience,
+          clients: other.clients,
+          usp: other.usp
+        }
+      }
+    });
+    
+    setCompletedPages({
+      profile: profileCompleted,
+      aboutYou: aboutYouCompleted,
+      prices: pricesCompleted,
+      gallery: galleryCompleted,
+    });
+  };
+
+  // Get total completed pages count
+  const getCompletedCount = () => {
+    return Object.values(completedPages).filter(Boolean).length;
+  };
+
   const fetchSpecialityList = () => {
     setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-speciality`, {
@@ -757,10 +878,11 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchOther();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
+          // Only refetch data if there was an error
+          fetchOther();
         } else {
           toast.success("Details Updated");
           if (!user?.profileCompleted) {
@@ -795,12 +917,16 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchPrices();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating photo details.");
-        } else if (!user?.profileCompleted) {
-          setDisplay("Gallery");
+          // Only refetch data if there was an error
+          fetchPrices();
+        } else {
+          toast.success("Details Updated");
+          if (!user?.profileCompleted) {
+            setDisplay("Gallery");
+          }
         }
       })
       .catch((error) => {
@@ -1174,13 +1300,17 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        fetchAddress();
-        fetchProfile();
         setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
-        } else if (!user?.profileCompleted) {
-          setDisplay("About you");
+          // Only refetch data if there was an error
+          fetchAddress();
+          fetchProfile();
+        } else {
+          toast.success("Details Updated");
+          if (!user?.profileCompleted) {
+            setDisplay("About you");
+          }
         }
       })
       .catch((error) => {
@@ -1350,6 +1480,18 @@ export default function Settings({ user }) {
     fetchSpecialityList();
     fetchDocuments();
   }, []);
+
+  // Update completion status after initial data loads
+  useEffect(() => {
+    if (loading === false) {
+      updateCompletionStatus();
+    }
+  }, [loading]);
+
+  // Update completion status whenever relevant data changes
+  useEffect(() => {
+    updateCompletionStatus();
+  }, [profile, address, other, prices, gallery, documents]);
   return (
     <>
       <style jsx>{`
@@ -1862,7 +2004,11 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                   onClick={() => {
                     if (profile.businessDescription.length > 350) {
@@ -2237,7 +2383,11 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                 onClick={() => {
                   // Validate all fields
@@ -2344,7 +2494,11 @@ export default function Settings({ user }) {
             )}
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 relative">
+              {/* Progress Tracker - Top Right */}
+              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
+                {getCompletedCount()}/4 completed
+              </span>
               <button
                 onClick={() => {
                   updatePrices();
