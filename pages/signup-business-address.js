@@ -34,17 +34,27 @@ export default function SignupBusinessAddress({}) {
       const existing = document.getElementById("gmaps-script");
       if (existing) {
         existing.addEventListener("load", () => resolve(window.google));
-        existing.addEventListener("error", reject);
+        existing.addEventListener("error", () => resolve(null)); // Don't reject, just return null
         return;
       }
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+      
+      // If no API key, resolve with null instead of failing
+      if (!apiKey) {
+        console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
+        return resolve(null);
+      }
+      
       const script = document.createElement("script");
       script.id = "gmaps-script";
       script.async = true;
       script.defer = true;
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
       script.onload = () => resolve(window.google);
-      script.onerror = reject;
+      script.onerror = () => {
+        console.warn("Failed to load Google Maps API. Autocomplete will be disabled.");
+        resolve(null); // Don't reject, just return null
+      };
       document.head.appendChild(script);
     });
   };
@@ -70,7 +80,10 @@ export default function SignupBusinessAddress({}) {
     const init = async () => {
       try {
         const google = await loadGoogleMaps();
-        if (!google?.maps?.places || !autocompleteInputRef.current) return;
+        if (!google?.maps?.places || !autocompleteInputRef.current) {
+          console.log("Google Maps not available, autocomplete disabled");
+          return;
+        }
         googleInstanceRef.current = google;
         const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
         const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
@@ -91,10 +104,83 @@ export default function SignupBusinessAddress({}) {
             if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
             return;
           }
-          // Only set the Google Maps field; other fields remain manual
-          setData(prev => ({ ...prev, googleMaps: formatted, message: "" }));
+          
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          let state = "";
+          let city = "";
+          let area = "";
+          let pincode = "";
+          
+          // Parse address components
+          addressComponents.forEach(component => {
+            const types = component.types;
+            if (types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            } else if (types.includes("locality") || types.includes("administrative_area_level_2")) {
+              city = component.long_name;
+            } else if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+              area = component.long_name;
+            } else if (types.includes("postal_code") || types.includes("postal_code_prefix") || types.includes("postal_code_suffix")) {
+              pincode = component.long_name;
+            }
+          });
+          
+          // Additional check: look for any component that looks like a pincode
+          if (!pincode) {
+            addressComponents.forEach(component => {
+              const name = component.long_name || component.short_name || "";
+              if (/^\d{6}$/.test(name)) {
+                pincode = name;
+              }
+            });
+          }
+          
+          // Debug logging to see what components we have
+          console.log("Address components:", addressComponents);
+          console.log("Extracted pincode:", pincode);
+          
+          // If city is not found in locality, try administrative_area_level_2
+          if (!city && addressComponents.find(c => c.types.includes("administrative_area_level_2"))) {
+            city = addressComponents.find(c => c.types.includes("administrative_area_level_2")).long_name;
+          }
+          
+          // If pincode is not found in components, try to extract from formatted address
+          if (!pincode) {
+            // Try multiple patterns for Indian pincodes
+            const pincodePatterns = [
+              /\b\d{6}\b/g,  // Standard 6-digit pincode
+              /\b\d{5,6}\b/g, // 5-6 digit pincode
+              /pincode[:\s]*(\d{6})/i, // "Pincode: 560001" format
+              /pin[:\s]*(\d{6})/i, // "Pin: 560001" format
+            ];
+            
+            for (const pattern of pincodePatterns) {
+              const match = formatted.match(pattern);
+              if (match) {
+                pincode = match[1] || match[0]; // Use captured group if available
+                break;
+              }
+            }
+            
+            console.log("Regex fallback pincode:", pincode);
+          }
+          
+          // Auto-fill all fields
+          setData(prev => ({ 
+            ...prev, 
+            googleMaps: formatted,
+            state: state || prev.state,
+            city: city || prev.city,
+            area: area || prev.area,
+            pincode: pincode || prev.pincode,
+            address: formatted, // Use the full formatted address as house address
+            message: "" 
+          }));
         });
-      } catch (_) {}
+      } catch (error) {
+        console.warn("Google Maps initialization failed:", error);
+      }
     };
     init();
     return () => {
@@ -258,12 +344,24 @@ export default function SignupBusinessAddress({}) {
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">Business Address</h1>
+            <h1 className="text-3xl font-semibold text-gray-900">Business Address</h1>
             <div className="w-6"></div> {/* Spacer for centering */}
           </div>
 
           {/* Form Container */}
           <div className="space-y-8">
+            {/* Google Maps (Autocomplete attached here; Bengaluru only) - MOVED TO TOP */}
+            <div>
+              <input
+                ref={autocompleteInputRef}
+                type="text"
+                placeholder="Google Maps"
+                value={data.googleMaps}
+                onChange={(e) => setData(prev => ({ ...prev, googleMaps: e.target.value }))}
+                className="input-field"
+              />
+            </div>
+
             {/* State */}
             <div>
               <input
@@ -297,26 +395,14 @@ export default function SignupBusinessAddress({}) {
               />
             </div>
 
-            {/* Address Textarea */}
+            {/* House Address Textarea */}
             <div>
               <textarea
-                placeholder="Address"
+                placeholder="House Address"
                 value={data.address}
                 onChange={(e) => setData(prev => ({ ...prev, address: e.target.value }))}
                 className="input-field resize-none"
                 rows={6}
-              />
-            </div>
-
-            {/* Google Maps (Autocomplete attached here; Bengaluru only) */}
-            <div>
-              <input
-                ref={autocompleteInputRef}
-                type="url"
-                placeholder="Google Maps"
-                value={data.googleMaps}
-                onChange={(e) => setData(prev => ({ ...prev, googleMaps: e.target.value }))}
-                className="input-field"
               />
             </div>
 
