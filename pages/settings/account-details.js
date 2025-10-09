@@ -772,38 +772,6 @@ export default function Settings({}) {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label value="Business Category" className="text-sm font-medium text-gray-700" />
-              <div className="relative">
-                <div
-                  className="select-field"
-                  onClick={() => toggleDropdown('business_category')}
-                >
-                  {accountCreationData?.subcategory ? 
-                    toProperCase(accountCreationData.subcategory.replaceAll("_", " ")) : 
-                    'Select Business Category'
-                  }
-                  <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
-                  </svg>
-                </div>
-                {dropdowns.business_category && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                    {["professional_services", "photographic_studio"]?.map(
-                      (item) => (
-                        <div
-                          key={item}
-                          className={`dropdown-option ${accountCreationData?.subcategory === item ? 'selected' : ''}`}
-                          onClick={() => selectOption('business_category', item)}
-                        >
-                          {toProperCase(item?.replaceAll("_", " "))}
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
             {(accountCreationData?.business_type === "partnership" || 
               accountCreationData?.business_type === "private_limited") && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

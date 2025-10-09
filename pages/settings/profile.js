@@ -22,13 +22,6 @@ export default function Settings({ user }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   
-  // Debug: Log user state and field states
-  console.log('Settings Component - User state:', {
-    profileCompleted: user?.profileCompleted,
-    loading: loading,
-    canEdit: !loading
-  });
-  
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
     servicesOffered: false,
@@ -245,23 +238,17 @@ export default function Settings({ user }) {
         'cropped-image.jpg'
       );
       
-      console.log('Cropped image blob:', croppedImageBlob);
-      
       if (cropType === 'cover') {
         setCoverPhoto(croppedImageBlob);
-        console.log('Set cover photo');
         // Auto-upload the cropped cover photo immediately
-        console.log('Auto-uploading cropped cover photo...');
         updateCoverPhoto(croppedImageBlob);
       } else if (cropType === 'gallery') {
         setCropFiles(prev => {
           const newFiles = [...prev, croppedImageBlob];
-          console.log('Added to crop files. Total files:', newFiles.length);
           return newFiles;
         });
         
         // Auto-upload the cropped photo immediately
-        console.log('Auto-uploading cropped photo...');
         uploadSingleCroppedPhoto(croppedImageBlob);
       }
       
@@ -287,6 +274,26 @@ export default function Settings({ user }) {
     }
   };
 
+  // Image viewer functions
+  const openImageViewer = (index) => {
+    setCurrentImageIndex(index);
+    setShowImageViewer(true);
+  };
+
+  const closeImageViewer = () => {
+    setShowImageViewer(false);
+  };
+
+  const nextImage = () => {
+    if (!gallery?.photos?.length) return;
+    setCurrentImageIndex((prev) => (prev + 1) % gallery.photos.length);
+  };
+
+  const prevImage = () => {
+    if (!gallery?.photos?.length) return;
+    setCurrentImageIndex((prev) => (prev - 1 + gallery.photos.length) % gallery.photos.length);
+  };
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -305,6 +312,26 @@ export default function Settings({ user }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Keyboard navigation for image viewer
+  useEffect(() => {
+    if (!showImageViewer || !gallery?.photos) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeImageViewer();
+      } else if (event.key === 'ArrowLeft') {
+        prevImage();
+      } else if (event.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showImageViewer, gallery?.photos?.length]);
   const [display, setDisplay] = useState("Profile");
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentType, setDocumentType] = useState("Aadhar Card");
@@ -471,6 +498,11 @@ export default function Settings({ user }) {
   const [cropType, setCropType] = useState(''); // 'cover' or 'gallery'
   const [cropFiles, setCropFiles] = useState([]);
   const imgRef = useRef(null);
+
+  // Image viewer state
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const [other, setOther] = useState({
     groomMakeup: false,
     lgbtqMakeup: false,
@@ -547,40 +579,6 @@ export default function Settings({ user }) {
     const aboutYouCompleted = checkAboutYouCompletion();
     const pricesCompleted = checkPricesCompletion();
     const galleryCompleted = checkGalleryCompletion();
-    
-    console.log('Completion Check Results:', {
-      profile: profileCompleted,
-      aboutYou: aboutYouCompleted,
-      prices: pricesCompleted,
-      gallery: galleryCompleted,
-      totalCompleted: [profileCompleted, aboutYouCompleted, pricesCompleted, galleryCompleted].filter(Boolean).length,
-      currentData: {
-        profile: {
-          businessName: profile.businessName,
-          businessDescription: profile.businessDescription,
-          speciality: profile.speciality,
-          servicesOffered: profile.servicesOffered
-        },
-        address: {
-          city: address.city,
-          state: address.state,
-          formatted_address: address.formatted_address,
-          postal_code: address.postal_code
-        },
-        documents: documents.length,
-        prices: prices,
-        gallery: {
-          coverPhoto: gallery.coverPhoto,
-          photos: gallery.photos.length
-        },
-        other: {
-          experience: other.experience,
-          clients: other.clients,
-          usp: other.usp
-        }
-      }
-    });
-    
   };
 
 
@@ -937,12 +935,10 @@ export default function Settings({ user }) {
   const updateCoverPhoto = async (imageBlob = null) => {
     const imageToUpload = imageBlob || coverPhoto;
     if (!imageToUpload) {
-      console.error('No image to upload');
       toast.error('No image selected for upload');
       return;
     }
     
-    console.log('Starting cover photo upload...');
     setLoading(true);
     
     try {
@@ -951,7 +947,6 @@ export default function Settings({ user }) {
         path: "vendor-gallery/",
         id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
       });
-      console.log('File uploaded to storage:', tempImage);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
@@ -965,7 +960,6 @@ export default function Settings({ user }) {
       });
       
       const result = await response.json();
-      console.log('API response:', result);
       
       if (result.message === "success") {
         await fetchGallery();
@@ -976,7 +970,6 @@ export default function Settings({ user }) {
         toast.error("Error updating photo details.");
       }
     } catch (error) {
-      console.error("Error uploading cover photo:", error);
       toast.error("Failed to upload cover photo. Please try again.");
     } finally {
       setLoading(false);
@@ -1114,25 +1107,16 @@ export default function Settings({ user }) {
       return;
     }
 
-    console.log("Starting upload of single cropped photo");
-    console.log("Current gallery photos:", gallery.photos.length);
-    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-    console.log("Token exists:", !!localStorage.getItem("token"));
-    
     setLoading(true);
     
     try {
-      console.log("Uploading single file:", croppedFile);
-      
       const uploadedUrl = await uploadFile({
         file: croppedFile,
         path: "vendor-gallery/",
         id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length}`,
       });
-      console.log("File uploaded successfully:", uploadedUrl);
       
       const newPhotos = [...gallery.photos, uploadedUrl];
-      console.log("New photos array:", newPhotos);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
@@ -1145,9 +1129,7 @@ export default function Settings({ user }) {
         }),
       });
 
-      console.log("API Response status:", response.status);
       const result = await response.json();
-      console.log("API Response:", result);
       
       if (result.message === "success") {
         fetchGallery();
@@ -1158,7 +1140,6 @@ export default function Settings({ user }) {
         toast.error("Error uploading photo: " + (result.message || "Unknown error"));
       }
     } catch (error) {
-      console.error("Error uploading photo:", error);
       toast.error("Failed to upload photo: " + error.message);
     } finally {
       setLoading(false);
@@ -1180,11 +1161,6 @@ export default function Settings({ user }) {
       return;
     }
 
-    console.log("Starting upload of", cropFiles.length, "cropped photos");
-    console.log("Current gallery photos:", gallery.photos.length);
-    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-    console.log("Token exists:", !!localStorage.getItem("token"));
-    
     setLoading(true);
     
     try {
@@ -1192,7 +1168,6 @@ export default function Settings({ user }) {
       const uploadedUrls = [];
       for (let i = 0; i < cropFiles.length; i++) {
         const file = cropFiles[i];
-        console.log(`Uploading file ${i + 1}/${cropFiles.length}:`, file);
         
         try {
           const uploadedUrl = await uploadFile({
@@ -1200,19 +1175,14 @@ export default function Settings({ user }) {
             path: "vendor-gallery/",
             id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + i}`,
           });
-          console.log(`File ${i + 1} uploaded successfully:`, uploadedUrl);
           uploadedUrls.push(uploadedUrl);
         } catch (fileError) {
-          console.error(`Error uploading file ${i + 1}:`, fileError);
           toast.error(`Failed to upload photo ${i + 1}. Please try again.`);
           throw fileError; // Stop the process if any file fails
         }
       }
-
-      console.log("All files uploaded successfully. URLs:", uploadedUrls);
       
       const newPhotos = [...gallery.photos, ...uploadedUrls];
-      console.log("New photos array:", newPhotos);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
         method: "PUT",
@@ -1225,9 +1195,7 @@ export default function Settings({ user }) {
         }),
       });
 
-      console.log("API Response status:", response.status);
       const result = await response.json();
-      console.log("API Response:", result);
       
       if (result.message === "success") {
         fetchGallery();
@@ -1237,7 +1205,6 @@ export default function Settings({ user }) {
         toast.error("Error uploading photos: " + (result.message || "Unknown error"));
       }
     } catch (error) {
-      console.error("Error uploading photos:", error);
       toast.error("Failed to upload photos: " + error.message);
     } finally {
       setLoading(false);
@@ -1339,28 +1306,22 @@ export default function Settings({ user }) {
       
       // Check if Google Maps is already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
-        console.log("Google Maps already loaded");
         return resolve(window.google);
       }
       
       // Check if script is already being loaded
       const existing = document.getElementById("gmaps-script");
       if (existing) {
-        console.log("Google Maps script already exists, waiting for load...");
         existing.addEventListener("load", () => {
-          console.log("Existing script loaded");
           resolve(window.google);
         });
         existing.addEventListener("error", () => {
-          console.error("Existing script failed to load");
           resolve(null);
         });
         return;
       }
       
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-      
-      console.log("Google Maps API Key:", apiKey ? "Found" : "Not found");
       
       if (!apiKey) {
         console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
@@ -1673,7 +1634,7 @@ export default function Settings({ user }) {
           </div>
         </div>
         {display === "Profile" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-28">
             {/* Profile Details Section */}
             {user?.profileCompleted && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
@@ -2126,7 +2087,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "About you" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-28">
             {/* Experience Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2302,7 +2263,7 @@ export default function Settings({ user }) {
                     awards: [...(other?.awards || []), { title: "", certificate: "" }],
                   });
                 }}
-                className="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-[#840032] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
               >
                 Add Award/Certificate <span className="text-lg">+</span>
               </button>
@@ -2372,7 +2333,7 @@ export default function Settings({ user }) {
                     className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-1 ${
                       (other?.makeupProducts?.length || 0) >= 5
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-black hover:bg-gray-800"
+                        : "bg-[#840032] hover:bg-gray-800"
                     }`}
                   >
                     Add more <span className="text-lg">+</span>
@@ -2497,7 +2458,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Prices" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-28">
             {/* Bridal Makeup Price */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2585,14 +2546,12 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Gallery" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-28">
             {/* Cover Photo Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
                 Upload Profile cover photo
-              </label>
-              <p className="text-xs text-gray-500 mb-4">Portrait photo preferable (3:4 aspect ratio)</p>
-              
+              </label>  
               <div className="flex justify-center">
                 {/* Cover Photo Upload Area */}
                 <div className="relative group">
@@ -2700,10 +2659,7 @@ export default function Settings({ user }) {
                          }}
                          className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2"
                        >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                         </svg>
-                         Back
+                         Cancel
                        </button>
                        <span className="text-sm font-medium text-gray-700">
                          {selectedPhotos.length} selected
@@ -2793,10 +2749,14 @@ export default function Settings({ user }) {
                     <div key={item.key} className="w-full aspect-square">
                       {item.type === 'photo' && (
                         <div
-                          onClick={() => isMultiSelectMode && togglePhotoSelection(item.index)}
-                          className={`group relative w-full h-full overflow-hidden rounded-lg transition-all ${
-                            isMultiSelectMode ? 'cursor-pointer' : ''
-                          } ${
+                          onClick={() => {
+                            if (isMultiSelectMode) {
+                              togglePhotoSelection(item.index);
+                            } else {
+                              openImageViewer(item.index);
+                            }
+                          }}
+                          className={`group relative w-full h-full overflow-hidden rounded-lg transition-all cursor-pointer ${
                             isMultiSelectMode && selectedPhotos.includes(item.index)
                               ? 'ring-2 ring-[#840032] ring-opacity-50'
                               : ''
@@ -3365,6 +3325,74 @@ export default function Settings({ user }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && gallery.photos.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Close Button */}
+            <button
+              onClick={closeImageViewer}
+              className="absolute top-4 right-4 w-10 h-10 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Previous Button */}
+            {gallery.photos.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-4 w-12 h-12 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Image */}
+            <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center px-20">
+              <img
+                src={gallery.photos[currentImageIndex]}
+                alt={`Gallery image ${currentImageIndex + 1}`}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Next Button */}
+            {gallery.photos.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-4 w-12 h-12 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm font-medium">
+              {currentImageIndex + 1} / {gallery.photos.length}
+            </div>
+          </div>
+
+          {/* Click anywhere to close */}
+          <div 
+            className="absolute inset-0 -z-10" 
+            onClick={closeImageViewer}
+          />
         </div>
       )}
     </>
