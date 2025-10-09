@@ -698,6 +698,18 @@ export default function Home({ user }) {
 
       {/* Search Bar and Upcoming Event Section with Background */}
       <div className="relative px-6 py-8 bg-cover bg-center bg-no-repeat bg-[url('/assets/background/bg-brushPowder.jpg')]">
+        {/* Complete Profile Button - Only show if profile is incomplete */}
+        {!user?.profileCompleted && (
+          <div className="relative mb-6">
+            <button
+              onClick={() => router.push('/settings/profile')}
+              className="w-full bg-white rounded-xl py-4 px-6 shadow-lg text-lg font-bold text-black shadow-xl transition-shadow duration-200"
+            >
+              Complete Your Profile
+            </button>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="relative mb-6">
           <button
