@@ -322,7 +322,7 @@ export default function SignupOtpVerification({}) {
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">Vendor Sign up</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Vendor Sign up</h1>
             <div className="w-6"></div> {/* Spacer for centering */}
           </div>
         </div>
