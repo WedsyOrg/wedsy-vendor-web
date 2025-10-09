@@ -2549,8 +2549,8 @@ export default function Settings({ user }) {
           <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-28">
             {/* Cover Photo Section */}
             <div>
-              <label className="block text-sm font-medium text-black mb-2">
-                Upload Profile cover photo
+              <label className="block text-lg font-medium text-black mb-2">
+              Cover Photo
               </label>  
               <div className="flex justify-center">
                 {/* Cover Photo Upload Area */}
@@ -2611,9 +2611,9 @@ export default function Settings({ user }) {
             {/* Gallery Photos Section */}
             <div className="w-full">
                <div className="w-full mb-4">
-                 <div className="mb-4 text-center">
-                   <label className="text-sm font-medium text-black">
-                     Upload photos for gallery view
+                 <div className="mb-4 text-left">
+                   <label className="text-lg font-medium text-black">
+                    Gallery
                    </label>
                    <p className="text-xs text-gray-500 mt-1">
                      Upload multiple images at once (max 15 photos)
@@ -2638,7 +2638,7 @@ export default function Settings({ user }) {
                  <div className="mb-4">
                    {!isMultiSelectMode ? (
                      /* Show Select button when not in select mode */
-                     <div className="flex items-center justify-center">
+                     <div className="flex items-center justify-left">
                        <button
                          onClick={() => setIsMultiSelectMode(true)}
                          className="px-4 py-2 text-sm font-medium bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-all duration-200 flex items-center gap-2"

@@ -290,7 +290,7 @@ export default function Login({}) {
 
         {/* Form Container */}
         <div 
-          className="p-4"
+          className="p-4 pt-5"
           style={{
             width: '100%',
             maxWidth: '320px',
@@ -303,17 +303,6 @@ export default function Login({}) {
 
           {/* Phone Field */}
           <div className="mb-3">
-            <div className="flex items-center justify-end mb-1">
-              {data.phone && data.phone.length > 0 && (
-                <button
-                  onClick={SendOTP}
-                  className="text-xs text-[#8B0000] underline hover:text-[#6B0000] transition-colors"
-                  disabled={data.loading}
-                >
-                  Send OTP
-                </button>
-              )}
-            </div>
             <AnimatedInput
               label="Phone Number"
               value={data.phone}
@@ -343,14 +332,14 @@ export default function Login({}) {
 
           {/* Success Message for OTP */}
           {data.otpMessage && (
-            <p className="text-green-600 text-sm mb-3 bg-green-50 px-3 py-2 rounded border border-green-200">
+            <p className="text-gray-700 text-xs py-2">
               {data.otpMessage}
             </p>
           )}
 
           {/* Error Message */}
           {data.message && (
-            <p className="text-red-500 text-sm mb-3 bg-red-50 px-3 py-2 rounded border border-red-200">
+            <p className="text-gray-700 text-xs py-2">
               {data.message}
             </p>
           )}
@@ -364,15 +353,18 @@ export default function Login({}) {
                 SendOTP();
               }
             }}
-            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm transition-colors text-base"
+            disabled={!data.phone || (data.otpSent && !data.Otp) || data.loading}
+            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {data.loading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Loading...
               </div>
-            ) : (
+            ) : data.otpSent ? (
               "Sign In"
+            ) : (
+              "Send OTP"
             )}
           </button>
 
