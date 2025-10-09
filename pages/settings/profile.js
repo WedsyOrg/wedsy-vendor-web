@@ -1499,8 +1499,8 @@ export default function Settings({ user }) {
           background: #FFFFFF;
           border: 1px solid #D1D5DB;
           border-radius: 6px;
-          padding: 16px 20px;
-          padding-right: 50px;
+          padding: 12px 16px;
+          padding-right: 40px;
           font-size: 16px;
           color: #374151;
           cursor: pointer;
