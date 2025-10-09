@@ -677,7 +677,6 @@ export default function Settings({}) {
               <BackIcon />
               <h1 className="text-2xl font-bold text-gray-900">Account Details</h1>
             </div>
-            <p className="text-sm text-gray-600 mt-2">Manage your business account information and payment details</p>
           </div>
         </div>
         

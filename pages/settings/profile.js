@@ -28,6 +28,7 @@ export default function Settings({ user }) {
     loading: loading,
     canEdit: !loading
   });
+  
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
     servicesOffered: false,
@@ -249,6 +250,9 @@ export default function Settings({ user }) {
       if (cropType === 'cover') {
         setCoverPhoto(croppedImageBlob);
         console.log('Set cover photo');
+        // Auto-upload the cropped cover photo immediately
+        console.log('Auto-uploading cropped cover photo...');
+        updateCoverPhoto(croppedImageBlob);
       } else if (cropType === 'gallery') {
         setCropFiles(prev => {
           const newFiles = [...prev, croppedImageBlob];
@@ -477,13 +481,6 @@ export default function Settings({ user }) {
     awards: [],
   });
 
-  // Progress tracking state
-  const [completedPages, setCompletedPages] = useState({
-    profile: false,
-    aboutYou: false,
-    prices: false,
-    gallery: false,
-  });
 
   // Functions to check completion status
   const checkProfileCompletion = () => {
@@ -584,18 +581,8 @@ export default function Settings({ user }) {
       }
     });
     
-    setCompletedPages({
-      profile: profileCompleted,
-      aboutYou: aboutYouCompleted,
-      prices: pricesCompleted,
-      gallery: galleryCompleted,
-    });
   };
 
-  // Get total completed pages count
-  const getCompletedCount = () => {
-    return Object.values(completedPages).filter(Boolean).length;
-  };
 
   const fetchSpecialityList = () => {
     setLoading(true);
@@ -947,40 +934,53 @@ export default function Settings({ user }) {
         console.error("There was a problem with the fetch operation:", error);
       });
   };
-  const updateCoverPhoto = async () => {
-    let tempImage = await uploadFile({
-      file: coverPhoto,
-      path: "vendor-gallery/",
-      id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
-    });
+  const updateCoverPhoto = async (imageBlob = null) => {
+    const imageToUpload = imageBlob || coverPhoto;
+    if (!imageToUpload) {
+      console.error('No image to upload');
+      toast.error('No image selected for upload');
+      return;
+    }
+    
+    console.log('Starting cover photo upload...');
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        gallery: { coverPhoto: tempImage },
-      }),
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        fetchGallery();
-        setCoverPhoto("");
-        coverPhotoRef.current.value = null;
-        setLoading(false);
-        if (response.message !== "success") {
-          toast.error("Error updating photo details.");
-        } else {
-          toast.success("Cover photo uploaded successfully!");
-        }
-      })
-      .catch((error) => {
-        setLoading(false);
-        console.error("There was a problem with the fetch operation:", error);
-        toast.error("Failed to upload cover photo. Please try again.");
+    
+    try {
+      let tempImage = await uploadFile({
+        file: imageToUpload,
+        path: "vendor-gallery/",
+        id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
       });
+      console.log('File uploaded to storage:', tempImage);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          gallery: { coverPhoto: tempImage },
+        }),
+      });
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      
+      if (result.message === "success") {
+        await fetchGallery();
+        setCoverPhoto("");
+        if (coverPhotoRef.current) coverPhotoRef.current.value = null;
+        toast.success("Cover photo uploaded successfully!");
+      } else {
+        toast.error("Error updating photo details.");
+      }
+    } catch (error) {
+      console.error("Error uploading cover photo:", error);
+      toast.error("Failed to upload cover photo. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteCoverPhoto = () => {
@@ -1336,22 +1336,35 @@ export default function Settings({ user }) {
   const loadGoogleMaps = () => {
     return new Promise((resolve, reject) => {
       if (typeof window === "undefined") return resolve(null);
+      
+      // Check if Google Maps is already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
         console.log("Google Maps already loaded");
         return resolve(window.google);
       }
+      
+      // Check if script is already being loaded
       const existing = document.getElementById("gmaps-script");
       if (existing) {
-        existing.addEventListener("load", () => resolve(window.google));
-        existing.addEventListener("error", () => resolve(null));
+        console.log("Google Maps script already exists, waiting for load...");
+        existing.addEventListener("load", () => {
+          console.log("Existing script loaded");
+          resolve(window.google);
+        });
+        existing.addEventListener("error", () => {
+          console.error("Existing script failed to load");
+          resolve(null);
+        });
         return;
       }
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
       
       console.log("Google Maps API Key:", apiKey ? "Found" : "Not found");
       
       if (!apiKey) {
         console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
+        console.warn("Please set NEXT_PUBLIC_GOOGLE_MAPS_KEY in your environment variables");
         return resolve(null);
       }
       
@@ -1360,11 +1373,31 @@ export default function Settings({ user }) {
       script.async = true;
       script.defer = true;
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
-      script.onload = () => resolve(window.google);
-      script.onerror = () => {
-        console.warn("Failed to load Google Maps API. Autocomplete will be disabled.");
+      // Add timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.error("Google Maps API loading timeout");
+        resolve(null);
+      }, 10000); // 10 second timeout
+      
+      script.onload = () => {
+        clearTimeout(timeout);
+        console.log("Google Maps script loaded successfully");
+        
+        // Double-check that everything is available
+        if (window.google && window.google.maps && window.google.maps.places) {
+          resolve(window.google);
+        } else {
+          console.error("Google Maps loaded but Places API not available");
+          resolve(null);
+        }
+      };
+      
+      script.onerror = (error) => {
+        clearTimeout(timeout);
+        console.error("Failed to load Google Maps API:", error);
         resolve(null);
       };
+      
       document.head.appendChild(script);
     });
   };
@@ -1380,46 +1413,41 @@ export default function Settings({ user }) {
     let autocomplete;
     const init = async () => {
       try {
-        console.log("Initializing Google Places Autocomplete...");
         const google = await loadGoogleMaps();
-        console.log("Google Maps loaded:", !!google);
-        console.log("Autocomplete input ref:", !!autocompleteInputRef.current);
         
         if (!google?.maps?.places) {
-          console.log("Google Maps not available, autocomplete disabled");
           return;
         }
         
         // Wait for the input ref to be available
         if (!autocompleteInputRef.current) {
-          console.log("Input ref not available yet, retrying in 100ms");
           setTimeout(init, 100);
           return;
         }
         
-        console.log("Creating autocomplete instance...");
         googleInstanceRef.current = google;
         const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
         const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
-        autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
-          types: ["geocode"],
-          componentRestrictions: { country: "in" },
-          fields: ["address_components", "formatted_address", "place_id", "geometry"],
-          strictBounds: true,
-        });
-        autocomplete.setBounds(circle.getBounds());
-        console.log("Autocomplete instance created successfully");
+        
+        try {
+          autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+            types: ["geocode"],
+            componentRestrictions: { country: "in" },
+            fields: ["address_components", "formatted_address", "place_id", "geometry"],
+            strictBounds: true,
+          });
+          autocomplete.setBounds(circle.getBounds());
+        } catch (error) {
+          console.error("Error creating autocomplete instance:", error);
+          return;
+        }
 
         autocomplete.addListener("place_changed", () => {
-          console.log("Place changed event triggered");
           const place = autocomplete.getPlace();
-          console.log("Selected place:", place);
           if (!place) return;
           const formatted = place.formatted_address || "";
-          console.log("Formatted address:", formatted);
           
           if (!isBengaluruAddress(formatted)) {
-            console.log("Address not in Bengaluru, rejecting");
             toast.error("We currently support only Bengaluru addresses.");
             if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
             return;
@@ -1493,7 +1521,7 @@ export default function Settings({ user }) {
           }));
         });
       } catch (error) {
-        console.warn("Google Maps initialization failed:", error);
+        console.error("Google Maps initialization failed:", error);
       }
     };
     init();
@@ -1501,7 +1529,6 @@ export default function Settings({ user }) {
       if (autocomplete) {
         try { 
           googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete);
-          console.log("Autocomplete listeners cleared");
         } catch (e) {
           console.warn("Error clearing autocomplete listeners:", e);
         }
@@ -1534,6 +1561,25 @@ export default function Settings({ user }) {
   return (
     <>
       <style jsx>{`
+        .pac-container {
+          z-index: 9999 !important;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .pac-item {
+          padding: 8px 12px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .pac-item:hover {
+          background-color: #f3f4f6;
+        }
+        .pac-item-query {
+          font-size: 14px;
+          color: #374151;
+        }
+        .pac-matched {
+          font-weight: 600;
+        }
         .select-field {
           background: #FFFFFF;
           border: 1px solid #D1D5DB;
@@ -2051,10 +2097,6 @@ export default function Settings({ user }) {
 
             {/* Submit Button */}
             <div className="pt-6 relative mb-8">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
               <button
                   onClick={() => {
                     if (profile.businessDescription.length > 350) {
@@ -2413,10 +2455,6 @@ export default function Settings({ user }) {
 
             {/* Submit Button */}
             <div className="pt-6 relative mb-8">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
               <button
                 onClick={() => {
                   // Validate all fields
@@ -2476,7 +2514,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
 
@@ -2496,7 +2534,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
 
@@ -2517,17 +2555,13 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
             </div>
             )}
 
             {/* Submit Button */}
             <div className="pt-6 relative mb-8">
-              {/* Progress Tracker - Top Right */}
-              <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
-                {getCompletedCount()}/4 completed
-              </span>
               <button
                 onClick={() => {
                   updatePrices();
