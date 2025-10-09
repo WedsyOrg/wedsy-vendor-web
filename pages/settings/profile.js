@@ -164,7 +164,7 @@ export default function Settings({ user }) {
       makeAspectCrop(
         {
           unit: '%',
-          width: 90,
+          width: 95,
         },
         2.5 / 3.5, // Cover photo aspect ratio (2.5" x 3.5")
         width,
@@ -2010,7 +2010,7 @@ export default function Settings({ user }) {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
+            <div className="pt-6 relative mb-8">
               {/* Progress Tracker - Top Right */}
               <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
                 {getCompletedCount()}/4 completed
@@ -2061,11 +2061,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
-                  !other.experience || other.experience.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
               {(!other.experience || other.experience.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2089,11 +2085,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 ${
-                  !other.clients || other.clients.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
               />
               {(!other.clients || other.clients.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2124,7 +2116,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="flex-1 px-4 py-3 border-2 border-[#840032] rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032]"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
                   />
                       <button
                         type="button"
@@ -2257,7 +2249,7 @@ export default function Settings({ user }) {
                           });
                         }}
                         disabled={loading}
-                        className="w-full border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#840032] focus:ring-0 text-black placeholder-gray-400"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#840032] text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
                       />
                       {/* Only show delete button if there's more than 1 product */}
@@ -2370,26 +2362,17 @@ export default function Settings({ user }) {
                   }
                 }}
                 disabled={loading}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 resize-none ${
-                  !other.usp || other.usp.trim() === '' 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : other.usp.length < 500 
-                    ? 'border-yellow-300 focus:border-yellow-500'
-                    : 'border-[#840032] focus:border-[#840032]'
-                }`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#840032] resize-none bg-transparent"
               />
-              <div className="flex justify-between items-center mt-1">
+              <div className="mt-1">
                 <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
                   {other.usp.length > 500 ? `Maximum 500 characters allowed (${other.usp.length}/500)` : `${other.usp.length}/500 characters`}
-                </div>
-                <div className={`text-xs ${other.usp.length <= 500 ? 'text-green-600' : 'text-gray-400'}`}>
-                  {other.usp.length <= 500 ? '✓ Valid' : 'Too long'}
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
+            <div className="pt-6 relative mb-8">
               {/* Progress Tracker - Top Right */}
               <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
                 {getCompletedCount()}/4 completed
@@ -2500,7 +2483,7 @@ export default function Settings({ user }) {
             )}
 
             {/* Submit Button */}
-            <div className="pt-6 relative">
+            <div className="pt-6 relative mb-8">
               {/* Progress Tracker - Top Right */}
               <span className="absolute -top-2 right-0 text-gray-500 text-xs block">
                 {getCompletedCount()}/4 completed
@@ -2536,7 +2519,7 @@ export default function Settings({ user }) {
               </label>
               <p className="text-xs text-gray-500 mb-4">Portrait photo preferable (3:4 aspect ratio)</p>
               
-              <div className="flex items-start gap-6">
+              <div className="flex justify-center">
                 {/* Cover Photo Upload Area */}
                 <div className="relative group">
                   {gallery.coverPhoto ? (
@@ -2589,54 +2572,6 @@ export default function Settings({ user }) {
                     disabled={loading}
                   />
                 </div>
-                
-                  {/* Info Panel */}
-                  <div className="flex-1">
-                   <div className="bg-gray-50 rounded-lg p-4">
-                     <h4 className="text-sm font-medium text-gray-900 mb-2">Cover Image</h4>
-                     <p className="text-xs text-gray-600">
-                       Upload your cover image here.
-                       Make sure you upload the best quality picture of yourself.
-                       The image should be in the format of 3:4 aspect ratio.
-                       
-                     </p>
-                   </div>
-                  
-            {coverPhoto && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-sm text-green-800">Ready to upload</span>
-                      </div>
-                      <button
-                onClick={() => {
-                  updateCoverPhoto();
-                }}
-                        disabled={loading}
-                        className="w-full px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {loading ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            Upload Cover Photo
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -2684,6 +2619,18 @@ export default function Settings({ user }) {
                    ) : (
                      /* Show Delete button when in select mode */
                      <div className="flex items-center justify-between gap-4">
+                       <button
+                         onClick={() => {
+                           setIsMultiSelectMode(false);
+                           setSelectedPhotos([]);
+                         }}
+                         className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                         </svg>
+                         Back
+                       </button>
                        <span className="text-sm font-medium text-gray-700">
                          {selectedPhotos.length} selected
                        </span>
@@ -3080,28 +3027,33 @@ export default function Settings({ user }) {
             <div className="p-4 max-h-[60vh] overflow-auto">
               {imgSrc && (
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ width: '300px', height: '400px' }}>
+                  <div className="relative rounded-lg overflow-hidden">
                     <ReactCrop
                       crop={crop}
-                      onChange={(_, percentCrop) => setCrop(percentCrop)}
+                      onChange={(_, percentCrop) => {
+                        // Preserve the scale when crop position changes
+                        setCrop(prev => ({
+                          ...percentCrop,
+                          scale: prev?.scale || 1
+                        }));
+                      }}
                       onComplete={(c) => setCompletedCrop(c)}
                       aspect={2.5 / 3.5} // Cover photo aspect ratio
-                      minWidth={100}
-                      minHeight={140}
+                      minWidth={50}
+                      minHeight={70}
                       locked={true} // Fixed crop area
-                      disabled={false} // Allow panning within crop
+                      disabled={false} // Allow crop tool movement
                     >
                       <img
                         ref={imgRef}
                         alt="Crop me"
                         src={imgSrc}
                         onLoad={onImageLoad}
-                        className="block w-full h-full object-cover"
+                        className="block max-w-full max-h-[50vh] object-contain"
                         style={{ 
-                          minWidth: '100%', 
-                          minHeight: '100%',
-                          transform: `scale(${crop?.scale || 1}) translate(${crop?.x || 0}px, ${crop?.y || 0}px)` 
+                          transform: `scale(${crop?.scale || 1})` 
                         }}
+                        draggable={false}
                       />
                     </ReactCrop>
                   </div>
@@ -3113,9 +3065,9 @@ export default function Settings({ user }) {
                         const newScale = Math.max(0.5, (crop?.scale || 1) - 0.1);
                         setCrop(prev => ({ ...prev, scale: newScale }));
                       }}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
-                      Zoom Out
+                      -
                     </button>
                     <span className="text-sm text-gray-600">
                       {Math.round((crop?.scale || 1) * 100)}%
@@ -3125,16 +3077,10 @@ export default function Settings({ user }) {
                         const newScale = Math.min(3, (crop?.scale || 1) + 0.1);
                         setCrop(prev => ({ ...prev, scale: newScale }));
                       }}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
-                      Zoom In
+                      +
                     </button>
-                  </div>
-                  
-                  <div className="text-xs text-gray-500 text-center">
-                    <p>• Drag to move the image within the crop area</p>
-                    <p>• Use zoom controls to adjust size</p>
-                    <p>• Crop area is fixed for cover photo (3:4 ratio)</p>
                   </div>
                 </div>
               )}
