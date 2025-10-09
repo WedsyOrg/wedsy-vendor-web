@@ -1237,10 +1237,11 @@ export default function Settings({ user }) {
         }
       `}</style>
       <div className="flex flex-col py-4 pt-8 overflow-x-hidden">
-        <div className="flex flex-row gap-3 items-center mb-4 px-8">
-          <BackIcon />
-        </div>
-        <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+          <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
+            <BackIcon />
+          </div>
+          <div className="flex flex-row items-center mb-6 border-b border-gray-200 overflow-x-hidden">
           <div
             className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
               display === "Profile" 
@@ -1289,9 +1290,10 @@ export default function Settings({ user }) {
           >
             Gallery
           </div>
+          </div>
         </div>
         {display === "Profile" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Profile Details Section */}
             <div className="space-y-6">
               <div>
@@ -1740,7 +1742,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "About you" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Experience Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2128,7 +2130,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Prices" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Bridal Makeup Price */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -2216,7 +2218,7 @@ export default function Settings({ user }) {
           </div>
         )}
         {display === "Gallery" && (
-          <div className="flex flex-col gap-6 px-6 overflow-x-hidden">
+          <div className="flex flex-col gap-6 px-6 overflow-x-hidden pt-24">
             {/* Cover Photo Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
