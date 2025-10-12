@@ -40,10 +40,10 @@ export default function StickFooter({}) {
       <path d="M1.8877 0.5H10.3828C11.1807 0.5 11.9721 0.665991 12.7109 0.990234C13.4498 1.31451 14.1229 1.79127 14.6914 2.39355C15.2599 2.99584 15.7123 3.71234 16.0215 4.50293C16.292 5.19478 16.4477 5.93115 16.4824 6.67871L16.4902 7C16.4879 7.86951 16.3217 8.72928 16.002 9.52832C15.6821 10.3275 15.2154 11.0491 14.6309 11.6514L14.291 12.001L14.6318 12.3496C15.508 13.2464 16.1137 14.404 16.3672 15.6748C16.6207 16.9459 16.5092 18.2687 16.0479 19.4707C15.5865 20.6723 14.7977 21.6958 13.7881 22.4121C12.7789 23.1281 11.5933 23.5056 10.3848 23.5H1.8877C1.52946 23.5 1.17971 23.3494 0.916992 23.0713C0.653295 22.7919 0.500015 22.4068 0.5 22V2C0.5 1.59316 0.653282 1.20809 0.916992 0.928711C1.17971 0.650579 1.52945 0.500031 1.8877 0.5ZM3.27539 20.5H10.3828C11.276 20.5 12.1267 20.124 12.749 19.4648C13.3704 18.8066 13.7148 17.9192 13.7148 17C13.7148 16.0808 13.3704 15.1935 12.749 14.5352C12.1267 13.8759 11.276 13.5 10.3828 13.5H3.27539V20.5ZM3.27539 10.5H10.3828C11.276 10.5 12.1267 10.1241 12.749 9.46484C13.3704 8.80655 13.7148 7.91923 13.7148 7C13.7148 6.08076 13.3704 5.19345 12.749 4.53516C12.1267 3.87593 11.276 3.5 10.3828 3.5H3.27539V10.5Z" fill="none" stroke="#2B3F6C" strokeWidth="2"/>
     ), className: "w-6 h-8 mt-1" },
     { href: "/personal-leads", icon: "svg", label: "Create", svgContent: router.pathname === "/personal-leads" ? (
-      <><circle cx="20" cy="20" r="18" fill="#2B3F6C"/><path d="M20 12v16M12 20h16" stroke="white" strokeWidth="3" strokeLinecap="round"/></>
+      <><circle cx="20" cy="20" r="18" fill="white"/><circle cx="20" cy="20" r="16" fill="#2B3F6C"/><path d="M20 12v16M12 20h16" stroke="white" strokeWidth="3" strokeLinecap="round"/></>
     ) : (
-      <><circle cx="20" cy="20" r="18" fill="none" stroke="#2B3F6C" strokeWidth="2"/><path d="M20 12v16M12 20h16" stroke="#2B3F6C" strokeWidth="2" strokeLinecap="round"/></>
-    ), className: "w-12 h-12", specialClass: "relative -top-8 z-50" },
+      <><circle cx="20" cy="20" r="18" fill="white"/><circle cx="20" cy="20" r="16" fill="none" stroke="#2B3F6C" strokeWidth="2"/><path d="M20 12v16M12 20h16" stroke="#2B3F6C" strokeWidth="2" strokeLinecap="round"/></>
+    ), className: "w-12 h-12", specialClass: "relative -top-6", style: { zIndex: 2147483647, position: 'relative' } },
     { href: "/chats/packages", icon: "svg", label: "Packages", svgContent: router.pathname === "/chats/packages" ? (
       <path d="M0 24V0H9.1C11.1444 0 12.8889 0.331429 14.3333 0.994287C15.7778 1.65714 16.8889 2.61714 17.6667 3.87429C18.4444 5.13143 18.8333 6.62857 18.8333 8.36572C18.8333 10.1029 18.4444 11.6 17.6667 12.8571C16.8889 14.0914 15.7778 15.0514 14.3333 15.7371C12.8889 16.4 11.1444 16.7314 9.1 16.7314L3.33333 16.7314V15.12V24H0ZM3.33333 15.4629V13.7486L9 13.7486C11.1333 13.7486 12.7444 13.28 13.8333 12.3429C14.9444 11.4057 15.5 10.08 15.5 8.36572C15.5 6.65143 14.9444 5.32572 13.8333 4.38857C12.7444 3.45143 11.1333 2.98286 9 2.98286L3.33333 2.98286V15.4629Z" fill="#2B3F6C"/>
     ) : (
@@ -56,7 +56,7 @@ export default function StickFooter({}) {
 
   return (
     <>
-      <div className="z-50 sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-gray-300 p-2 px-4 justify-items-center bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.08)]">
+      <div className="sticky bottom-0 mt-px w-full grid grid-cols-5 gap-2 border-t border-gray-300 p-2 px-4 justify-items-center bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.08)]" style={{ zIndex: 60 }}>
         {navItems.map((item, index) => (
           <motion.div
             key={item.href}
@@ -68,6 +68,7 @@ export default function StickFooter({}) {
               href={item.href}
               onClick={(e) => handleNavigation(e, item.href)}
               className={`flex flex-col items-center ${item.specialClass || ''} ${isTransitioning ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
+              style={item.style || {}}
             >
               {item.icon === "img" ? (
                 <img src={item.iconSrc} className={item.className} />
