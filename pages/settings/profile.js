@@ -1503,7 +1503,7 @@ export default function Settings({ user }) {
           <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
             <BackIcon />
           </div>
-          <div className="flex flex-row items-start border-b border-gray-200 overflow-x-auto scrollbar-hide">
+          <div className="flex flex-row items-start border-b border-gray-200 overflow-x-auto scrollbar-hide justify-center">
           <div
             className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Profile" 
