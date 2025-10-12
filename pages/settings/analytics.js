@@ -9,6 +9,7 @@ import AnimatedDropdown from "@/components/AnimatedDropdown";
 export default function Settings({}) {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
+  const [filteredCalls, setFilteredCalls] = useState([]);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState("Jan 2024");
@@ -17,6 +18,39 @@ export default function Settings({}) {
     fetchCalls();
     fetchChats();
   }, []);
+
+  // Filter calls based on selected month
+  useEffect(() => {
+    filterCallsByMonth();
+  }, [calls, selectedMonth]);
+
+  const filterCallsByMonth = () => {
+    if (!calls.length) {
+      setFilteredCalls([]);
+      return;
+    }
+
+    const monthMap = {
+      "Jan 2024": { month: 0, year: 2024 }, // January is 0
+      "Feb 2024": { month: 1, year: 2024 },
+      "Mar 2024": { month: 2, year: 2024 },
+      "Apr 2024": { month: 3, year: 2024 }
+    };
+
+    const selectedDate = monthMap[selectedMonth];
+    if (!selectedDate) {
+      setFilteredCalls(calls);
+      return;
+    }
+
+    const filtered = calls.filter(call => {
+      const callDate = new Date(call.date);
+      return callDate.getMonth() === selectedDate.month && 
+             callDate.getFullYear() === selectedDate.year;
+    });
+
+    setFilteredCalls(filtered);
+  };
 
   const fetchCalls = async () => {
     try {
@@ -63,22 +97,43 @@ export default function Settings({}) {
               id: 3,
               name: "Sunita Singh",
               number: "+91 76543 21098",
-              date: "2024-01-13T09:15:00Z",
+              date: "2024-02-13T09:15:00Z",
               duration: "12:45"
             },
             {
               id: 4,
               name: "Amit Patel",
               number: "+91 65432 10987",
-              date: "2024-01-12T14:20:00Z",
+              date: "2024-02-12T14:20:00Z",
               duration: "3:15"
             },
             {
               id: 5,
               name: "Neha Gupta",
               number: "+91 54321 09876",
-              date: "2024-01-11T16:30:00Z",
+              date: "2024-03-11T16:30:00Z",
               duration: "7:42"
+            },
+            {
+              id: 6,
+              name: "Vikram Joshi",
+              number: "+91 43210 98765",
+              date: "2024-03-10T11:15:00Z",
+              duration: "6:30"
+            },
+            {
+              id: 7,
+              name: "Sneha Reddy",
+              number: "+91 32109 87654",
+              date: "2024-04-09T13:45:00Z",
+              duration: "9:20"
+            },
+            {
+              id: 8,
+              name: "Arjun Mehta",
+              number: "+91 21098 76543",
+              date: "2024-04-08T16:20:00Z",
+              duration: "4:15"
             }
           ];
           setCalls(dummyCalls);
@@ -108,8 +163,43 @@ export default function Settings({}) {
           id: 3,
           name: "Sunita Singh",
           number: "+91 76543 21098",
-          date: "2024-01-13T09:15:00Z",
+          date: "2024-02-13T09:15:00Z",
           duration: "12:45"
+        },
+        {
+          id: 4,
+          name: "Amit Patel",
+          number: "+91 65432 10987",
+          date: "2024-02-12T14:20:00Z",
+          duration: "3:15"
+        },
+        {
+          id: 5,
+          name: "Neha Gupta",
+          number: "+91 54321 09876",
+          date: "2024-03-11T16:30:00Z",
+          duration: "7:42"
+        },
+        {
+          id: 6,
+          name: "Vikram Joshi",
+          number: "+91 43210 98765",
+          date: "2024-03-10T11:15:00Z",
+          duration: "6:30"
+        },
+        {
+          id: 7,
+          name: "Sneha Reddy",
+          number: "+91 32109 87654",
+          date: "2024-04-09T13:45:00Z",
+          duration: "9:20"
+        },
+        {
+          id: 8,
+          name: "Arjun Mehta",
+          number: "+91 21098 76543",
+          date: "2024-04-08T16:20:00Z",
+          duration: "4:15"
         }
       ];
       setCalls(dummyCalls);
@@ -216,7 +306,7 @@ export default function Settings({}) {
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4">
             <p>Calls</p>
-            <p className="text-5xl font-semibold text-center">{calls.length}</p>
+            <p className="text-5xl font-semibold text-center">{filteredCalls.length}</p>
           </div>
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4">
             <p>Chats</p>
@@ -244,14 +334,14 @@ export default function Settings({}) {
                 </div>
               ))}
             </div>
-          ) : calls.length === 0 ? (
+          ) : filteredCalls.length === 0 ? (
             <div className="bg-white rounded-lg p-8 text-center">
               <MdPhone className="mx-auto text-gray-400 text-4xl mb-2" />
-              <p className="text-gray-500">No calls found</p>
+              <p className="text-gray-500">No calls found for {selectedMonth}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {calls.map((call) => (
+              {filteredCalls.map((call) => (
                 <div key={call.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
