@@ -1,12 +1,13 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
+import SearchBox from "@/components/SearchBox";
+import AnimatedDropdown from "@/components/AnimatedDropdown";
 import { useEffect, useState } from "react";
 import {
   MdArrowForwardIos,
   MdFilterAlt,
   MdOutlineLocationOn,
-  MdSearch,
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
@@ -22,6 +23,12 @@ export default function Leads({}) {
   const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState("");
   const [sendingReminder, setSendingReminder] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: "all",
+    dateRange: "all",
+    amountRange: "all"
+  });
 
   const fetchLeads = () => {
     setLoading(true);
@@ -53,48 +60,116 @@ export default function Leads({}) {
         setLeads([
           {
             _id: "1",
-            name: "Lead name",
-            payment: { total: "0" },
+            name: "Wedding Photography Lead",
+            payment: { total: "25000" },
             eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
+            createdAt: new Date(),
+            status: "pending"
           },
           {
             _id: "2", 
-            name: "Lead name",
-            payment: { total: "0" },
-            eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
+            name: "Corporate Event Lead",
+            payment: { total: "15000" },
+            eventInfo: [{ date: "2024-12-15" }],
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+            status: "confirmed"
           },
           {
             _id: "3",
-            name: "Lead name", 
-            payment: { total: "0" },
-            eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
+            name: "Birthday Party Lead", 
+            payment: { total: "5000" },
+            eventInfo: [{ date: "2024-12-20" }],
+            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+            status: "completed"
           },
           {
             _id: "4",
-            name: "Lead name",
-            payment: { total: "0" },
-            eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
-          },
-          {
-            _id: "5",
-            name: "Lead name",
-            payment: { total: "0" },
-            eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
-          },
-          {
-            _id: "6",
-            name: "Lead name",
-            payment: { total: "0" },
-            eventInfo: [{ date: "2024-12-12" }],
-            createdAt: new Date()
+            name: "Anniversary Lead",
+            payment: { total: "75000" },
+            eventInfo: [{ date: "2024-12-25" }],
+            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
+            status: "cancelled"
           }
         ]);
       });
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const applyFilters = () => {
+    // Filter logic can be implemented here
+    setShowFilters(false);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: "all",
+      dateRange: "all",
+      amountRange: "all"
+    });
+  };
+
+  const filterLeads = (leads) => {
+    return leads.filter((lead) => {
+      // Search filter
+      const matchesSearch = search ? lead.name.toLowerCase().includes(search.toLowerCase()) : true;
+      
+      // Status filter
+      const matchesStatus = filters.status === "all" || lead.status === filters.status;
+      
+      // Date range filter
+      let matchesDate = true;
+      if (filters.dateRange !== "all") {
+        const leadDate = new Date(lead.createdAt || lead.updatedAt || 0);
+        const now = new Date();
+        
+        switch (filters.dateRange) {
+          case "today":
+            matchesDate = leadDate.toDateString() === now.toDateString();
+            break;
+          case "week":
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            matchesDate = leadDate >= weekAgo;
+            break;
+          case "month":
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            matchesDate = leadDate >= monthAgo;
+            break;
+          default:
+            matchesDate = true;
+        }
+      }
+      
+      // Amount range filter
+      let matchesAmount = true;
+      if (filters.amountRange !== "all") {
+        const amount = parseFloat(lead.payment?.total || 0);
+        
+        switch (filters.amountRange) {
+          case "0-10000":
+            matchesAmount = amount >= 0 && amount <= 10000;
+            break;
+          case "10000-50000":
+            matchesAmount = amount > 10000 && amount <= 50000;
+            break;
+          case "50000-100000":
+            matchesAmount = amount > 50000 && amount <= 100000;
+            break;
+          case "100000+":
+            matchesAmount = amount > 100000;
+            break;
+          default:
+            matchesAmount = true;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesDate && matchesAmount;
+    });
   };
 
   const sendPaymentReminder = async (leadId, leadName) => {
@@ -147,23 +222,107 @@ export default function Leads({}) {
           </svg>
         </Link>
       </div>
-      <div className="px-6 py-4 bg-white border-b border-gray-200">
+      <div className="px-6 py-4 bg-white">
         <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <input
-              type="text"
+          <div className="flex-1 min-w-0">
+            <SearchBox
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-4 py-3 pl-10 bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#840032] focus:bg-white transition-colors"
             />
-            <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" size={20} />
           </div>
-          <div className="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors bg-white">
+          <div 
+            className="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors bg-white flex-shrink-0"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             <MdFilterAlt size={20} className="text-gray-600" />
           </div>
         </div>
       </div>
+
+      {/* Filter Modal */}
+      {showFilters && (
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Filter Leads</h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {/* Status Filter */}
+              <div>
+                <AnimatedDropdown
+                  label="Status"
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  options={[
+                    { value: "all", label: "All Status" },
+                    { value: "pending", label: "Pending" },
+                    { value: "confirmed", label: "Confirmed" },
+                    { value: "completed", label: "Completed" },
+                    { value: "cancelled", label: "Cancelled" }
+                  ]}
+                />
+              </div>
+
+              {/* Date Range Filter */}
+              <div>
+                <AnimatedDropdown
+                  label="Date Range"
+                  value={filters.dateRange}
+                  onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+                  options={[
+                    { value: "all", label: "All Dates" },
+                    { value: "today", label: "Today" },
+                    { value: "week", label: "This Week" },
+                    { value: "month", label: "This Month" },
+                    { value: "custom", label: "Custom Range" }
+                  ]}
+                />
+              </div>
+
+              {/* Amount Range Filter */}
+              <div>
+                <AnimatedDropdown
+                  label="Amount Range"
+                  value={filters.amountRange}
+                  onChange={(e) => handleFilterChange('amountRange', e.target.value)}
+                  options={[
+                    { value: "all", label: "All Amounts" },
+                    { value: "0-10000", label: "₹0 - ₹10,000" },
+                    { value: "10000-50000", label: "₹10,000 - ₹50,000" },
+                    { value: "50000-100000", label: "₹50,000 - ₹1,00,000" },
+                    { value: "100000+", label: "₹1,00,000+" }
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Filter Actions */}
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-[#2B3F6C] text-white px-4 py-2 rounded-lg hover:bg-[#1e2d4a] transition-colors"
+              >
+                Apply Filters
+              </button>
+              <button
+                onClick={clearFilters}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white min-h-screen">
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -171,8 +330,7 @@ export default function Leads({}) {
           </div>
         ) : leads && leads.length > 0 ? (
           <div className="px-6 py-4 space-y-3">
-            {leads
-              ?.filter((i) => (search ? i.name.toLowerCase().includes(search.toLowerCase()) : true))
+            {filterLeads(leads)
               .sort((a, b) => {
                 const dateA = new Date(a?.createdAt || a?.updatedAt || 0);
                 const dateB = new Date(b?.createdAt || b?.updatedAt || 0);

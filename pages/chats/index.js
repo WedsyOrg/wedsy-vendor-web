@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { 
   MdArrowBackIos,
-  MdSearch, 
   MdChatBubbleOutline
 } from "react-icons/md";
+import SearchBox from "@/components/SearchBox";
 import { useNavigation } from "@/utils/navigation";
 
 export default function Chats() {
@@ -70,18 +70,11 @@ export default function Chats() {
 
       {/* Search Bar */}
       <div className="px-6 py-4">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MdSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search chats..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-gray-400"
-          />
-        </div>
+        <SearchBox
+          placeholder="Search chats..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* Chat List */}

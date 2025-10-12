@@ -1,4 +1,5 @@
 import BackIcon from "@/components/icons/BackIcon";
+import SearchBox from "@/components/SearchBox";
 import { uploadFile } from "@/utils/file";
 import {
   Button,
@@ -1857,14 +1858,12 @@ export default function Settings({ user }) {
                 <label className="block text-sm font-medium text-black mb-2">
                   Address
                 </label>
-                <input
+                <SearchBox
                   ref={autocompleteInputRef}
-                  type="text"
                   placeholder="Search your address"
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors autocomplete-input"
                 />
               </div>
 

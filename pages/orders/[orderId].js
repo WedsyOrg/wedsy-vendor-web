@@ -1,6 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
+import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
 import {
   MdAdd,
@@ -13,7 +14,6 @@ import {
   MdOutlineChevronRight,
   MdOutlineLocationOn,
   MdPersonOutline,
-  MdSearch,
 } from "react-icons/md";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { BsPlusCircle } from "react-icons/bs";
@@ -165,25 +165,11 @@ export default function Packages({}) {
 
       {/* Search Bar */}
       <div className="px-6 py-4 flex justify-center">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MdSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
-            style={{
-              background: '#D9D9D9',
-              width: '318px',
-              height: '34px',
-              borderRadius: '10px',
-              opacity: 1
-            }}
-          />
-        </div>
+        <SearchBox
+          placeholder="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* Order Details */}
