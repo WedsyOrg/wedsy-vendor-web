@@ -243,14 +243,6 @@ export default function Settings({ user }) {
         setCoverPhoto(croppedImageBlob);
         // Auto-upload the cropped cover photo immediately
         updateCoverPhoto(croppedImageBlob);
-      } else if (cropType === 'gallery') {
-        setCropFiles(prev => {
-          const newFiles = [...prev, croppedImageBlob];
-          return newFiles;
-        });
-        
-        // Auto-upload the cropped photo immediately
-        uploadSingleCroppedPhoto(croppedImageBlob);
       }
       
       setShowCropModal(false);
@@ -272,6 +264,38 @@ export default function Settings({ user }) {
         setShowCropModal(true);
       });
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGalleryFileSelect = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    setLoading(true);
+    try {
+      const uploadPromises = imageFiles.map((file, index) => 
+        uploadFile({
+          file: file,
+          path: "vendor-gallery/",
+          id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + index}`
+        })
+      );
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      const newPhotos = [...gallery.photos, ...uploadedUrls];
+      setGallery(prev => ({ ...prev, photos: newPhotos }));
+      
+      // Update completion status
+      updateCompletionStatus();
+      
+      toast.success(`${uploadedUrls.length} photo(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Error uploading photos. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -496,8 +520,7 @@ export default function Settings({ user }) {
   const [completedCrop, setCompletedCrop] = useState();
   const [imgSrc, setImgSrc] = useState('');
   const [showCropModal, setShowCropModal] = useState(false);
-  const [cropType, setCropType] = useState(''); // 'cover' or 'gallery'
-  const [cropFiles, setCropFiles] = useState([]);
+  const [cropType, setCropType] = useState(''); // 'cover' only now
   const imgRef = useRef(null);
 
   // Image viewer state
@@ -1101,119 +1124,9 @@ export default function Settings({ user }) {
     }
   };
 
-  // Handle single cropped photo upload
-  const uploadSingleCroppedPhoto = async (croppedFile) => {
-    if (gallery.photos.length >= 15) {
-      toast.error("Maximum 15 photos allowed.");
-      return;
-    }
+  // Note: Removed uploadSingleCroppedPhoto function as gallery photos are now uploaded directly
 
-    setLoading(true);
-    
-    try {
-      const uploadedUrl = await uploadFile({
-        file: croppedFile,
-        path: "vendor-gallery/",
-        id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length}`,
-      });
-      
-      const newPhotos = [...gallery.photos, uploadedUrl];
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { photos: newPhotos },
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.message === "success") {
-        fetchGallery();
-        // Remove the uploaded photo from cropFiles
-        setCropFiles(prev => prev.filter(file => file !== croppedFile));
-        toast.success("Photo uploaded successfully!");
-      } else {
-        toast.error("Error uploading photo: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      toast.error("Failed to upload photo: " + error.message);
-    } finally {
-      setLoading(false);
-      if (photoRef.current) {
-        photoRef.current.value = null;
-      }
-    }
-  };
-
-  // Handle cropped files upload
-  const handleCroppedFilesUpload = async () => {
-    if (cropFiles.length === 0) {
-      toast.error("No photos to upload.");
-      return;
-    }
-    
-    if (gallery.photos.length + cropFiles.length > 15) {
-      toast.error("Maximum 15 photos allowed. Please select fewer files.");
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Upload files one by one to better handle errors
-      const uploadedUrls = [];
-      for (let i = 0; i < cropFiles.length; i++) {
-        const file = cropFiles[i];
-        
-        try {
-          const uploadedUrl = await uploadFile({
-            file: file,
-            path: "vendor-gallery/",
-            id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + i}`,
-          });
-          uploadedUrls.push(uploadedUrl);
-        } catch (fileError) {
-          toast.error(`Failed to upload photo ${i + 1}. Please try again.`);
-          throw fileError; // Stop the process if any file fails
-        }
-      }
-      
-      const newPhotos = [...gallery.photos, ...uploadedUrls];
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { photos: newPhotos },
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.message === "success") {
-        fetchGallery();
-        setCropFiles([]);
-        toast.success(`Photo uploaded successfully!`);
-      } else {
-        toast.error("Error uploading photos: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      toast.error("Failed to upload photos: " + error.message);
-    } finally {
-      setLoading(false);
-      if (photoRef.current) {
-        photoRef.current.value = null;
-      }
-    }
-  };
+  // Note: Removed handleCroppedFilesUpload function as gallery photos are now uploaded directly
 
   const handleDeletePhoto = (index) => {
     if (loading) return;
@@ -2685,10 +2598,8 @@ export default function Settings({ user }) {
               onChange={(e) => {
                   const files = Array.from(e.target.files);
                   if (files.length > 0) {
-                    // Process each file for cropping
-                    files.forEach(file => {
-                      handleFileSelect(file, 'gallery');
-                    });
+                    // Upload files directly without cropping
+                    handleGalleryFileSelect(files);
                   }
                 }}
                 className="hidden"
@@ -2724,15 +2635,7 @@ export default function Settings({ user }) {
                     });
                   });
                   
-                  // Add cropped photos
-                  cropFiles.forEach((file, index) => {
-                    allItems.push({
-                      type: 'crop',
-                      data: file,
-                      index: index,
-                      key: `crop-${index}`
-                    });
-                  });
+                  // Note: Removed cropFiles since gallery photos are now uploaded directly
                   
                   // Add upload placeholder if needed
                   if (allItems.length < 15) {
@@ -2765,6 +2668,10 @@ export default function Settings({ user }) {
                             src={item.data}
                             alt={`Gallery image ${item.index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', item.data);
+                              e.target.src = '/placeholder-image.png'; // Fallback image
+                            }}
                           />
                           
                           {/* Selection Checkbox - Only show in multi-select mode */}
@@ -2799,30 +2706,7 @@ export default function Settings({ user }) {
                         </div>
                       )}
                       
-                      {item.type === 'crop' && (
-                        <div className="group relative w-full h-full rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50">
-                          <img
-                            src={URL.createObjectURL(item.data)}
-                            alt={`Cropped photo ${item.index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {/* Pending indicator */}
-                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                            Pending Upload
-                          </div>
-                          {/* Remove button */}
-                          <button
-                            onClick={() => {
-                              setCropFiles(prev => prev.filter((_, i) => i !== item.index));
-                            }}
-                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                      {/* Note: Removed crop type rendering as gallery photos are now uploaded directly */}
                       
                       {item.type === 'placeholder' && (
                         <div
@@ -2836,7 +2720,7 @@ export default function Settings({ user }) {
                             Click to add photos
                           </p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {gallery.photos.length + cropFiles.length}/15
+                            {gallery.photos.length}/15
                           </p>
                         </div>
                       )}
@@ -3156,61 +3040,7 @@ export default function Settings({ user }) {
         </div>
       )}
 
-      {/* Cropped Files Preview and Upload - Only show if there are files and not loading */}
-      {cropFiles.length > 0 && !loading && (() => {
-        console.log("Rendering upload button for", cropFiles.length, "files");
-        return (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-black">
-              Cropped Photos ({cropFiles.length})
-            </h4>
-            <button
-              onClick={() => setCropFiles([])}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <MdCancel size={16} />
-            </button>
-          </div>
-          
-          <div className="space-y-2 mb-3">
-            {cropFiles.map((file, index) => (
-              <div key={index} className="flex items-center space-x-2 text-xs text-gray-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Photo {index + 1} - Ready to upload</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 mb-2">
-            Debug: {cropFiles.length} files, Gallery: {gallery.photos.length}/15
-          </div>
-          
-          {/* Test upload button */}
-          <button
-            onClick={() => {
-              console.log("Test upload clicked");
-              console.log("Crop files:", cropFiles);
-              console.log("Gallery temp:", gallery.temp);
-              console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-              console.log("Token:", localStorage.getItem("token") ? "Exists" : "Missing");
-            }}
-            className="w-full px-3 py-1 bg-blue-500 text-white rounded text-xs mb-2"
-          >
-            Test Debug Info
-          </button>
-          
-          <button
-            onClick={handleCroppedFilesUpload}
-            disabled={loading}
-            className="w-full px-3 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {loading ? 'Uploading...' : `Upload ${cropFiles.length} Photo(s)`}
-          </button>
-        </div>
-        );
-      })()}
+      {/* Note: Removed cropped files preview section as gallery photos are now uploaded directly */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
