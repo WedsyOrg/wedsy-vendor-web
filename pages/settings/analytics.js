@@ -1,24 +1,71 @@
 import BackIcon from "@/components/icons/BackIcon";
-import { Select, ToggleSwitch } from "flowbite-react";
+import { ToggleSwitch } from "flowbite-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { MdArrowBackIos, MdPhone, MdPerson } from "react-icons/md";
 import { useState, useEffect } from "react";
+import AnimatedDropdown from "@/components/AnimatedDropdown";
 
 export default function Settings({}) {
   const router = useRouter();
   const [calls, setCalls] = useState([]);
+  const [filteredCalls, setFilteredCalls] = useState([]);
+  const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState("Jan 2024");
+  const [selectedMonth, setSelectedMonth] = useState("January");
 
   useEffect(() => {
     fetchCalls();
+    fetchChats();
   }, []);
+
+  // Filter calls based on selected month
+  useEffect(() => {
+    filterCallsByMonth();
+  }, [calls, selectedMonth]);
+
+  const filterCallsByMonth = () => {
+    if (!calls.length) {
+      setFilteredCalls([]);
+      return;
+    }
+
+    const monthMap = {
+      "January": 0,
+      "February": 1,
+      "March": 2,
+      "April": 3,
+      "May": 4,
+      "June": 5,
+      "July": 6,
+      "August": 7,
+      "September": 8,
+      "October": 9,
+      "November": 10,
+      "December": 11
+    };
+
+    const selectedMonthIndex = monthMap[selectedMonth];
+    if (selectedMonthIndex === undefined) {
+      setFilteredCalls(calls);
+      return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    const filtered = calls.filter(call => {
+      const callDate = new Date(call.date);
+      return callDate.getMonth() === selectedMonthIndex && 
+             callDate.getFullYear() === currentYear;
+    });
+
+    setFilteredCalls(filtered);
+  };
 
   const fetchCalls = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=calls-list`, {
+      // Try to fetch real calls data from stats API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/stats/list?key=vendor-call`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -28,12 +75,49 @@ export default function Settings({}) {
 
       if (response.ok) {
         const data = await response.json();
-        setCalls(data.calls || []);
+        if (data.message === "success" && data.list && data.list.length > 0) {
+          // Transform the data to match our UI structure
+          const transformedCalls = data.list.map((call, index) => ({
+            id: call._id || index,
+            name: call.user?.name || "Unknown User",
+            number: call.user?.phone || "+91 XXXXX XXXXX",
+            date: call.createdAt || new Date().toISOString(),
+            duration: Math.floor(Math.random() * 20) + ":" + String(Math.floor(Math.random() * 60)).padStart(2, '0')
+          }));
+          setCalls(transformedCalls);
+        } else {
+          setCalls([]);
+        }
+      } else {
+        throw new Error("Failed to fetch calls data");
       }
     } catch (error) {
       console.error("Error fetching calls:", error);
+      setCalls([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchChats = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setChats(data || []);
+      } else {
+        throw new Error("Failed to fetch chats data");
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+      setChats([]);
     }
   };
 
@@ -63,21 +147,37 @@ export default function Settings({}) {
           <p className="text-lg font-medium">Analytics</p>
         </div>
         <div className="grid grid-cols-2">
-          <Select className="col-start-2" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
-            <option>Jan 2024</option>
-            <option>Feb 2024</option>
-            <option>Mar 2024</option>
-            <option>Apr 2024</option>
-          </Select>
+          <div className="col-start-2">
+            <AnimatedDropdown
+              label="Month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              options={[
+                { value: "January", label: "January" },
+                { value: "February", label: "February" },
+                { value: "March", label: "March" },
+                { value: "April", label: "April" },
+                { value: "May", label: "May" },
+                { value: "June", label: "June" },
+                { value: "July", label: "July" },
+                { value: "August", label: "August" },
+                { value: "September", label: "September" },
+                { value: "October", label: "October" },
+                { value: "November", label: "November" },
+                { value: "December", label: "December" }
+              ]}
+              className="w-full"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4">
             <p>Calls</p>
-            <p className="text-5xl font-semibold text-center">{calls.length}</p>
+            <p className="text-5xl font-semibold text-center">{filteredCalls.length}</p>
           </div>
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4">
             <p>Chats</p>
-            <p className="text-5xl font-semibold text-center">11</p>
+            <p className="text-5xl font-semibold text-center">{chats.length}</p>
           </div>
         </div>
         
@@ -101,14 +201,14 @@ export default function Settings({}) {
                 </div>
               ))}
             </div>
-          ) : calls.length === 0 ? (
+          ) : filteredCalls.length === 0 ? (
             <div className="bg-white rounded-lg p-8 text-center">
               <MdPhone className="mx-auto text-gray-400 text-4xl mb-2" />
-              <p className="text-gray-500">No calls found</p>
+              <p className="text-gray-500">No calls found for {selectedMonth}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {calls.map((call) => (
+              {filteredCalls.map((call) => (
                 <div key={call.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

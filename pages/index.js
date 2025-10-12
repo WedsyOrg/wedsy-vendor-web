@@ -915,7 +915,7 @@ export default function Home({ user }) {
 
 
         {/* Revenue this month Card */}
-        <div className="w-full h-[147px] shadow-lg p-6 bg-[#FF97BE] font-semibold">
+        <div className="w-full h-[147px] shadow-lg p-6 bg-transparent font-semibold">
           <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
           {!dataLoaded && revenueLoading ? (
             <div className="my-4 flex flex-col items-center justify-center animate-pulse">
@@ -1195,64 +1195,47 @@ export default function Home({ user }) {
 
       {/* Ongoing Order Banner */}
       {!showOrderDetails && (
-        <motion.div 
-          initial={{ translateY: 100, opacity: 0 }}
-          animate={{ 
-            translateY: Math.min(scrollY * 0.1, 20), 
-            opacity: 1 
-          }}
-          exit={{ translateY: 100, opacity: 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 500, 
-            damping: 20,
-            duration: 0.2 
-          }}
-          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#2B3F6C]"
+        <div 
+          className="fixed bottom-20 left-0 right-0 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#2B3F6C]"
           onClick={handleOngoingOrderClick}
           style={{
+            zIndex: 50,
             transform: `translateY(${Math.min(smoothScrollY * 0.015, 3)}px) translateX(${Math.sin(smoothScrollY * 0.01) * 2}px) scale(${1 + Math.sin(smoothScrollY * 0.005) * 0.02})`,
             transition: 'none' // Disable CSS transition for smooth interpolation
           }}
         >
           {/* Handle */}
-          <motion.div 
+          <div 
             className="mb-2"
-            whileHover={{ scale: 1.1 }}
-            transition={{ duration: 0.2 }}
             style={{
               transform: `translateX(${Math.sin(smoothScrollY * 0.02) * 1}px) rotate(${Math.sin(smoothScrollY * 0.01) * 2}deg)`
             }}
           >
             <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
-          </motion.div>
+          </div>
           
           {/* Banner Content */}
           <div className="w-full flex justify-between items-center">
-            <motion.p 
+            <p 
               className="text-white font-bold text-sm"
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
               style={{
                 transform: `translateY(${Math.sin(smoothScrollY * 0.008) * 1}px) translateX(${Math.sin(smoothScrollY * 0.015) * 0.5}px)`
               }}
             >
               ONGOING ORDER
-            </motion.p>
-            <motion.p 
-              className="text-white font-bold text-sm"
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
-              style={{
-                transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
-              }}
-            >
-              {getCurrentTime()}
-            </motion.p>
+            </p>
+            {ongoingOrder && (
+              <p 
+                className="text-white font-bold text-sm"
+                style={{
+                  transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
+                }}
+              >
+                {getCurrentTime()}
+              </p>
+            )}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Order Details Modal */}
