@@ -19,6 +19,7 @@ import { useRouter } from "next/router";
 import { Avatar, Button, Select, TextInput } from "flowbite-react";
 import Link from "next/link";
 import { toPriceString } from "@/utils/text";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Packages({}) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function Packages({}) {
   const [display, setDisplay] = useState("");
   const [orders, setOrders] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const { navigateTo } = useNavigation();
 
   const fetchOrders = () => {
     setLoading(true);
@@ -179,7 +181,7 @@ export default function Packages({}) {
               key={index}
               className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => {
-                router.push(`/orders/${order?._id}`);
+                navigateTo(`/orders/${order?._id}`, 'right');
               }}
             >
               <div className="flex items-center justify-between">

@@ -5,12 +5,14 @@ import {
   MdSearch, 
   MdChatBubbleOutline
 } from "react-icons/md";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Chats() {
   const router = useRouter();
   const [chats, setChats] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const { navigateTo, back } = useNavigation();
 
   const fetchChats = () => {
     setLoading(true);
@@ -45,11 +47,11 @@ export default function Chats() {
   }, []);
 
   const handleBackClick = () => {
-    router.push('/');
+    back();
   };
 
   const onOpenChat = (id) => {
-    router.push(`/chats/view/${id}`);
+    navigateTo(`/chats/view/${id}`, 'right');
   };
 
   return (

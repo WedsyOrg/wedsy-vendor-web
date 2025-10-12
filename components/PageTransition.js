@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PageTransition = ({ children, direction = 'left' }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,27 +23,45 @@ const PageTransition = ({ children, direction = 'left' }) => {
     }, 300); // Match transition duration
   };
 
-  const getTransform = () => {
-    if (isExiting) {
-      return direction === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
+  // Enhanced animation variants
+  const pageVariants = {
+    initial: {
+      opacity: 0,
+      x: direction === 'left' ? '100%' : '-100%',
+      scale: 0.95,
+    },
+    in: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+    },
+    out: {
+      opacity: 0,
+      x: direction === 'left' ? '-100%' : '100%',
+      scale: 0.95,
     }
-    if (isVisible) {
-      return 'translateX(0)';
-    }
-    return direction === 'left' ? 'translateX(100%)' : 'translateX(-100%)';
+  };
+
+  const pageTransition = {
+    type: 'tween',
+    ease: 'anticipate',
+    duration: 0.4
   };
 
   return (
-    <div
+    <motion.div
       className="w-full h-screen overflow-hidden"
+      initial="initial"
+      animate={isVisible ? "in" : "initial"}
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
       style={{
-        transform: getTransform(),
-        transition: 'transform 0.3s ease-in-out',
         position: 'relative'
       }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
 

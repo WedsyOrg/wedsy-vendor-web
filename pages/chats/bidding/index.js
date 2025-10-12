@@ -12,8 +12,11 @@ import {
 } from "react-icons/md";
 import { useRouter } from "next/router";
 import { Avatar, Button, TextInput } from "flowbite-react";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Home({}) {
+  const { navigateTo } = useNavigation();
+  
   // Dummy fallback data for Personal Packages tab
   const DUMMY_PACKAGES = [
     {
@@ -229,7 +232,7 @@ export default function Home({}) {
       setShowDeclineConfirm(false);
       setDecliningBidId(null);
       // Navigate to bidding detail page
-      router.push(`/chats/bidding/${decliningBidId}`);
+      navigateTo(`/chats/bidding/${decliningBidId}`, 'right');
     }
   };
   useEffect(() => {
