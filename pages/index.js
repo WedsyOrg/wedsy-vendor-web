@@ -915,7 +915,7 @@ export default function Home({ user }) {
 
 
         {/* Revenue this month Card */}
-        <div className="w-full h-[147px] shadow-lg p-6 bg-[#FF97BE] font-semibold">
+        <div className="w-full h-[147px] shadow-lg p-6 bg-transparent font-semibold">
           <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
           {!dataLoaded && revenueLoading ? (
             <div className="my-4 flex flex-col items-center justify-center animate-pulse">
