@@ -214,7 +214,7 @@ export default function Leads({}) {
         </div>
         <Link
           href="/personal-leads/create"
-          className="flex items-center gap-2 text-black hover:text-[#840032] transition-colors"
+          className="flex items-center gap-2 text-black hover:text-[#2B3F6C] transition-colors"
         >
           <span className="text-black font-medium">Create lead</span>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -326,7 +326,7 @@ export default function Leads({}) {
       <div className="bg-white min-h-screen">
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#840032]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
           </div>
         ) : leads && leads.length > 0 ? (
           <div className="px-6 py-4 space-y-3">
@@ -377,7 +377,7 @@ export default function Leads({}) {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No leads yet</h3>
               <p className="text-gray-500 mb-6">Create your first lead to get started</p>
               <Link href="/personal-leads/create">
-                <button className="bg-[#840032] text-white px-6 py-3 rounded-lg hover:bg-[#6d0028] transition-colors">
+                <button className="bg-[#2B3F6C] text-white px-6 py-3 rounded-lg hover:bg-[#1e2d4a] transition-colors">
                   Create Lead
                 </button>
               </Link>

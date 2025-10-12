@@ -429,7 +429,7 @@ export default function SignupBusinessAddress({}) {
                   width: '140px',
                   height: '50px',
                   borderRadius: '25px',
-                  background: data.otpSent ? '#10B981' : '#840032',
+                  background: data.otpSent ? '#10B981' : '#2B3F6C',
                   opacity: 1
                 }}
                 className="text-white font-medium hover:bg-[#6B0025] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
@@ -466,7 +466,7 @@ export default function SignupBusinessAddress({}) {
         }
         .input-field:focus {
           outline: none;
-          border-color: #840032;
+          border-color: #2B3F6C;
           box-shadow: none;
         }
         

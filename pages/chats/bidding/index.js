@@ -625,7 +625,7 @@ export default function Home({}) {
             
             <div className="flex gap-3">
               <button
-                className="flex-1 py-3 px-4 border border-[#840032] bg-white text-[#840032] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 px-4 border border-[#2B3F6C] bg-white text-[#2B3F6C] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
                 onClick={handleDeclineConfirm}
               >
                 Decline

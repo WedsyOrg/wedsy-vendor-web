@@ -379,7 +379,7 @@ export default function Home({}) {
 
       {/*best bid received section */}
       {bidding?.lowestBid?.bid && (
-        <div className="py-3 flex flex-row gap-8 justify-center items-center bg-[#840032] text-white">
+        <div className="py-3 flex flex-row gap-8 justify-center items-center bg-[#2B3F6C] text-white">
           <span className="font-semibold">Best Bid Received</span>
           <span className="font-semibold">{toPriceString(bidding?.lowestBid?.bid)}</span>
         </div>
@@ -462,7 +462,7 @@ export default function Home({}) {
                     value={bid}
                     onChange={(e) => handleBidChange(e.target.value)}
                     type="number"
-                    className="w-full text-xl font-bold text-black border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#840032] focus:ring-0 transition-colors duration-200 text-center"
+                    className="w-full text-xl font-bold text-black border-0 border-b-2 border-gray-300 pb-2 bg-transparent focus:outline-none focus:border-[#2B3F6C] focus:ring-0 transition-colors duration-200 text-center"
                     onFocus={() => setIsQuoteFocused(true)}
                     onBlur={() => setIsQuoteFocused(false)}
                     style={{ outline: 'none', boxShadow: 'none' }}
@@ -473,7 +473,7 @@ export default function Home({}) {
                   <>
                     
                     <p className="text-sm text-gray-600 mb-2">Payable to Wedsy</p>
-                    <div className="text-xl font-bold text-black border-b-2 border-[#840032] pb-2 mb-4 text-right">
+                    <div className="text-xl font-bold text-black border-b-2 border-[#2B3F6C] pb-2 mb-4 text-right">
                       {toPriceString(wedsyAmount)}
                     </div>
                   </>
@@ -643,7 +643,7 @@ export default function Home({}) {
             
             <div className="flex gap-3">
               <button
-                className="flex-1 py-3 px-4 border border-[#840032] bg-white text-[#840032] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 px-4 border border-[#2B3F6C] bg-white text-[#2B3F6C] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
                 onClick={handleDeclineConfirm}
               >
                 Decline

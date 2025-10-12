@@ -1208,7 +1208,7 @@ export default function Home({ user }) {
             damping: 20,
             duration: 0.2 
           }}
-          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#840032]"
+          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#2B3F6C]"
           onClick={handleOngoingOrderClick}
           style={{
             transform: `translateY(${Math.min(smoothScrollY * 0.015, 3)}px) translateX(${Math.sin(smoothScrollY * 0.01) * 2}px) scale(${1 + Math.sin(smoothScrollY * 0.005) * 0.02})`,
@@ -1277,7 +1277,7 @@ export default function Home({ user }) {
                 duration: 0.4,
                 ease: "easeOut"
               }}
-              className="w-full max-h-[85vh] bg-[#840032] flex flex-col"
+              className="w-full max-h-[85vh] bg-[#2B3F6C] flex flex-col"
               style={{ borderRadius: '10px 10px 0 0' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1439,7 +1439,7 @@ export default function Home({ user }) {
                   {require("@/utils/text").toPriceString(stats?.amountToReceive ?? 0)}
                 </p>
                 <button 
-                  className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
+                  className="w-full bg-white text-[#2B3F6C] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     toast.success("Payment confirmation sent!", {
                       position: "top-right",

@@ -223,7 +223,7 @@ export default function Packages({}) {
                     <span
                       className={`text-sm font-semibold uppercase ${
                         order?.source === "Wedsy-Package"
-                          ? "text-[#840032]"
+                          ? "text-[#2B3F6C]"
                           : order?.source === "Personal-Package"
                           ? "text-[#00AC4F]"
                           : "text-[#2B3F6C]"

@@ -10,7 +10,7 @@ export default function ExpandText({ text, limit }) {
             {text}
             <br />
             <span
-              className="text-[#840032] hover:text-[#6d0028] cursor-pointer font-medium ml-1"
+              className="text-[#2B3F6C] hover:text-[#1e2d4a] cursor-pointer font-medium ml-1"
               onClick={() => {
                 setExpanded(!expanded);
               }}
@@ -22,7 +22,7 @@ export default function ExpandText({ text, limit }) {
           <>
             {text?.slice(0, limit)}...
             <span
-              className="text-[#840032] hover:text-[#6d0028] cursor-pointer font-medium ml-1"
+              className="text-[#2B3F6C] hover:text-[#1e2d4a] cursor-pointer font-medium ml-1"
               onClick={() => {
                 setExpanded(!expanded);
               }}

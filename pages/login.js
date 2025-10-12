@@ -354,7 +354,7 @@ export default function Login({}) {
               }
             }}
             disabled={!data.phone || (data.otpSent && !data.Otp) || data.loading}
-            className="w-full bg-[#840032] text-white font-medium py-3 px-6 rounded-lg shadow-sm transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#2B3F6C] text-white font-medium py-3 px-6 rounded-lg shadow-sm transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {data.loading ? (
               <div className="flex items-center justify-center">
@@ -373,7 +373,7 @@ export default function Login({}) {
             Not a member yet?{" "}
             <button 
               onClick={() => navigateWithTransition('/signup', 'left')}
-              className="text-[#840032] underline hover:text-[#840032]/80 transition-colors cursor-pointer"
+              className="text-[#2B3F6C] underline hover:text-[#2B3F6C]/80 transition-colors cursor-pointer"
             >
               Sign up
             </button>

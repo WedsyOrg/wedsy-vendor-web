@@ -76,7 +76,7 @@ export default function Home({ user }) {
             <div className="flex flex-col gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-sm font-bold">①</div>
+                  <div className="w-6 h-6 bg-[#2B3F6C] text-white rounded-full flex items-center justify-center text-sm font-bold">①</div>
                   <Label value="Start with a descriptive title" className="text-base font-semibold text-black" />
                 </div>
                 <div className="relative">
@@ -100,7 +100,7 @@ export default function Home({ user }) {
               
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-[#840032] text-white rounded-full flex items-center justify-center text-sm font-bold">②</div>
+                  <div className="w-6 h-6 bg-[#2B3F6C] text-white rounded-full flex items-center justify-center text-sm font-bold">②</div>
                   <Label value="Provide more details" className="text-base font-semibold text-black" />
                 </div>
                 <Textarea
@@ -146,7 +146,7 @@ export default function Home({ user }) {
             </div>
             <div className="flex justify-center mt-4">
               <Button
-                className="px-6 py-2 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
+                className="px-6 py-2 rounded-full text-white bg-[#2B3F6C] hover:bg-[#1e2d4a] font-semibold"
                 disabled={!community.title || !community.body}
                 onClick={() => {
                   setDisplay("Post");
@@ -188,7 +188,7 @@ export default function Home({ user }) {
                   />
                   <Label
                     htmlFor="anonymous"
-                    className="text-base text-[#840032]"
+                    className="text-base text-[#2B3F6C]"
                   >
                     Anonymous (Computer generated ID)
                   </Label>
@@ -197,7 +197,7 @@ export default function Home({ user }) {
             </div>
             <div className="flex justify-center">
               <Button
-                className="px-6 py-2 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] font-semibold"
+                className="px-6 py-2 rounded-full text-white bg-[#2B3F6C] hover:bg-[#1e2d4a] font-semibold"
                 disabled={loading}
                 onClick={handleSubmit}
               >

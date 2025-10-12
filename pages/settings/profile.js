@@ -1471,11 +1471,11 @@ export default function Settings({ user }) {
         }
         .select-field:focus {
           outline: none !important;
-          border-color: #840032 !important;
+          border-color: #2B3F6C !important;
           box-shadow: none !important;
         }
         .select-field:hover {
-          border-color: #840032;
+          border-color: #2B3F6C;
         }
         .dropdown-option {
           padding: 12px 16px;
@@ -1488,7 +1488,7 @@ export default function Settings({ user }) {
         }
         .dropdown-option.selected {
           background-color: #FEF2F2;
-          color: #840032;
+          color: #2B3F6C;
         }
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -1507,7 +1507,7 @@ export default function Settings({ user }) {
           <div
             className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Profile" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1519,7 +1519,7 @@ export default function Settings({ user }) {
           <div
             className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
               display === "About you" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1531,7 +1531,7 @@ export default function Settings({ user }) {
           <div
             className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Prices" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1543,7 +1543,7 @@ export default function Settings({ user }) {
           <div
             className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Gallery" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1580,7 +1580,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
               />
             </div>
 
@@ -1601,7 +1601,7 @@ export default function Settings({ user }) {
                     }
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] resize-none transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none transition-colors"
               />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {profile.businessDescription.length}/350 characters
@@ -1699,7 +1699,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
                     </label>
@@ -1715,7 +1715,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
                     </label>
@@ -1741,7 +1741,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
                     </label>
@@ -1757,7 +1757,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
                     </label>
@@ -1802,7 +1802,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1822,7 +1822,7 @@ export default function Settings({ user }) {
                   }}
                   ref={inputRef}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1841,7 +1841,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1896,7 +1896,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
                 
@@ -1951,7 +1951,7 @@ export default function Settings({ user }) {
                       type="button"
                   disabled={loading}
                       onClick={() => setShowDocumentModal(true)}
-                      className="w-full px-4 py-2 border border-[#840032] text-[#840032] rounded-lg hover:bg-[#840032] hover:text-white transition-colors text-sm"
+                      className="w-full px-4 py-2 border border-[#2B3F6C] text-[#2B3F6C] rounded-lg hover:bg-[#2B3F6C] hover:text-white transition-colors text-sm"
                     >
                       Update Document
                     </button>
@@ -1961,7 +1961,7 @@ export default function Settings({ user }) {
                     type="button"
                     disabled={loading}
                     onClick={() => setShowDocumentModal(true)}
-                    className="w-full px-4 py-3 border-2 border-dashed border-[#840032] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 border-2 border-dashed border-[#2B3F6C] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1988,7 +1988,7 @@ export default function Settings({ user }) {
                     }
                   }}
                 disabled={loading}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2023,7 +2023,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.experience || other.experience.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2047,7 +2047,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.clients || other.clients.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2078,7 +2078,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
                   />
                       <button
                         type="button"
@@ -2182,7 +2182,7 @@ export default function Settings({ user }) {
                     awards: [...(other?.awards || []), { title: "", certificate: "" }],
                   });
                 }}
-                className="w-full px-4 py-3 bg-[#840032] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-[#2B3F6C] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
               >
                 Add Award/Certificate <span className="text-lg">+</span>
               </button>
@@ -2211,7 +2211,7 @@ export default function Settings({ user }) {
                           });
                         }}
                         disabled={loading}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#840032] text-black placeholder-gray-400"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#2B3F6C] text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
                       />
                       {/* Only show delete button if there's more than 1 product */}
@@ -2252,7 +2252,7 @@ export default function Settings({ user }) {
                     className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-1 ${
                       (other?.makeupProducts?.length || 0) >= 5
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-[#840032] hover:bg-gray-800"
+                        : "bg-[#2B3F6C] hover:bg-gray-800"
                     }`}
                   >
                     Add more <span className="text-lg">+</span>
@@ -2283,7 +2283,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                    className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                    className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">Yes</span>
                 </label>
@@ -2299,7 +2299,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                    className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                    className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">No</span>
                 </label>
@@ -2324,7 +2324,7 @@ export default function Settings({ user }) {
                   }
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#840032] resize-none bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none bg-transparent"
               />
               <div className="mt-1">
                 <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
@@ -2359,7 +2359,7 @@ export default function Settings({ user }) {
                   updateOther();
                 }}
                 disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length > 500}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2394,7 +2394,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
 
@@ -2414,7 +2414,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
 
@@ -2435,7 +2435,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
             )}
@@ -2447,7 +2447,7 @@ export default function Settings({ user }) {
                   updatePrices();
                 }}
                 disabled={!prices.bridal || (profile.servicesOffered !== "Hairstylist" && profile.groomMakeup && !prices.groom)}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2499,7 +2499,7 @@ export default function Settings({ user }) {
                     </div>
                   ) : (
                     <div 
-                      className="w-40 h-52 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 hover:border-[#840032] hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="w-40 h-52 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => coverPhotoRef.current?.click()}
                     >
                       <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2543,7 +2543,7 @@ export default function Settings({ user }) {
                      photoRef.current?.click();
                    }}
                    disabled={loading || gallery.photos.length >= 15}
-                   className="w-full px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+                   className="w-full px-6 py-3 bg-[#2B3F6C] text-white rounded-xl hover:bg-[#1e2d4a] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
                  >
                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2560,7 +2560,7 @@ export default function Settings({ user }) {
                      <div className="flex items-center justify-left">
                        <button
                          onClick={() => setIsMultiSelectMode(true)}
-                         className="px-4 py-2 text-sm font-medium bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-all duration-200 flex items-center gap-2"
+                         className="px-4 py-2 text-sm font-medium bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-all duration-200 flex items-center gap-2"
                        >
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2667,7 +2667,7 @@ export default function Settings({ user }) {
                           }}
                           className={`group relative w-full h-full overflow-hidden rounded-lg transition-all cursor-pointer ${
                             isMultiSelectMode && selectedPhotos.includes(item.index)
-                              ? 'ring-2 ring-[#840032] ring-opacity-50'
+                              ? 'ring-2 ring-[#2B3F6C] ring-opacity-50'
                               : ''
                           }`}
                         >
@@ -2686,7 +2686,7 @@ export default function Settings({ user }) {
                             <div className="absolute top-3 left-3">
                               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                                 selectedPhotos.includes(item.index)
-                                  ? 'bg-[#840032] border-[#840032]'
+                                  ? 'bg-[#2B3F6C] border-[#2B3F6C]'
                                   : 'bg-white border-gray-300'
                               }`}>
                                 {selectedPhotos.includes(item.index) && (
@@ -2718,7 +2718,7 @@ export default function Settings({ user }) {
                       {item.type === 'placeholder' && (
                         <div
                           onClick={() => photoRef.current?.click()}
-                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors aspect-[3/4]"
+                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors aspect-[3/4]"
                         >
                           <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2914,7 +2914,7 @@ export default function Settings({ user }) {
                   <button
                     onClick={handleSaveDocument}
                     disabled={loading || !documentType || !documentFrontUrl || !documentBackUrl}
-                    className="flex-1 px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Uploading...' : 'Save Document'}
                   </button>
@@ -3025,7 +3025,7 @@ export default function Settings({ user }) {
               <button
                 onClick={handleCropComplete}
                 disabled={!completedCrop}
-                className="px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Crop & Continue
               </button>
@@ -3038,11 +3038,11 @@ export default function Settings({ user }) {
       {loading && (
         <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
           <div className="flex items-center gap-3">
-            <svg className="animate-spin h-4 w-4 text-[#840032]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-4 w-4 text-[#2B3F6C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span className="text-sm text-[#840032]">Uploading photo...</span>
+            <span className="text-sm text-[#2B3F6C]">Uploading photo...</span>
           </div>
         </div>
       )}

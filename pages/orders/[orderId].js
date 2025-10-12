@@ -71,7 +71,7 @@ export default function Packages({}) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#840032]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3F6C]"></div>
         <p className="mt-4 text-gray-600">Loading order details...</p>
       </div>
     );
@@ -83,7 +83,7 @@ export default function Packages({}) {
         <p className="text-gray-600">Order not found</p>
         <button 
           onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-[#840032] text-white rounded-lg"
+          className="mt-4 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg"
         >
           Go Back
         </button>
@@ -222,7 +222,7 @@ export default function Packages({}) {
               window.open(mapsUrl, '_blank');
             }}
           >
-            <MdOutlineLocationOn className="text-[#840032]" size={20} />
+            <MdOutlineLocationOn className="text-[#2B3F6C]" size={20} />
             <span className="text-black font-medium">HOME</span>
             <span className="text-black">{order?.wedsyPackageBooking?.address?.formatted_address || order?.vendorPersonalPackageBooking?.address?.formatted_address || order?.biddingBooking?.events?.[0]?.location || "#2014, Prestige garden bay, Yelahan"}</span>
           </div>
@@ -313,7 +313,7 @@ export default function Packages({}) {
             <div className="mb-4">
               <h3 className="text-lg font-bold text-black mb-2">Address</h3>
               <div className="bg-gray-200 rounded-lg p-3 flex items-center gap-2">
-                <MdOutlineLocationOn className="text-[#840032]" size={20} />
+                <MdOutlineLocationOn className="text-[#2B3F6C]" size={20} />
                 <span className="text-black font-medium">HOME</span>
                 <span className="text-black">{order?.vendorPersonalPackageBooking?.address?.formatted_address || "#2014, Prestige garden bay, Yelahan"}</span>
               </div>
