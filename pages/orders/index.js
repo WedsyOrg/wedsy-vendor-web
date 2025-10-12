@@ -1,6 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
+import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
 import {
   MdAdd,
@@ -12,13 +13,13 @@ import {
   MdKeyboardArrowRight,
   MdOutlineChevronRight,
   MdOutlineLocationOn,
-  MdSearch,
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
 import { Avatar, Button, Select, TextInput } from "flowbite-react";
 import Link from "next/link";
 import { toPriceString } from "@/utils/text";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Packages({}) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function Packages({}) {
   const [display, setDisplay] = useState("");
   const [orders, setOrders] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const { navigateTo } = useNavigation();
 
   const fetchOrders = () => {
     setLoading(true);
@@ -135,25 +137,11 @@ export default function Packages({}) {
 
       {/* Search Bar */}
       <div className="px-6 py-4 flex justify-center">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MdSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
-            style={{
-              background: '#D9D9D9',
-              width: '318px',
-              height: '34px',
-              borderRadius: '10px',
-              opacity: 1
-            }}
-          />
-        </div>
+        <SearchBox
+          placeholder="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* Orders List */}
@@ -179,7 +167,7 @@ export default function Packages({}) {
               key={index}
               className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => {
-                router.push(`/orders/${order?._id}`);
+                navigateTo(`/orders/${order?._id}`, 'right');
               }}
             >
               <div className="flex items-center justify-between">
@@ -235,7 +223,7 @@ export default function Packages({}) {
                     <span
                       className={`text-sm font-semibold uppercase ${
                         order?.source === "Wedsy-Package"
-                          ? "text-[#840032]"
+                          ? "text-[#2B3F6C]"
                           : order?.source === "Personal-Package"
                           ? "text-[#00AC4F]"
                           : "text-[#2B3F6C]"

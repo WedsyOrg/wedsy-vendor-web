@@ -650,11 +650,11 @@ export default function Settings({}) {
         }
         .select-field:focus {
           outline: none !important;
-          border-color: #840032 !important;
+          border-color: #2B3F6C !important;
           box-shadow: none !important;
         }
         .select-field:hover {
-          border-color: #840032;
+          border-color: #2B3F6C;
         }
         .dropdown-option {
           padding: 12px 16px;
@@ -667,7 +667,7 @@ export default function Settings({}) {
         }
         .dropdown-option.selected {
           background-color: #FEF2F2;
-          color: #840032;
+          color: #2B3F6C;
         }
       `}</style>
       <div className="min-h-screen bg-gray-50">
@@ -948,7 +948,7 @@ export default function Settings({}) {
             
             <div className="flex justify-center mt-8">
               <Button
-                className="px-6 py-2 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-full transition-colors"
+                className="px-6 py-2 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-full transition-colors"
                 disabled={
                   loading ||
                   !accountCreationData?.legal_business_name ||
@@ -1039,7 +1039,7 @@ export default function Settings({}) {
             
             <div className="flex justify-center mt-8">
               <Button
-                className="px-8 py-3 bg-[#840032] hover:bg-[#6d0028] text-white font-semibold rounded-lg transition-colors"
+                className="px-8 py-3 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-lg transition-colors"
                 disabled={
                   loading ||
                   !productData?.beneficiary_name ||

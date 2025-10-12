@@ -2,9 +2,12 @@ import React, { useEffect, useState } from "react";
 import "../styles/globals.css";
 import { useRouter } from "next/router";
 import StickFooter from "@/components/layout/StickyFooter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import PageTransition from "@/components/PageTransition";
+import PageTransitionLoader from "@/components/PageTransitionLoader";
+import { usePageTransition } from "@/hooks/usePageTransition";
 
 function MyApp({ Component, pageProps }) {
   const [isLandscape, setIsLandscape] = useState(false);
@@ -12,6 +15,7 @@ function MyApp({ Component, pageProps }) {
   const [loading, setLoading] = useState(true);
   const [logIn, setLogIn] = useState(false);
   const [user, setUser] = useState({});
+  const { isLoading } = usePageTransition();
 
   const Logout = () => {
     setLogIn(true);
@@ -108,20 +112,35 @@ function MyApp({ Component, pageProps }) {
         </>
       ) : (
         <div className="bg-white text-black flex flex-col h-screen w-screen">
-          <div className="grow overflow-scroll">
-            <Component
-              {...pageProps}
-              userLoggedIn={!logIn}
-              user={user}
-              CheckLogin={CheckLogin}
-              Logout={Logout}
-            />
+          <div className="grow overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={router.asPath}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  duration: 0.3,
+                  ease: "easeInOut"
+                }}
+                className="h-full overflow-scroll"
+              >
+                <Component
+                  {...pageProps}
+                  userLoggedIn={!logIn}
+                  user={user}
+                  CheckLogin={CheckLogin}
+                  Logout={Logout}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
           {router?.pathname !== "/login" && router?.pathname !== "/signup" && (
             <StickFooter />
           )}
         </div>
       )}
+      <PageTransitionLoader isLoading={isLoading} />
       <ToastContainer
         position="top-right"
         autoClose={5000}

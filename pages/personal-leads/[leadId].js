@@ -183,7 +183,7 @@ export default function Lead({}) {
                 placeholder="Add notes about this lead"
                 disabled={loading}
                 value={notes}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none"
                 onChange={(e) => {
                   setNotes(e.target.value);
                 }}
@@ -242,7 +242,7 @@ export default function Lead({}) {
                   type="time"
                   disabled={loading}
                   value={task?.time}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032] cursor-pointer"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C] cursor-pointer"
                   style={{ cursor: 'pointer' }}
                   onChange={(e) => {
                     setTask({
@@ -362,7 +362,7 @@ export default function Lead({}) {
                   <input
                     type="date"
                     value={event.date}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C]"
                     onChange={(e) => {
                       const updatedEventInfo = [...eventInfo];
                       updatedEventInfo[index] = { ...event, date: e.target.value };
@@ -375,7 +375,7 @@ export default function Lead({}) {
                   <input
                     type="time"
                     value={event.time}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032] cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C] cursor-pointer"
                     style={{ cursor: 'pointer' }}
                     onChange={(e) => {
                       const updatedEventInfo = [...eventInfo];
@@ -401,7 +401,7 @@ export default function Lead({}) {
               </div>
             ))}
             <button
-              className="flex items-center gap-2 text-[#840032] text-sm hover:text-[#6d0028] transition-colors"
+              className="flex items-center gap-2 text-[#2B3F6C] text-sm hover:text-[#1e2d4a] transition-colors"
               onClick={() => {
                 setEventInfo([...eventInfo, { date: "", time: "" }]);
               }}
@@ -436,12 +436,12 @@ export default function Lead({}) {
             <div>
               <Label value="Total Amount" />
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#840032] font-semibold">₹</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2B3F6C] font-semibold">₹</span>
                 <input
                   type="number"
                   value={totalAmount}
                   placeholder="Enter total amount"
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C]"
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, "");
                     setTotalAmount(value);
@@ -452,12 +452,12 @@ export default function Lead({}) {
             <div>
               <Label value="Amount Received" />
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#840032] font-semibold">₹</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2B3F6C] font-semibold">₹</span>
                 <input
                   type="number"
                   value={amountReceived}
                   placeholder="Enter received amount"
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#840032]"
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C]"
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, "");
                     setAmountReceived(value);
@@ -526,7 +526,7 @@ export default function Lead({}) {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Event Details</h3>
               <button
-                className="flex items-center gap-1 text-[#840032] text-sm hover:text-[#6d0028] transition-colors"
+                className="flex items-center gap-1 text-[#2B3F6C] text-sm hover:text-[#1e2d4a] transition-colors"
                 onClick={() => {
                   setEventInfo(lead?.eventInfo || []);
                   setEditEventDates(true);
@@ -626,7 +626,7 @@ export default function Lead({}) {
             <div className="flex items-center justify-between mb-4">
               <p className="text-lg font-semibold text-gray-900">Payment Details</p>
               <button
-                className="flex items-center gap-1 text-[#840032] text-sm hover:text-[#6d0028] transition-colors"
+                className="flex items-center gap-1 text-[#2B3F6C] text-sm hover:text-[#1e2d4a] transition-colors"
                 onClick={() => {
                   setTotalAmount(lead?.payment?.total || "");
                   setAmountReceived(lead?.payment?.received || "");

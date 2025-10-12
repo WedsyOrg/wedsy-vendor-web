@@ -200,7 +200,7 @@ export default function Home({}) {
             </button>
             <button
               onClick={() => setShowTerms(false)}
-              className="flex-1 py-3 px-4 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors font-medium"
+              className="flex-1 py-3 px-4 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-colors font-medium"
             >
               Accept & Continue
             </button>
@@ -263,7 +263,7 @@ export default function Home({}) {
               </div>
             ))}
             <div
-              className="flex items-center gap-1 text-sm cursor-pointer text-[#840032] hover:text-[#6d0028]"
+              className="flex items-center gap-1 text-sm cursor-pointer text-[#2B3F6C] hover:text-[#1e2d4a]"
               onClick={() => {
                 setPackage({
                   ...newPackage,

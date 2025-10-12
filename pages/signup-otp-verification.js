@@ -349,7 +349,7 @@ export default function SignupOtpVerification({}) {
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={index === 0 ? handlePaste : undefined}
-                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:border-[#840032] focus:ring-2 focus:ring-[#840032]/20"
+                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:border-[#2B3F6C] focus:ring-2 focus:ring-[#2B3F6C]/20"
                   />
                 ))}
               </div>
@@ -367,7 +367,7 @@ export default function SignupOtpVerification({}) {
                   </p>
                   <button
                     onClick={handleEditMobile}
-                    className="text-sm text-[#840032] underline hover:no-underline"
+                    className="text-sm text-[#2B3F6C] underline hover:no-underline"
                   >
                     Edit mobile no? ✏️
                   </button>
@@ -379,12 +379,12 @@ export default function SignupOtpVerification({}) {
                     value={mobileNumber}
                     onChange={handleMobileChange}
                     placeholder="Enter mobile number"
-                    className="w-full max-w-xs mx-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#840032]"
+                    className="w-full max-w-xs mx-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#2B3F6C]"
                   />
                   <button
                     onClick={handleMobileSubmit}
                     disabled={loading}
-                    className="px-6 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6B0025] disabled:opacity-50"
+                    className="px-6 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#6B0025] disabled:opacity-50"
                   >
                     {loading ? "Sending..." : "Send OTP"}
                   </button>
@@ -401,7 +401,7 @@ export default function SignupOtpVerification({}) {
                   <button
                     onClick={handleResendOtp}
                     disabled={loading}
-                    className="text-sm text-[#840032] underline hover:no-underline disabled:opacity-50"
+                    className="text-sm text-[#2B3F6C] underline hover:no-underline disabled:opacity-50"
                   >
                     Resend OTP
                   </button>
@@ -427,7 +427,7 @@ export default function SignupOtpVerification({}) {
                   width: '140px',
                   height: '50px',
                   borderRadius: '25px',
-                  background: '#840032',
+                  background: '#2B3F6C',
                   opacity: 1
                 }}
                 className="text-white font-medium hover:bg-[#6B0025] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"

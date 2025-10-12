@@ -246,7 +246,7 @@ export default function Community({}) {
       <div className="flex flex-col gap-4 pb-4 px-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#840032]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
             <p className="text-gray-500 mt-2">Loading community posts...</p>
           </div>
         ) : community?.length === 0 ? (
@@ -257,7 +257,7 @@ export default function Community({}) {
               Be the first to share your experiences, ask questions, or help other vendors in the community.
             </p>
             <Link href="/community/create">
-              <Button className="bg-[#840032] hover:bg-[#6d0028] text-white px-6 py-2 rounded-lg">
+              <Button className="bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white px-6 py-2 rounded-lg">
                 Create First Post
               </Button>
             </Link>
@@ -275,7 +275,7 @@ export default function Community({}) {
               key={index} 
               className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-700 transform ${
                 newPostId === item._id 
-                  ? 'animate-pulse border-[#840032] shadow-lg scale-105 animate-bounce' 
+                  ? 'animate-pulse border-[#2B3F6C] shadow-lg scale-105 animate-bounce' 
                   : 'hover:scale-[1.02]'
               }`}
               style={{
@@ -302,7 +302,7 @@ export default function Community({}) {
                 <div className="space-y-2">
                   <Link
                     href={`/community/${item._id}`}
-                    className="text-lg font-semibold text-black hover:text-[#840032] transition-colors block"
+                    className="text-lg font-semibold text-black hover:text-[#2B3F6C] transition-colors block"
                   >
                     {item.title}
                   </Link>
@@ -316,7 +316,7 @@ export default function Community({}) {
                     onClick={() =>
                       router.push(`/community/${item._id}?replyCommunity=true`)
                     }
-                    className="px-4 py-1 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] transition-colors text-sm"
+                    className="px-4 py-1 rounded-full text-white bg-[#2B3F6C] hover:bg-[#1e2d4a] transition-colors text-sm"
                   >
                     Reply
                   </Button>
@@ -326,7 +326,7 @@ export default function Community({}) {
                       <div className="flex flex-col items-center cursor-pointer">
                         <BiSolidLike
                           size={20}
-                          className="text-[#840032]"
+                          className="text-[#2B3F6C]"
                           onClick={() => {
                             removeCommunityLike(item._id);
                           }}
@@ -337,7 +337,7 @@ export default function Community({}) {
                       <div className="flex flex-col items-center cursor-pointer">
                         <BiLike
                           size={20}
-                          className="text-[#840032]"
+                          className="text-[#2B3F6C]"
                           onClick={() => {
                             addCommunityLike(item._id);
                           }}
@@ -350,7 +350,7 @@ export default function Community({}) {
                       <div className="flex flex-col items-center cursor-pointer">
                         <BiSolidDislike
                           size={20}
-                          className="text-[#840032]"
+                          className="text-[#2B3F6C]"
                           onClick={() => {
                             removeCommunityDisLike(item._id);
                           }}
@@ -361,7 +361,7 @@ export default function Community({}) {
                       <div className="flex flex-col items-center cursor-pointer">
                         <BiDislike
                           size={20}
-                          className="text-[#840032]"
+                          className="text-[#2B3F6C]"
                           onClick={() => {
                             addCommunityDisLike(item._id);
                           }}

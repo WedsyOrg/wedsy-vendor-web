@@ -97,7 +97,7 @@ export default function Home({}) {
                     placeholder="Lead Name"
                     disabled={loading}
                     value={lead?.name}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] text-center"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
                     onChange={(e) => {
                       setLead({
                         ...lead,
@@ -121,7 +121,7 @@ export default function Home({}) {
                     disabled={loading}
                     value={lead?.phone}
                     maxLength={10}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] text-center"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
                     onChange={(e) => {
                       const phoneNumber = e.target.value.replace(/\D/g, "");
                       if (phoneNumber.length <= 10) {
@@ -148,7 +148,7 @@ export default function Home({}) {
                       type="date"
                       disabled={loading}
                       value={lead?.eventInfo[0]?.date}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] text-center"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
                       onChange={(e) => {
                         setLead({
                           ...lead,
@@ -172,7 +172,7 @@ export default function Home({}) {
                       type="time"
                       disabled={loading}
                       value={lead?.eventInfo[0]?.time}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] cursor-pointer text-center"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] cursor-pointer text-center"
                       style={{ cursor: 'pointer' }}
                       onChange={(e) => {
                         setLead({
@@ -195,7 +195,7 @@ export default function Home({}) {
 
                 {/* Add Additional Events */}
                 <div
-                  className="flex items-center gap-2 text-sm text-[#840032] cursor-pointer hover:text-[#6d0028] transition-colors"
+                  className="flex items-center gap-2 text-sm text-[#2B3F6C] cursor-pointer hover:text-[#1e2d4a] transition-colors"
                   onClick={() => {
                     setLead({
                       ...lead,
@@ -204,7 +204,7 @@ export default function Home({}) {
                   }}
                 >
                   <span>Add more</span>
-                  <div className="w-4 h-4 bg-[#840032] rounded-full flex items-center justify-center">
+                  <div className="w-4 h-4 bg-[#2B3F6C] rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">+</span>
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export default function Home({}) {
                   rows={3}
                   disabled={loading}
                   value={lead?.notes}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] resize-none text-center"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] resize-none text-center"
                   onChange={(e) => {
                     setLead({
                       ...lead,
@@ -235,7 +235,7 @@ export default function Home({}) {
               <button
                 className="px-8 py-3 text-white font-medium transition-colors"
                 style={{
-                  backgroundColor: '#840032',
+                  backgroundColor: '#2B3F6C',
                   borderRadius: '25px'
                 }}
                 disabled={loading}
@@ -269,7 +269,7 @@ export default function Home({}) {
                   placeholder="Description"
                   disabled={loading}
                   value={lead?.tasks[0]?.task}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032]"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C]"
                   onChange={(e) => {
                     setLead({
                       ...lead,
@@ -289,7 +289,7 @@ export default function Home({}) {
                     type="date"
                     disabled={loading}
                     value={lead?.tasks[0]?.date}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C]"
                     onChange={(e) => {
                       setLead({
                         ...lead,
@@ -306,7 +306,7 @@ export default function Home({}) {
                     type="time"
                     disabled={loading}
                     value={lead?.tasks[0]?.time}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] cursor-pointer"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] cursor-pointer"
                     style={{ cursor: 'pointer' }}
                     onChange={(e) => {
                       setLead({
@@ -335,13 +335,13 @@ export default function Home({}) {
                   Total Amount
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#840032] font-semibold">₹</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2B3F6C] font-semibold">₹</span>
                   <input
                     type="number"
                     disabled={loading}
                     value={lead?.payment?.total}
                     placeholder="Enter total amount"
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] text-center"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "");
                       setLead({
@@ -359,13 +359,13 @@ export default function Home({}) {
                   Amount Received
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#840032] font-semibold">₹</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2B3F6C] font-semibold">₹</span>
                   <input
                     type="text"
                     disabled={loading}
                     value={lead?.payment?.received}
                     placeholder="Enter received amount"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] text-center"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "");
                       setLead({
@@ -384,7 +384,7 @@ export default function Home({}) {
                 </label>
                 <select
                   disabled={loading}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#840032] focus:border-[#840032] bg-white text-center"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] bg-white text-center"
                   onChange={(e) => {
                     setLead({
                       ...lead,
@@ -412,7 +412,7 @@ export default function Home({}) {
                 <button
                   className="text-white font-medium transition-colors"
                   style={{
-                    backgroundColor: '#840032',
+                    backgroundColor: '#2B3F6C',
                     width: '144px',
                     height: '31px',
                     borderRadius: '4px',
@@ -454,7 +454,7 @@ export default function Home({}) {
               <button
                 className="px-8 py-3 text-white font-medium transition-colors"
                 style={{
-                  backgroundColor: '#840032',
+                  backgroundColor: '#2B3F6C',
                   borderRadius: '25px'
                 }}
                 disabled={loading}

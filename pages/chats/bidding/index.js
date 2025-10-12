@@ -12,8 +12,11 @@ import {
 } from "react-icons/md";
 import { useRouter } from "next/router";
 import { Avatar, Button, TextInput } from "flowbite-react";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Home({}) {
+  const { navigateTo } = useNavigation();
+  
   // Dummy fallback data for Personal Packages tab
   const DUMMY_PACKAGES = [
     {
@@ -229,7 +232,7 @@ export default function Home({}) {
       setShowDeclineConfirm(false);
       setDecliningBidId(null);
       // Navigate to bidding detail page
-      router.push(`/chats/bidding/${decliningBidId}`);
+      navigateTo(`/chats/bidding/${decliningBidId}`, 'right');
     }
   };
   useEffect(() => {
@@ -622,7 +625,7 @@ export default function Home({}) {
             
             <div className="flex gap-3">
               <button
-                className="flex-1 py-3 px-4 border border-[#840032] bg-white text-[#840032] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 px-4 border border-[#2B3F6C] bg-white text-[#2B3F6C] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
                 onClick={handleDeclineConfirm}
               >
                 Decline

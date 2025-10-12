@@ -246,7 +246,7 @@ export default function Community({}) {
             {!displayReply && (
               <Button
                 onClick={() => setDisplayReply(true)}
-                className="px-4 py-1 rounded-full text-white bg-[#840032] hover:bg-[#6d0028] text-sm"
+                className="px-4 py-1 rounded-full text-white bg-[#2B3F6C] hover:bg-[#1e2d4a] text-sm"
               >
                 Reply
               </Button>
@@ -256,7 +256,7 @@ export default function Community({}) {
                 <div className="flex flex-col items-center cursor-pointer">
                   <BiSolidLike
                     size={20}
-                    className="text-[#840032]"
+                    className="text-[#2B3F6C]"
                     onClick={() => {
                       removeCommunityLike(community._id);
                     }}
@@ -267,7 +267,7 @@ export default function Community({}) {
                 <div className="flex flex-col items-center cursor-pointer">
                   <BiLike
                     size={20}
-                    className="text-[#840032]"
+                    className="text-[#2B3F6C]"
                     onClick={() => {
                       addCommunityLike(community._id);
                     }}
@@ -280,7 +280,7 @@ export default function Community({}) {
                 <div className="flex flex-col items-center cursor-pointer">
                   <BiSolidDislike
                     size={20}
-                    className="text-[#840032]"
+                    className="text-[#2B3F6C]"
                     onClick={() => {
                       removeCommunityDisLike(community._id);
                     }}
@@ -291,7 +291,7 @@ export default function Community({}) {
                 <div className="flex flex-col items-center cursor-pointer">
                   <BiDislike
                     size={20}
-                    className="text-[#840032]"
+                    className="text-[#2B3F6C]"
                     onClick={() => {
                       addCommunityDisLike(community._id);
                     }}

@@ -1,6 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
+import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
 import {
   MdAdd,
@@ -13,7 +14,6 @@ import {
   MdOutlineChevronRight,
   MdOutlineLocationOn,
   MdPersonOutline,
-  MdSearch,
 } from "react-icons/md";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { BsPlusCircle } from "react-icons/bs";
@@ -71,7 +71,7 @@ export default function Packages({}) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#840032]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3F6C]"></div>
         <p className="mt-4 text-gray-600">Loading order details...</p>
       </div>
     );
@@ -83,7 +83,7 @@ export default function Packages({}) {
         <p className="text-gray-600">Order not found</p>
         <button 
           onClick={() => router.back()}
-          className="mt-4 px-4 py-2 bg-[#840032] text-white rounded-lg"
+          className="mt-4 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg"
         >
           Go Back
         </button>
@@ -165,25 +165,11 @@ export default function Packages({}) {
 
       {/* Search Bar */}
       <div className="px-6 py-4 flex justify-center">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MdSearch className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-0"
-            style={{
-              background: '#D9D9D9',
-              width: '318px',
-              height: '34px',
-              borderRadius: '10px',
-              opacity: 1
-            }}
-          />
-        </div>
+        <SearchBox
+          placeholder="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {/* Order Details */}
@@ -236,7 +222,7 @@ export default function Packages({}) {
               window.open(mapsUrl, '_blank');
             }}
           >
-            <MdOutlineLocationOn className="text-[#840032]" size={20} />
+            <MdOutlineLocationOn className="text-[#2B3F6C]" size={20} />
             <span className="text-black font-medium">HOME</span>
             <span className="text-black">{order?.wedsyPackageBooking?.address?.formatted_address || order?.vendorPersonalPackageBooking?.address?.formatted_address || order?.biddingBooking?.events?.[0]?.location || "#2014, Prestige garden bay, Yelahan"}</span>
           </div>
@@ -327,7 +313,7 @@ export default function Packages({}) {
             <div className="mb-4">
               <h3 className="text-lg font-bold text-black mb-2">Address</h3>
               <div className="bg-gray-200 rounded-lg p-3 flex items-center gap-2">
-                <MdOutlineLocationOn className="text-[#840032]" size={20} />
+                <MdOutlineLocationOn className="text-[#2B3F6C]" size={20} />
                 <span className="text-black font-medium">HOME</span>
                 <span className="text-black">{order?.vendorPersonalPackageBooking?.address?.formatted_address || "#2014, Prestige garden bay, Yelahan"}</span>
               </div>

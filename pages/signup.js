@@ -112,7 +112,7 @@ export default function Signup({}) {
         }
         .input-field:focus {
           outline: none;
-          border-color: #840032;
+          border-color: #2B3F6C;
           box-shadow: none;
         }
         .select-field {
@@ -132,7 +132,7 @@ export default function Signup({}) {
         }
         .select-field:focus {
           outline: none !important;
-          border-color: #840032 !important;
+          border-color: #2B3F6C !important;
           box-shadow: none !important;
         }
         .select-field option {
@@ -172,10 +172,10 @@ export default function Signup({}) {
           transition: all 0.2s;
         }
         .service-option:hover {
-          border-color: #840032;
+          border-color: #2B3F6C;
         }
         .service-option.selected {
-          border-color: #840032;
+          border-color: #2B3F6C;
           background-color: #FEF2F2;
         }
         .checkmark {
@@ -408,7 +408,7 @@ export default function Signup({}) {
                 width: '140px',
                 height: '50px',
                 borderRadius: '25px',
-                background: '#840032',
+                background: '#2B3F6C',
                 opacity: 1
               }}
               className="text-white font-medium hover:bg-[#6B0025] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-base"

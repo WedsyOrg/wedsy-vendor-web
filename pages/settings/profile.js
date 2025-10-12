@@ -1,4 +1,5 @@
 import BackIcon from "@/components/icons/BackIcon";
+import SearchBox from "@/components/SearchBox";
 import { uploadFile } from "@/utils/file";
 import {
   Button,
@@ -242,14 +243,6 @@ export default function Settings({ user }) {
         setCoverPhoto(croppedImageBlob);
         // Auto-upload the cropped cover photo immediately
         updateCoverPhoto(croppedImageBlob);
-      } else if (cropType === 'gallery') {
-        setCropFiles(prev => {
-          const newFiles = [...prev, croppedImageBlob];
-          return newFiles;
-        });
-        
-        // Auto-upload the cropped photo immediately
-        uploadSingleCroppedPhoto(croppedImageBlob);
       }
       
       setShowCropModal(false);
@@ -271,6 +264,38 @@ export default function Settings({ user }) {
         setShowCropModal(true);
       });
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGalleryFileSelect = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    setLoading(true);
+    try {
+      const uploadPromises = imageFiles.map((file, index) => 
+        uploadFile({
+          file: file,
+          path: "vendor-gallery/",
+          id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + index}`
+        })
+      );
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      const newPhotos = [...gallery.photos, ...uploadedUrls];
+      setGallery(prev => ({ ...prev, photos: newPhotos }));
+      
+      // Update completion status
+      updateCompletionStatus();
+      
+      toast.success(`${uploadedUrls.length} photo(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Error uploading photos. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -495,8 +520,7 @@ export default function Settings({ user }) {
   const [completedCrop, setCompletedCrop] = useState();
   const [imgSrc, setImgSrc] = useState('');
   const [showCropModal, setShowCropModal] = useState(false);
-  const [cropType, setCropType] = useState(''); // 'cover' or 'gallery'
-  const [cropFiles, setCropFiles] = useState([]);
+  const [cropType, setCropType] = useState(''); // 'cover' only now
   const imgRef = useRef(null);
 
   // Image viewer state
@@ -1100,119 +1124,9 @@ export default function Settings({ user }) {
     }
   };
 
-  // Handle single cropped photo upload
-  const uploadSingleCroppedPhoto = async (croppedFile) => {
-    if (gallery.photos.length >= 15) {
-      toast.error("Maximum 15 photos allowed.");
-      return;
-    }
+  // Note: Removed uploadSingleCroppedPhoto function as gallery photos are now uploaded directly
 
-    setLoading(true);
-    
-    try {
-      const uploadedUrl = await uploadFile({
-        file: croppedFile,
-        path: "vendor-gallery/",
-        id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length}`,
-      });
-      
-      const newPhotos = [...gallery.photos, uploadedUrl];
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { photos: newPhotos },
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.message === "success") {
-        fetchGallery();
-        // Remove the uploaded photo from cropFiles
-        setCropFiles(prev => prev.filter(file => file !== croppedFile));
-        toast.success("Photo uploaded successfully!");
-      } else {
-        toast.error("Error uploading photo: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      toast.error("Failed to upload photo: " + error.message);
-    } finally {
-      setLoading(false);
-      if (photoRef.current) {
-        photoRef.current.value = null;
-      }
-    }
-  };
-
-  // Handle cropped files upload
-  const handleCroppedFilesUpload = async () => {
-    if (cropFiles.length === 0) {
-      toast.error("No photos to upload.");
-      return;
-    }
-    
-    if (gallery.photos.length + cropFiles.length > 15) {
-      toast.error("Maximum 15 photos allowed. Please select fewer files.");
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Upload files one by one to better handle errors
-      const uploadedUrls = [];
-      for (let i = 0; i < cropFiles.length; i++) {
-        const file = cropFiles[i];
-        
-        try {
-          const uploadedUrl = await uploadFile({
-            file: file,
-            path: "vendor-gallery/",
-            id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + i}`,
-          });
-          uploadedUrls.push(uploadedUrl);
-        } catch (fileError) {
-          toast.error(`Failed to upload photo ${i + 1}. Please try again.`);
-          throw fileError; // Stop the process if any file fails
-        }
-      }
-      
-      const newPhotos = [...gallery.photos, ...uploadedUrls];
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { photos: newPhotos },
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.message === "success") {
-        fetchGallery();
-        setCropFiles([]);
-        toast.success(`Photo uploaded successfully!`);
-      } else {
-        toast.error("Error uploading photos: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      toast.error("Failed to upload photos: " + error.message);
-    } finally {
-      setLoading(false);
-      if (photoRef.current) {
-        photoRef.current.value = null;
-      }
-    }
-  };
+  // Note: Removed handleCroppedFilesUpload function as gallery photos are now uploaded directly
 
   const handleDeletePhoto = (index) => {
     if (loading) return;
@@ -1557,11 +1471,11 @@ export default function Settings({ user }) {
         }
         .select-field:focus {
           outline: none !important;
-          border-color: #840032 !important;
+          border-color: #2B3F6C !important;
           box-shadow: none !important;
         }
         .select-field:hover {
-          border-color: #840032;
+          border-color: #2B3F6C;
         }
         .dropdown-option {
           padding: 12px 16px;
@@ -1574,7 +1488,14 @@ export default function Settings({ user }) {
         }
         .dropdown-option.selected {
           background-color: #FEF2F2;
-          color: #840032;
+          color: #2B3F6C;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
       <div className="flex flex-col overflow-x-hidden">
@@ -1582,11 +1503,11 @@ export default function Settings({ user }) {
           <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
             <BackIcon />
           </div>
-          <div className="flex flex-row items-center border-b border-gray-200 overflow-x-hidden">
+          <div className="flex flex-row items-start border-b border-gray-200 overflow-x-auto scrollbar-hide justify-center">
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Profile" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1596,9 +1517,9 @@ export default function Settings({ user }) {
             Profile
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors whitespace-nowrap ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
               display === "About you" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1608,9 +1529,9 @@ export default function Settings({ user }) {
             About you
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Prices" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1620,9 +1541,9 @@ export default function Settings({ user }) {
             Prices
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Gallery" 
-                ? "text-[#840032] border-[#840032]" 
+                ? "text-[#2B3F6C] border-[#2B3F6C]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
             onClick={() => {
@@ -1659,7 +1580,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
               />
             </div>
 
@@ -1680,7 +1601,7 @@ export default function Settings({ user }) {
                     }
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] resize-none transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none transition-colors"
               />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {profile.businessDescription.length}/350 characters
@@ -1778,7 +1699,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
                     </label>
@@ -1794,7 +1715,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
                     </label>
@@ -1820,7 +1741,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
                     </label>
@@ -1836,7 +1757,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                        className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
                     </label>
@@ -1857,14 +1778,12 @@ export default function Settings({ user }) {
                 <label className="block text-sm font-medium text-black mb-2">
                   Address
                 </label>
-                <input
+                <SearchBox
                   ref={autocompleteInputRef}
-                  type="text"
                   placeholder="Search your address"
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors autocomplete-input"
                 />
               </div>
 
@@ -1883,7 +1802,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1903,7 +1822,7 @@ export default function Settings({ user }) {
                   }}
                   ref={inputRef}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1922,7 +1841,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
 
@@ -1977,7 +1896,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   disabled={loading}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] transition-colors"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
                 
@@ -2032,7 +1951,7 @@ export default function Settings({ user }) {
                       type="button"
                   disabled={loading}
                       onClick={() => setShowDocumentModal(true)}
-                      className="w-full px-4 py-2 border border-[#840032] text-[#840032] rounded-lg hover:bg-[#840032] hover:text-white transition-colors text-sm"
+                      className="w-full px-4 py-2 border border-[#2B3F6C] text-[#2B3F6C] rounded-lg hover:bg-[#2B3F6C] hover:text-white transition-colors text-sm"
                     >
                       Update Document
                     </button>
@@ -2042,7 +1961,7 @@ export default function Settings({ user }) {
                     type="button"
                     disabled={loading}
                     onClick={() => setShowDocumentModal(true)}
-                    className="w-full px-4 py-3 border-2 border-dashed border-[#840032] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 border-2 border-dashed border-[#2B3F6C] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2069,7 +1988,7 @@ export default function Settings({ user }) {
                     }
                   }}
                 disabled={loading}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2104,7 +2023,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.experience || other.experience.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2128,7 +2047,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.clients || other.clients.trim() === '') && (
                 <p className="text-xs text-red-500 mt-1">This field is required</p>
@@ -2159,7 +2078,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
                   />
                       <button
                         type="button"
@@ -2263,7 +2182,7 @@ export default function Settings({ user }) {
                     awards: [...(other?.awards || []), { title: "", certificate: "" }],
                   });
                 }}
-                className="w-full px-4 py-3 bg-[#840032] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-[#2B3F6C] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
               >
                 Add Award/Certificate <span className="text-lg">+</span>
               </button>
@@ -2292,7 +2211,7 @@ export default function Settings({ user }) {
                           });
                         }}
                         disabled={loading}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#840032] text-black placeholder-gray-400"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#2B3F6C] text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
                       />
                       {/* Only show delete button if there's more than 1 product */}
@@ -2333,7 +2252,7 @@ export default function Settings({ user }) {
                     className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-1 ${
                       (other?.makeupProducts?.length || 0) >= 5
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-[#840032] hover:bg-gray-800"
+                        : "bg-[#2B3F6C] hover:bg-gray-800"
                     }`}
                   >
                     Add more <span className="text-lg">+</span>
@@ -2364,7 +2283,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                    className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                    className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">Yes</span>
                 </label>
@@ -2380,7 +2299,7 @@ export default function Settings({ user }) {
                       });
                     }}
                     disabled={loading}
-                    className="w-4 h-4 text-[#840032] border-2 border-gray-300 focus:ring-[#840032]"
+                    className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">No</span>
                 </label>
@@ -2405,7 +2324,7 @@ export default function Settings({ user }) {
                   }
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#840032] resize-none bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none bg-transparent"
               />
               <div className="mt-1">
                 <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
@@ -2440,7 +2359,7 @@ export default function Settings({ user }) {
                   updateOther();
                 }}
                 disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length > 500}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2475,7 +2394,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
 
@@ -2495,7 +2414,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
 
@@ -2516,7 +2435,7 @@ export default function Settings({ user }) {
                   });
                 }}
                 disabled={loading}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#840032] bg-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
             )}
@@ -2528,7 +2447,7 @@ export default function Settings({ user }) {
                   updatePrices();
                 }}
                 disabled={!prices.bridal || (profile.servicesOffered !== "Hairstylist" && profile.groomMakeup && !prices.groom)}
-                className="w-full py-4 bg-[#840032] text-white font-semibold rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2580,7 +2499,7 @@ export default function Settings({ user }) {
                     </div>
                   ) : (
                     <div 
-                      className="w-40 h-52 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 hover:border-[#840032] hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="w-40 h-52 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => coverPhotoRef.current?.click()}
                     >
                       <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2624,7 +2543,7 @@ export default function Settings({ user }) {
                      photoRef.current?.click();
                    }}
                    disabled={loading || gallery.photos.length >= 15}
-                   className="w-full px-6 py-3 bg-[#840032] text-white rounded-xl hover:bg-[#6d0028] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+                   className="w-full px-6 py-3 bg-[#2B3F6C] text-white rounded-xl hover:bg-[#1e2d4a] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
                  >
                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2641,7 +2560,7 @@ export default function Settings({ user }) {
                      <div className="flex items-center justify-left">
                        <button
                          onClick={() => setIsMultiSelectMode(true)}
-                         className="px-4 py-2 text-sm font-medium bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-all duration-200 flex items-center gap-2"
+                         className="px-4 py-2 text-sm font-medium bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-all duration-200 flex items-center gap-2"
                        >
                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2686,10 +2605,8 @@ export default function Settings({ user }) {
               onChange={(e) => {
                   const files = Array.from(e.target.files);
                   if (files.length > 0) {
-                    // Process each file for cropping
-                    files.forEach(file => {
-                      handleFileSelect(file, 'gallery');
-                    });
+                    // Upload files directly without cropping
+                    handleGalleryFileSelect(files);
                   }
                 }}
                 className="hidden"
@@ -2725,15 +2642,7 @@ export default function Settings({ user }) {
                     });
                   });
                   
-                  // Add cropped photos
-                  cropFiles.forEach((file, index) => {
-                    allItems.push({
-                      type: 'crop',
-                      data: file,
-                      index: index,
-                      key: `crop-${index}`
-                    });
-                  });
+                  // Note: Removed cropFiles since gallery photos are now uploaded directly
                   
                   // Add upload placeholder if needed
                   if (allItems.length < 15) {
@@ -2758,7 +2667,7 @@ export default function Settings({ user }) {
                           }}
                           className={`group relative w-full h-full overflow-hidden rounded-lg transition-all cursor-pointer ${
                             isMultiSelectMode && selectedPhotos.includes(item.index)
-                              ? 'ring-2 ring-[#840032] ring-opacity-50'
+                              ? 'ring-2 ring-[#2B3F6C] ring-opacity-50'
                               : ''
                           }`}
                         >
@@ -2766,6 +2675,10 @@ export default function Settings({ user }) {
                             src={item.data}
                             alt={`Gallery image ${item.index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', item.data);
+                              e.target.src = '/placeholder-image.png'; // Fallback image
+                            }}
                           />
                           
                           {/* Selection Checkbox - Only show in multi-select mode */}
@@ -2773,7 +2686,7 @@ export default function Settings({ user }) {
                             <div className="absolute top-3 left-3">
                               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                                 selectedPhotos.includes(item.index)
-                                  ? 'bg-[#840032] border-[#840032]'
+                                  ? 'bg-[#2B3F6C] border-[#2B3F6C]'
                                   : 'bg-white border-gray-300'
                               }`}>
                                 {selectedPhotos.includes(item.index) && (
@@ -2800,35 +2713,12 @@ export default function Settings({ user }) {
                         </div>
                       )}
                       
-                      {item.type === 'crop' && (
-                        <div className="group relative w-full h-full rounded-lg overflow-hidden border border-blue-300 shadow-sm hover:shadow-md transition-shadow bg-blue-50">
-                          <img
-                            src={URL.createObjectURL(item.data)}
-                            alt={`Cropped photo ${item.index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {/* Pending indicator */}
-                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                            Pending Upload
-                          </div>
-                          {/* Remove button */}
-                          <button
-                            onClick={() => {
-                              setCropFiles(prev => prev.filter((_, i) => i !== item.index));
-                            }}
-                            className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                      {/* Note: Removed crop type rendering as gallery photos are now uploaded directly */}
                       
                       {item.type === 'placeholder' && (
                         <div
                           onClick={() => photoRef.current?.click()}
-                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#840032] hover:bg-gray-100 transition-colors aspect-[3/4]"
+                          className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors aspect-[3/4]"
                         >
                           <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2837,7 +2727,7 @@ export default function Settings({ user }) {
                             Click to add photos
                           </p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {gallery.photos.length + cropFiles.length}/15
+                            {gallery.photos.length}/15
                           </p>
                         </div>
                       )}
@@ -3024,7 +2914,7 @@ export default function Settings({ user }) {
                   <button
                     onClick={handleSaveDocument}
                     disabled={loading || !documentType || !documentFrontUrl || !documentBackUrl}
-                    className="flex-1 px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Uploading...' : 'Save Document'}
                   </button>
@@ -3135,7 +3025,7 @@ export default function Settings({ user }) {
               <button
                 onClick={handleCropComplete}
                 disabled={!completedCrop}
-                className="px-4 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Crop & Continue
               </button>
@@ -3148,70 +3038,16 @@ export default function Settings({ user }) {
       {loading && (
         <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
           <div className="flex items-center gap-3">
-            <svg className="animate-spin h-4 w-4 text-[#840032]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-4 w-4 text-[#2B3F6C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span className="text-sm text-[#840032]">Uploading photo...</span>
+            <span className="text-sm text-[#2B3F6C]">Uploading photo...</span>
           </div>
         </div>
       )}
 
-      {/* Cropped Files Preview and Upload - Only show if there are files and not loading */}
-      {cropFiles.length > 0 && !loading && (() => {
-        console.log("Rendering upload button for", cropFiles.length, "files");
-        return (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-black">
-              Cropped Photos ({cropFiles.length})
-            </h4>
-            <button
-              onClick={() => setCropFiles([])}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <MdCancel size={16} />
-            </button>
-          </div>
-          
-          <div className="space-y-2 mb-3">
-            {cropFiles.map((file, index) => (
-              <div key={index} className="flex items-center space-x-2 text-xs text-gray-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Photo {index + 1} - Ready to upload</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 mb-2">
-            Debug: {cropFiles.length} files, Gallery: {gallery.photos.length}/15
-          </div>
-          
-          {/* Test upload button */}
-          <button
-            onClick={() => {
-              console.log("Test upload clicked");
-              console.log("Crop files:", cropFiles);
-              console.log("Gallery temp:", gallery.temp);
-              console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-              console.log("Token:", localStorage.getItem("token") ? "Exists" : "Missing");
-            }}
-            className="w-full px-3 py-1 bg-blue-500 text-white rounded text-xs mb-2"
-          >
-            Test Debug Info
-          </button>
-          
-          <button
-            onClick={handleCroppedFilesUpload}
-            disabled={loading}
-            className="w-full px-3 py-2 bg-[#840032] text-white rounded-lg hover:bg-[#6d0028] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {loading ? 'Uploading...' : `Upload ${cropFiles.length} Photo(s)`}
-          </button>
-        </div>
-        );
-      })()}
+      {/* Note: Removed cropped files preview section as gallery photos are now uploaded directly */}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

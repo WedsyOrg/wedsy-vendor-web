@@ -7,9 +7,12 @@ import { MdLocationPin, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigation } from "@/utils/navigation";
 
 export default function Home({ user }) {
   const router = useRouter();
+  const { navigateTo } = useNavigation();
   const [expandOngoing, setExpandOngoing] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
@@ -44,6 +47,8 @@ export default function Home({ user }) {
   const [ongoingOrderLoading, setOngoingOrderLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [smoothScrollY, setSmoothScrollY] = useState(0);
   const dashboardRef = useRef(null);
   
   // Guided tour state
@@ -360,6 +365,71 @@ export default function Home({ user }) {
       }
     };
   }, [dataLoaded, user?.profileCompleted, fetchAllDashboardData]);
+
+  // Scroll event listener for smooth ongoing order banner movement
+  useEffect(() => {
+    let ticking = false;
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth interpolation for scroll movement
+  useEffect(() => {
+    const smoothScroll = () => {
+      setSmoothScrollY(prev => {
+        const diff = scrollY - prev;
+        return prev + diff * 0.1; // Smooth interpolation factor
+      });
+    };
+
+    const interval = setInterval(smoothScroll, 16); // 60fps
+    return () => clearInterval(interval);
+  }, [scrollY]);
+
+  // Smooth scroll function for ongoing order click
+  const smoothScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Handle ongoing order click with smooth scroll and modal
+  const handleOngoingOrderClick = () => {
+    // Smooth scroll to top with easing
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // Delay opening modal to allow smooth scroll to complete
+    setTimeout(() => {
+      setShowOrderDetails(true);
+    }, 300);
+  };
+
+  // Handle modal close with smooth scroll
+  const handleModalClose = () => {
+    setShowOrderDetails(false);
+    // Smooth scroll to current position to maintain scroll state
+    setTimeout(() => {
+      window.scrollTo({
+        top: scrollY,
+        behavior: 'smooth'
+      });
+    }, 150);
+  };
 
   const nextEvent = () => {
     setCurrentEventIndex((prev) => 
@@ -1125,65 +1195,175 @@ export default function Home({ user }) {
 
       {/* Ongoing Order Banner */}
       {!showOrderDetails && (
-        <div 
-          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#840032]"
-          onClick={() => setShowOrderDetails(true)}
+        <motion.div 
+          initial={{ translateY: 100, opacity: 0 }}
+          animate={{ 
+            translateY: Math.min(scrollY * 0.1, 20), 
+            opacity: 1 
+          }}
+          exit={{ translateY: 100, opacity: 0 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 500, 
+            damping: 20,
+            duration: 0.2 
+          }}
+          className="fixed bottom-20 left-0 right-0 z-30 px-6 py-3 cursor-pointer flex flex-col items-center bg-[#2B3F6C]"
+          onClick={handleOngoingOrderClick}
+          style={{
+            transform: `translateY(${Math.min(smoothScrollY * 0.015, 3)}px) translateX(${Math.sin(smoothScrollY * 0.01) * 2}px) scale(${1 + Math.sin(smoothScrollY * 0.005) * 0.02})`,
+            transition: 'none' // Disable CSS transition for smooth interpolation
+          }}
         >
           {/* Handle */}
-          <div className="mb-2">
+          <motion.div 
+            className="mb-2"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              transform: `translateX(${Math.sin(smoothScrollY * 0.02) * 1}px) rotate(${Math.sin(smoothScrollY * 0.01) * 2}deg)`
+            }}
+          >
             <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
-          </div>
+          </motion.div>
           
           {/* Banner Content */}
           <div className="w-full flex justify-between items-center">
-            <p className="text-white font-bold text-sm">ONGOING ORDER</p>
-            {ongoingOrder && <p className="text-white font-bold text-sm">{getCurrentTime()}</p>}
+            <motion.p 
+              className="text-white font-bold text-sm"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+              style={{
+                transform: `translateY(${Math.sin(smoothScrollY * 0.008) * 1}px) translateX(${Math.sin(smoothScrollY * 0.015) * 0.5}px)`
+              }}
+            >
+              ONGOING ORDER
+            </motion.p>
+            <motion.p 
+              className="text-white font-bold text-sm"
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+              style={{
+                transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
+              }}
+            >
+              {getCurrentTime()}
+            </motion.p>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Order Details Modal */}
-      {showOrderDetails && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
-          onClick={() => setShowOrderDetails(false)}
-        >
-            <div 
-              className="w-full max-h-[85vh] bg-[#840032] flex flex-col"
+      <AnimatePresence>
+        {showOrderDetails && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
+            onClick={handleModalClose}
+          >
+            <motion.div 
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 400, 
+                damping: 20,
+                duration: 0.4,
+                ease: "easeOut"
+              }}
+              className="w-full max-h-[85vh] bg-[#2B3F6C] flex flex-col"
               style={{ borderRadius: '10px 10px 0 0' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" style={{ borderRadius: '10px 10px 0 0' }}>
-              {/* Handle */}
-              <div className="mb-3">
-                <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
-              </div>
-              
-              {/* Header Content */}
-              <div className="w-full flex justify-between items-center">
-                <p className="text-white font-bold text-lg">ONGOING ORDER</p>
-                {ongoingOrder && <p className="text-white font-bold text-lg">{getCurrentTime()}</p>}
-              </div>
-            </div>
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+                className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" 
+                style={{ borderRadius: '10px 10px 0 0' }}
+              >
+                {/* Handle */}
+                <motion.div 
+                  className="mb-3"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
+                </motion.div>
+                
+                {/* Header Content */}
+                <div className="w-full flex justify-between items-center">
+                  <motion.p 
+                    className="text-white font-bold text-lg"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                  >
+                    ONGOING ORDER
+                  </motion.p>
+                  {ongoingOrder && (
+                    <motion.p 
+                      className="text-white font-bold text-lg"
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                    >
+                      {getCurrentTime()}
+                    </motion.p>
+                  )}
+                </div>
+              </motion.div>
             
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20">
-              <div 
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+              className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20"
+            >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
                 className="bg-white border border-red-300 mb-4 overflow-hidden"
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >
                 <div className="p-6">
                 {orderDetails.loading ? (
-                  <div className="text-center py-8">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-8"
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-4"
+                    />
                     <p className="text-gray-500">Loading order details...</p>
-                  </div>
+                  </motion.div>
                 ) : orderDetails.error ? (
-                  <div className="text-center py-8">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-8"
+                  >
                     <p className="text-gray-500">{orderDetails.error}</p>
-                  </div>
+                  </motion.div>
                 ) : orderDetails.data ? (
-                  <div className="space-y-4">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.4 }}
+                    className="space-y-4"
+                  >
                     {/* Day and Date - render only when data available */}
                     {selectedEvent && (
                       <div className="flex justify-between items-center mb-4">
@@ -1243,14 +1423,14 @@ export default function Home({ user }) {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No order details available</p>
                   </div>
                 )}
                 </div>
-              </div>
+              </motion.div>
               
               {/* Payment Section - Inside Scrollable Area */}
               <div className="px-2 py-4">
@@ -1259,21 +1439,21 @@ export default function Home({ user }) {
                   {require("@/utils/text").toPriceString(stats?.amountToReceive ?? 0)}
                 </p>
                 <button 
-                  className="w-full bg-white text-[#840032] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
+                  className="w-full bg-white text-[#2B3F6C] font-bold py-4 px-6 rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     toast.success("Payment confirmation sent!", {
                       position: "top-right",
                       autoClose: 3000,
                     });
-                    setShowOrderDetails(false);
+                    handleModalClose();
                   }}
                 >
                   CONFIRM PAYMENT
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       )}
       
       {/* CSS Animation for swipe effect */}
@@ -1451,13 +1631,17 @@ export default function Home({ user }) {
 
               {/* Action Buttons */}
               <div className="flex gap-2 mt-4">
-                <button
-                  onClick={closeModal}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleModalClose}
                   className="flex-1 bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg hover:bg-gray-300 transition-colors text-sm"
                 >
                   Close
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     // Add action for contact customer
                     toast.success("Contacting customer...", {
@@ -1468,12 +1652,13 @@ export default function Home({ user }) {
                   className="flex-1 bg-[#2B3F6C] text-white font-semibold py-2 px-3 rounded-lg hover:bg-[#1e2a4a] transition-colors text-sm"
                 >
                   Contact
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
         </div>
       )}
+      </AnimatePresence>
     </>
   );
 }

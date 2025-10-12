@@ -1,6 +1,7 @@
 import BackIcon from "@/components/icons/BackIcon";
 import MessageIcon from "@/components/icons/MessageIcon";
 import NotificationIcon from "@/components/icons/NotificationIcon";
+import AnimatedDropdown from "@/components/AnimatedDropdown";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   MdArrowForwardIos,
@@ -11,7 +12,7 @@ import {
   MdSearch,
 } from "react-icons/md";
 import { useRouter } from "next/router";
-import { Avatar, Button, TextInput, Select } from "flowbite-react";
+import { Avatar, Button, TextInput } from "flowbite-react";
 import { toPriceString } from "@/utils/text";
 
 export default function Home({}) {
@@ -283,25 +284,27 @@ export default function Home({}) {
       {/* Filters: Upcoming / Completed, and Bidding - as dropdowns */}
       <div className="grid grid-cols-2 gap-3 px-6 mb-4">
         <div>
-          <Select
+          <AnimatedDropdown
+            label="Time Filter"
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
-            className="w-full"
-          >
-            <option value="All">All</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Completed">Completed</option>
-          </Select>
+            options={[
+              { value: "All", label: "All" },
+              { value: "Upcoming", label: "Upcoming" },
+              { value: "Completed", label: "Completed" }
+            ]}
+          />
         </div>
         <div>
-          <Select
+          <AnimatedDropdown
+            label="Bidding Filter"
             value={biddingFilter}
             onChange={(e) => setBiddingFilter(e.target.value)}
-            className="w-full"
-          >
-            <option value="All">All</option>
-            <option value="Bidding Only">Bidding</option>
-          </Select>
+            options={[
+              { value: "All", label: "All" },
+              { value: "Bidding Only", label: "Bidding" }
+            ]}
+          />
         </div>
       </div>
       
