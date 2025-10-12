@@ -1490,15 +1490,22 @@ export default function Settings({ user }) {
           background-color: #FEF2F2;
           color: #840032;
         }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
       <div className="flex flex-col overflow-x-hidden">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
           <div className="flex flex-row gap-3 items-center mb-4 px-8 pt-4">
             <BackIcon />
           </div>
-          <div className="flex flex-row items-center border-b border-gray-200 overflow-x-hidden">
+          <div className="flex flex-row items-start border-b border-gray-200 overflow-x-auto scrollbar-hide">
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Profile" 
                 ? "text-[#840032] border-[#840032]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
@@ -1510,7 +1517,7 @@ export default function Settings({ user }) {
             Profile
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors whitespace-nowrap ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
               display === "About you" 
                 ? "text-[#840032] border-[#840032]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
@@ -1522,7 +1529,7 @@ export default function Settings({ user }) {
             About you
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Prices" 
                 ? "text-[#840032] border-[#840032]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
@@ -1534,7 +1541,7 @@ export default function Settings({ user }) {
             Prices
           </div>
           <div
-            className={`font-semibold text-sm py-3 px-6 text-center flex-grow border-b-2 transition-colors ${
+            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
               display === "Gallery" 
                 ? "text-[#840032] border-[#840032]" 
                 : "text-gray-500 border-transparent hover:text-gray-700"
