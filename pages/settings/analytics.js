@@ -12,7 +12,7 @@ export default function Settings({}) {
   const [filteredCalls, setFilteredCalls] = useState([]);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState("Jan 2024");
+  const [selectedMonth, setSelectedMonth] = useState("January");
 
   useEffect(() => {
     fetchCalls();
@@ -31,22 +31,31 @@ export default function Settings({}) {
     }
 
     const monthMap = {
-      "Jan 2024": { month: 0, year: 2024 }, // January is 0
-      "Feb 2024": { month: 1, year: 2024 },
-      "Mar 2024": { month: 2, year: 2024 },
-      "Apr 2024": { month: 3, year: 2024 }
+      "January": 0,
+      "February": 1,
+      "March": 2,
+      "April": 3,
+      "May": 4,
+      "June": 5,
+      "July": 6,
+      "August": 7,
+      "September": 8,
+      "October": 9,
+      "November": 10,
+      "December": 11
     };
 
-    const selectedDate = monthMap[selectedMonth];
-    if (!selectedDate) {
+    const selectedMonthIndex = monthMap[selectedMonth];
+    if (selectedMonthIndex === undefined) {
       setFilteredCalls(calls);
       return;
     }
 
+    const currentYear = new Date().getFullYear();
     const filtered = calls.filter(call => {
       const callDate = new Date(call.date);
-      return callDate.getMonth() === selectedDate.month && 
-             callDate.getFullYear() === selectedDate.year;
+      return callDate.getMonth() === selectedMonthIndex && 
+             callDate.getFullYear() === currentYear;
     });
 
     setFilteredCalls(filtered);
@@ -77,132 +86,14 @@ export default function Settings({}) {
           }));
           setCalls(transformedCalls);
         } else {
-          // Add dummy call data for testing when no real data
-          const dummyCalls = [
-            {
-              id: 1,
-              name: "Priya Sharma",
-              number: "+91 98765 43210",
-              date: "2024-01-15T10:30:00Z",
-              duration: "5:23"
-            },
-            {
-              id: 2,
-              name: "Rajesh Kumar",
-              number: "+91 87654 32109",
-              date: "2024-01-14T15:45:00Z",
-              duration: "8:12"
-            },
-            {
-              id: 3,
-              name: "Sunita Singh",
-              number: "+91 76543 21098",
-              date: "2024-02-13T09:15:00Z",
-              duration: "12:45"
-            },
-            {
-              id: 4,
-              name: "Amit Patel",
-              number: "+91 65432 10987",
-              date: "2024-02-12T14:20:00Z",
-              duration: "3:15"
-            },
-            {
-              id: 5,
-              name: "Neha Gupta",
-              number: "+91 54321 09876",
-              date: "2024-03-11T16:30:00Z",
-              duration: "7:42"
-            },
-            {
-              id: 6,
-              name: "Vikram Joshi",
-              number: "+91 43210 98765",
-              date: "2024-03-10T11:15:00Z",
-              duration: "6:30"
-            },
-            {
-              id: 7,
-              name: "Sneha Reddy",
-              number: "+91 32109 87654",
-              date: "2024-04-09T13:45:00Z",
-              duration: "9:20"
-            },
-            {
-              id: 8,
-              name: "Arjun Mehta",
-              number: "+91 21098 76543",
-              date: "2024-04-08T16:20:00Z",
-              duration: "4:15"
-            }
-          ];
-          setCalls(dummyCalls);
+          setCalls([]);
         }
       } else {
         throw new Error("Failed to fetch calls data");
       }
     } catch (error) {
       console.error("Error fetching calls:", error);
-      // Add dummy data even on error for testing
-      const dummyCalls = [
-        {
-          id: 1,
-          name: "Priya Sharma",
-          number: "+91 98765 43210",
-          date: "2024-01-15T10:30:00Z",
-          duration: "5:23"
-        },
-        {
-          id: 2,
-          name: "Rajesh Kumar",
-          number: "+91 87654 32109",
-          date: "2024-01-14T15:45:00Z",
-          duration: "8:12"
-        },
-        {
-          id: 3,
-          name: "Sunita Singh",
-          number: "+91 76543 21098",
-          date: "2024-02-13T09:15:00Z",
-          duration: "12:45"
-        },
-        {
-          id: 4,
-          name: "Amit Patel",
-          number: "+91 65432 10987",
-          date: "2024-02-12T14:20:00Z",
-          duration: "3:15"
-        },
-        {
-          id: 5,
-          name: "Neha Gupta",
-          number: "+91 54321 09876",
-          date: "2024-03-11T16:30:00Z",
-          duration: "7:42"
-        },
-        {
-          id: 6,
-          name: "Vikram Joshi",
-          number: "+91 43210 98765",
-          date: "2024-03-10T11:15:00Z",
-          duration: "6:30"
-        },
-        {
-          id: 7,
-          name: "Sneha Reddy",
-          number: "+91 32109 87654",
-          date: "2024-04-09T13:45:00Z",
-          duration: "9:20"
-        },
-        {
-          id: 8,
-          name: "Arjun Mehta",
-          number: "+91 21098 76543",
-          date: "2024-04-08T16:20:00Z",
-          duration: "4:15"
-        }
-      ];
-      setCalls(dummyCalls);
+      setCalls([]);
     } finally {
       setLoading(false);
     }
@@ -220,45 +111,13 @@ export default function Settings({}) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data && data.length > 0) {
-          setChats(data);
-        } else {
-          // Add dummy chat data for testing when no real data
-          const dummyChats = [
-            { _id: 1, user: { name: "Priya Sharma" }, lastMessage: { content: "Hi, I'm interested in your wedding package", createdAt: "2024-01-15T10:30:00Z" } },
-            { _id: 2, user: { name: "Rajesh Kumar" }, lastMessage: { content: "What are your photography rates?", createdAt: "2024-01-14T15:45:00Z" } },
-            { _id: 3, user: { name: "Sunita Singh" }, lastMessage: { content: "Can you provide more details about the venue?", createdAt: "2024-01-13T09:15:00Z" } },
-            { _id: 4, user: { name: "Amit Patel" }, lastMessage: { content: "Thank you for the quote", createdAt: "2024-01-12T14:20:00Z" } },
-            { _id: 5, user: { name: "Neha Gupta" }, lastMessage: { content: "When can we schedule a meeting?", createdAt: "2024-01-11T16:30:00Z" } },
-            { _id: 6, user: { name: "Vikram Joshi" }, lastMessage: { content: "I'd like to book your services", createdAt: "2024-01-10T11:15:00Z" } },
-            { _id: 7, user: { name: "Sneha Reddy" }, lastMessage: { content: "What packages do you offer?", createdAt: "2024-01-09T13:45:00Z" } },
-            { _id: 8, user: { name: "Arjun Mehta" }, lastMessage: { content: "Can you customize the package?", createdAt: "2024-01-08T16:20:00Z" } },
-            { _id: 9, user: { name: "Kavya Nair" }, lastMessage: { content: "What's included in the premium package?", createdAt: "2024-01-07T09:30:00Z" } },
-            { _id: 10, user: { name: "Rohit Agarwal" }, lastMessage: { content: "Do you provide transportation?", createdAt: "2024-01-06T12:10:00Z" } },
-            { _id: 11, user: { name: "Deepika Sharma" }, lastMessage: { content: "I'm planning my wedding for March", createdAt: "2024-01-05T15:55:00Z" } }
-          ];
-          setChats(dummyChats);
-        }
+        setChats(data || []);
       } else {
         throw new Error("Failed to fetch chats data");
       }
     } catch (error) {
       console.error("Error fetching chats:", error);
-      // Add dummy chat data even on error for testing
-      const dummyChats = [
-        { _id: 1, user: { name: "Priya Sharma" }, lastMessage: { content: "Hi, I'm interested in your wedding package", createdAt: "2024-01-15T10:30:00Z" } },
-        { _id: 2, user: { name: "Rajesh Kumar" }, lastMessage: { content: "What are your photography rates?", createdAt: "2024-01-14T15:45:00Z" } },
-        { _id: 3, user: { name: "Sunita Singh" }, lastMessage: { content: "Can you provide more details about the venue?", createdAt: "2024-01-13T09:15:00Z" } },
-        { _id: 4, user: { name: "Amit Patel" }, lastMessage: { content: "Thank you for the quote", createdAt: "2024-01-12T14:20:00Z" } },
-        { _id: 5, user: { name: "Neha Gupta" }, lastMessage: { content: "When can we schedule a meeting?", createdAt: "2024-01-11T16:30:00Z" } },
-        { _id: 6, user: { name: "Vikram Joshi" }, lastMessage: { content: "I'd like to book your services", createdAt: "2024-01-10T11:15:00Z" } },
-        { _id: 7, user: { name: "Sneha Reddy" }, lastMessage: { content: "What packages do you offer?", createdAt: "2024-01-09T13:45:00Z" } },
-        { _id: 8, user: { name: "Arjun Mehta" }, lastMessage: { content: "Can you customize the package?", createdAt: "2024-01-08T16:20:00Z" } },
-        { _id: 9, user: { name: "Kavya Nair" }, lastMessage: { content: "What's included in the premium package?", createdAt: "2024-01-07T09:30:00Z" } },
-        { _id: 10, user: { name: "Rohit Agarwal" }, lastMessage: { content: "Do you provide transportation?", createdAt: "2024-01-06T12:10:00Z" } },
-        { _id: 11, user: { name: "Deepika Sharma" }, lastMessage: { content: "I'm planning my wedding for March", createdAt: "2024-01-05T15:55:00Z" } }
-      ];
-      setChats(dummyChats);
+      setChats([]);
     }
   };
 
@@ -294,10 +153,18 @@ export default function Settings({}) {
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
               options={[
-                { value: "Jan 2024", label: "Jan 2024" },
-                { value: "Feb 2024", label: "Feb 2024" },
-                { value: "Mar 2024", label: "Mar 2024" },
-                { value: "Apr 2024", label: "Apr 2024" }
+                { value: "January", label: "January" },
+                { value: "February", label: "February" },
+                { value: "March", label: "March" },
+                { value: "April", label: "April" },
+                { value: "May", label: "May" },
+                { value: "June", label: "June" },
+                { value: "July", label: "July" },
+                { value: "August", label: "August" },
+                { value: "September", label: "September" },
+                { value: "October", label: "October" },
+                { value: "November", label: "November" },
+                { value: "December", label: "December" }
               ]}
               className="w-full"
             />
