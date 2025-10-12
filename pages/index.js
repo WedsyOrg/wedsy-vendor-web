@@ -1224,14 +1224,16 @@ export default function Home({ user }) {
             >
               ONGOING ORDER
             </p>
-            <p 
-              className="text-white font-bold text-sm"
-              style={{
-                transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
-              }}
-            >
-              {getCurrentTime()}
-            </p>
+            {ongoingOrder && (
+              <p 
+                className="text-white font-bold text-sm"
+                style={{
+                  transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
+                }}
+              >
+                {getCurrentTime()}
+              </p>
+            )}
           </div>
         </div>
       )}
