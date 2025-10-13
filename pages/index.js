@@ -1206,7 +1206,7 @@ export default function Home({ user }) {
             >
               ONGOING ORDER
             </p>
-            {ongoingOrder && (
+            {ongoingOrder && (stats?.amountToReceive ?? 0) > 0 && (
               <p 
                 className="text-white font-bold text-sm"
                 style={{
@@ -1227,7 +1227,7 @@ export default function Home({ user }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
             onClick={handleModalClose}
           >
@@ -1237,9 +1237,9 @@ export default function Home({ user }) {
               exit={{ y: "100%", opacity: 0 }}
               transition={{ 
                 type: "spring", 
-                stiffness: 400, 
-                damping: 20,
-                duration: 0.4,
+                stiffness: 200, 
+                damping: 25,
+                duration: 0.8,
                 ease: "easeOut"
               }}
               className="w-full max-h-[85vh] bg-[#2B3F6C] flex flex-col"
@@ -1250,7 +1250,7 @@ export default function Home({ user }) {
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
                 className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" 
                 style={{ borderRadius: '10px 10px 0 0' }}
               >
@@ -1258,7 +1258,7 @@ export default function Home({ user }) {
                 <motion.div 
                   className="mb-3"
                   whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.4 }}
                 >
                   <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
                 </motion.div>
@@ -1269,16 +1269,16 @@ export default function Home({ user }) {
                     className="text-white font-bold text-lg"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.3 }}
+                    transition={{ delay: 0.6, duration: 0.6 }}
                   >
                     ONGOING ORDER
                   </motion.p>
-                  {ongoingOrder && (
+                  {ongoingOrder && (stats?.amountToReceive ?? 0) > 0 && (
                     <motion.p 
                       className="text-white font-bold text-lg"
                       initial={{ x: 20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
+                      transition={{ delay: 0.8, duration: 0.6 }}
                     >
                       {getCurrentTime()}
                     </motion.p>
@@ -1290,13 +1290,13 @@ export default function Home({ user }) {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
+              transition={{ delay: 1.0, duration: 0.8 }}
               className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20"
             >
               <motion.div 
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
+                transition={{ delay: 1.2, duration: 0.6 }}
                 className="bg-white border border-red-300 mb-4 overflow-hidden"
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >

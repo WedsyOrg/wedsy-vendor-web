@@ -689,7 +689,7 @@ export default function Settings({}) {
                 <Label value="Account Name" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your business name"
-                  disabled={loading}
+                  disabled={false}
                   value={accountCreationData?.legal_business_name}
                   onChange={(e) => {
                     setAccountCreationData({
@@ -698,6 +698,7 @@ export default function Settings({}) {
                     });
                   }}
                   className="w-full"
+                  style={{ color: '#2B3F6C' }}
                 />
                 {userProfile?.businessName && (
                   <p className="text-xs text-blue-600">
@@ -759,7 +760,7 @@ export default function Settings({}) {
                   <Label value="Business PAN" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Enter your PAN number"
-                    disabled={loading}
+                    disabled={false}
                     value={accountCreationData?.pan}
                     onChange={(e) => {
                       setAccountCreationData({
@@ -774,7 +775,7 @@ export default function Settings({}) {
                   <Label value="GST Number" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Enter your GST number"
-                    disabled={loading}
+                    disabled={false}
                     value={accountCreationData?.gst}
                     onChange={(e) => {
                       setAccountCreationData({
@@ -795,7 +796,7 @@ export default function Settings({}) {
                   <Label value="Search Address" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Start typing your address..."
-                    disabled={loading}
+                    disabled={false}
                     ref={autocompleteInputRef}
                     className="w-full"
                   />
@@ -820,7 +821,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -841,7 +842,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -865,7 +866,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -886,7 +887,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -907,7 +908,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -921,7 +922,7 @@ export default function Settings({}) {
                 placeholder="Country"
                 readOnly={true}
                 value={accountCreationData?.addresses?.registered?.country || "India"}
-                disabled={loading}
+                disabled={false}
                 className="w-full bg-gray-50"
               />
             </div>
@@ -930,7 +931,6 @@ export default function Settings({}) {
               <Button
                 className="px-6 py-2 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-full transition-colors"
                 disabled={
-                  loading ||
                   !accountCreationData?.legal_business_name ||
                   !accountCreationData?.business_type ||
                   !accountCreationData?.category ||
@@ -964,7 +964,7 @@ export default function Settings({}) {
                 <Label value="Account Name" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter account holder name"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.beneficiary_name || userProfile?.businessName || ""}
                   onChange={(e) => {
                     setProductData({
@@ -973,6 +973,7 @@ export default function Settings({}) {
                     });
                   }}
                   className="w-full"
+                  style={{ color: '#2B3F6C' }}
                 />
                 {userProfile?.businessName && (
                   <p className="text-xs text-blue-600">
@@ -985,7 +986,7 @@ export default function Settings({}) {
                 <Label value="Account Number" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your account number"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.account_number}
                   onChange={(e) => {
                     setProductData({
@@ -1003,7 +1004,7 @@ export default function Settings({}) {
                 <Label value="IFSC Code" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your bank's IFSC code"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.ifsc_code}
                   onChange={(e) => {
                     setProductData({
@@ -1021,7 +1022,6 @@ export default function Settings({}) {
               <Button
                 className="px-8 py-3 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-lg transition-colors"
                 disabled={
-                  loading ||
                   !productData?.beneficiary_name ||
                   !productData?.account_number ||
                   !productData?.ifsc_code
