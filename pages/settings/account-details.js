@@ -12,7 +12,6 @@ export default function Settings({}) {
   const inputRef = useRef(null);
   const autocompleteInputRef = useRef(null);
   const googleInstanceRef = useRef(null);
-  const [loading, setLoading] = useState(true);
   const [razorPaySetupCompleted, setRazorPayStatusCompleted] = useState(null);
   const [accountCreated, setAccountCreated] = useState(null);
   const [productCreated, setProductCreated] = useState(null);
@@ -157,7 +156,6 @@ export default function Settings({}) {
   };
 
   const fetchAccount = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements?checkStatus=true`, {
       method: "GET",
       headers: {
@@ -175,7 +173,6 @@ export default function Settings({}) {
       })
       .then((response) => {
         if (response.message === "success") {
-          setLoading(false);
           setAccountCreated(response?.accountCreated);
           if (response?.accountCreated) {
             setAccountDetails(response?.accountDetails);
@@ -191,7 +188,6 @@ export default function Settings({}) {
       });
   };
   const fetchAccountDetails = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=accountDetails`,
       {
@@ -212,7 +208,6 @@ export default function Settings({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setAccountDetails(response.accountDetails);
         }
       })
@@ -221,7 +216,6 @@ export default function Settings({}) {
       });
   };
   const updateAccountDetails = async () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -235,7 +229,6 @@ export default function Settings({}) {
       .then((response) => response.json())
       .then((response) => {
         fetchAccountDetails();
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating account details.", {
             position: "top-right",
@@ -248,13 +241,11 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
 
   const createSettlementAccount = async () => {
-    setLoading(true);
     
     // Debug: Log the data being sent
     console.log("Sending account creation data:", accountCreationData);
@@ -322,7 +313,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       router.push("/login");
       return;
     }
@@ -337,7 +327,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -351,7 +340,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -365,7 +353,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -379,7 +366,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -458,7 +444,6 @@ export default function Settings({}) {
           })
             .then((response) => response.json())
             .then((response) => {
-              setLoading(false);
               if (response.message === "success") {
                 fetchAccount();
               } else {
@@ -473,7 +458,6 @@ export default function Settings({}) {
               }
             })
             .catch((error) => {
-              setLoading(false);
               console.error(
                 "There was a problem with the fetch operation:",
                 error
@@ -491,12 +475,10 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const updateSettlementAccount = async () => {
-    setLoading(true);
     
     // Show loading toast
     toast.info("Updating bank details...", {
@@ -518,7 +500,6 @@ export default function Settings({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           toast.success("Bank details updated successfully!", {
             position: "top-right",
@@ -541,7 +522,6 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -967,7 +947,7 @@ export default function Settings({}) {
                 }
                 onClick={createSettlementAccount}
               >
-                {loading ? "Processing..." : "Next"}
+                Next
               </Button>
             </div>
           </div>
@@ -1048,7 +1028,7 @@ export default function Settings({}) {
                 }
                 onClick={updateSettlementAccount}
               >
-                {loading ? "Updating..." : "Update Bank Details"}
+                Update Bank Details
               </Button>
             </div>
           </div>

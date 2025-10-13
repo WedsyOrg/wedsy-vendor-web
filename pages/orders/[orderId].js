@@ -26,14 +26,12 @@ import { RxDashboard } from "react-icons/rx";
 export default function Packages({}) {
   const router = useRouter();
   const { orderId } = router.query;
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [display, setDisplay] = useState("");
   const [order, setOrder] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchOrder = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/${orderId}?populate=true`, {
       method: "GET",
       headers: {
@@ -51,14 +49,12 @@ export default function Packages({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setOrder(response);
           setDisplay(response?.source);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        setLoading(false);
       });
   };
 
@@ -68,7 +64,7 @@ export default function Packages({}) {
     }
   }, [orderId]);
 
-  if (loading) {
+  if (false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3F6C]"></div>

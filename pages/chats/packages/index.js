@@ -53,7 +53,6 @@ export default function Home({}) {
     },
   ];
   const [display, setDisplay] = useState("Pending");
-  const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [error, setError] = useState(null);
   const [selectedSource, setSelectedSource] = useState("Wedsy");
@@ -64,7 +63,6 @@ export default function Home({}) {
 
 
   const fetchWedsyPackageBooking = useCallback(async () => {
-    setLoading(true);
     const source = selectedSource === "Wedsy" ? "Wedsy-Package" : "Vendor-Package";
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`;
     
@@ -100,7 +98,6 @@ export default function Home({}) {
       setList(selectedSource === "Wedsy" ? DUMMY_WEDSY_PACKAGES : DUMMY_VENDOR_PACKAGES);
       setError(null);
     } finally {
-      setLoading(false);
     }
   }, [selectedSource, router]);
 
@@ -115,7 +112,6 @@ export default function Home({}) {
   }, [fetchWedsyPackageBooking]);
 
   const AcceptWedsyPackageBooking = useCallback(async (_id) => {
-    setLoading(true);
     const acceptUrl = `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/accept-wedsy-package-booking`;
     
     try {
@@ -142,11 +138,9 @@ export default function Home({}) {
     } catch (error) {
       console.error("There was a problem with the accept operation:", error);
     } finally {
-      setLoading(false);
     }
   }, [fetchWedsyPackageBooking, router]);
   const RejectWedsyPackageBooking = useCallback(async (_id) => {
-    setLoading(true);
     const rejectUrl = `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-wedsy-package-booking`;
     
     try {
@@ -173,7 +167,6 @@ export default function Home({}) {
     } catch (error) {
       console.error("There was a problem with the reject operation:", error);
     } finally {
-      setLoading(false);
     }
   }, [fetchWedsyPackageBooking, router]);
   useEffect(() => {
@@ -217,32 +210,6 @@ export default function Home({}) {
   // Memoize empty state check
   const isEmpty = useMemo(() => filteredList.length === 0, [filteredList.length]);
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <div className="bg-gray-200 rounded-lg p-4 animate-pulse">
-      <div className="flex justify-between items-start mb-2">
-        <div className="h-6 bg-gray-300 rounded w-32"></div>
-        <div className="h-4 bg-gray-300 rounded w-20"></div>
-      </div>
-      <div className="flex justify-between items-end">
-        <div className="flex-1">
-          <div className="flex items-center gap-1 mb-1">
-            <div className="h-4 w-4 bg-gray-300 rounded"></div>
-            <div className="h-4 bg-gray-300 rounded w-24"></div>
-          </div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="h-4 w-4 bg-gray-300 rounded"></div>
-            <div className="h-4 bg-gray-300 rounded w-8"></div>
-          </div>
-          <div className="h-4 bg-gray-300 rounded w-40"></div>
-        </div>
-        <div className="flex gap-1">
-          <div className="h-8 w-8 bg-gray-300 rounded"></div>
-          <div className="h-8 w-8 bg-gray-300 rounded"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -337,13 +304,7 @@ export default function Home({}) {
         </div>
       </div>
       <div className="flex flex-col gap-2 px-4">
-        {loading ? (
-          <>
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-          </>
-        ) : error ? (
+        {error ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="text-gray-500 text-center">
               <p>{error}</p>
@@ -423,13 +384,13 @@ export default function Home({}) {
                   {display === "Pending" ? (
                     <div className="flex items-center gap-0 ml-auto">
                       <button
-                        onClick={() => !loading && RejectWedsyPackageBooking(item._id)}
+                        onClick={() => RejectWedsyPackageBooking(item._id)}
                         className="h-9 px-4 text-[12px] font-semibold border border-custom-dark-blue border-r-0 text-custom-dark-blue bg-white rounded-none"
                       >
                         CANCEL
                       </button>
                       <button
-                        onClick={() => !loading && AcceptWedsyPackageBooking(item._id)}
+                        onClick={() => AcceptWedsyPackageBooking(item._id)}
                         className="h-9 px-4 text-[12px] font-semibold bg-custom-dark-blue text-white rounded-none"
                       >
                         ACCEPT

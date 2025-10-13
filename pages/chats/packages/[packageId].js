@@ -58,14 +58,12 @@ export default function Home({}) {
     },
   };
   const [display, setDisplay] = useState("Pending");
-  const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
   const router = useRouter();
   const { packageId } = router.query;
   const fetchOrderDetails = () => {
     if (!packageId) return;
-    setLoading(true);
     setError(null);
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/${packageId}?populate=true`, {
@@ -106,11 +104,9 @@ export default function Home({}) {
         }
       })
       .finally(() => {
-        setLoading(false);
       });
   };
   const AcceptWedsyPackageBooking = (_id) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/accept-wedsy-package-booking`,
       {
@@ -136,11 +132,9 @@ export default function Home({}) {
         console.error("There was a problem with the fetch operation:", error);
       })
       .finally(() => {
-        setLoading(false);
       });
   };
   const RejectWedsyPackageBooking = (_id) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-wedsy-package-booking`,
       {
@@ -168,7 +162,6 @@ export default function Home({}) {
         console.error("There was a problem with the fetch operation:", error);
       })
       .finally(() => {
-        setLoading(false);
       });
   };
   useEffect(() => {
@@ -230,9 +223,7 @@ export default function Home({}) {
         </div>
       </div>
       <div className="flex flex-col gap-4 px-4 pb-4">
-        {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading package...</div>
-        ) : error ? (
+        {error ? (
           <div className="text-center py-8 text-gray-500">{error}</div>
         ) : !currentBooking ? (
           <div className="text-center py-8 text-gray-500">Package not found.</div>
@@ -323,7 +314,7 @@ export default function Home({}) {
                 <div className="uppercase flex flex-row w-full justify-center items-center text-xs col-span-5">
                   <span
                     onClick={() => {
-                      if (!loading) {
+                      {
                         RejectWedsyPackageBooking(currentBooking?._id);
                       }
                     }}
@@ -333,7 +324,7 @@ export default function Home({}) {
                   </span>
                   <span
                     onClick={() => {
-                      if (!loading) {
+                      {
                         AcceptWedsyPackageBooking(currentBooking?._id);
                       }
                     }}

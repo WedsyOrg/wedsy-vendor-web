@@ -16,7 +16,6 @@ export default function Home({ user }) {
   const [expandOngoing, setExpandOngoing] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [revenue, setRevenue] = useState({
@@ -28,23 +27,19 @@ export default function Home({ user }) {
     count: 0,
     amount: 0
   });
-  const [revenueLoading, setRevenueLoading] = useState(false);
   const [stats, setStats] = useState({
     leads: { total: 0, breakdown: [] },
     confirmedBookings: { total: 0, breakdown: [] }
   });
-  const [statsLoading, setStatsLoading] = useState(false);
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
   const [currentBookingIndex, setCurrentBookingIndex] = useState(0);
   const [followUps, setFollowUps] = useState({
     calls: { total: 0, breakdown: [] },
     chats: { total: 0, breakdown: [] }
   });
-  const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const [currentCallIndex, setCurrentCallIndex] = useState(0);
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [ongoingOrder, setOngoingOrder] = useState(null);
-  const [ongoingOrderLoading, setOngoingOrderLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -57,7 +52,6 @@ export default function Home({ user }) {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
-    loading: false,
     data: {
       user: {
         name: "Priya Sharma"
@@ -240,11 +234,6 @@ export default function Home({ user }) {
   const fetchAllDashboardData = useCallback(async () => {
     if (dataLoaded) return; // Prevent multiple calls
     
-    setLoading(true);
-    setRevenueLoading(true);
-    setStatsLoading(true);
-    setFollowUpsLoading(true);
-    setOngoingOrderLoading(true);
     
     try {
       // Fetch all data in parallel
@@ -332,11 +321,6 @@ export default function Home({ user }) {
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
-      setLoading(false);
-      setRevenueLoading(false);
-      setStatsLoading(false);
-      setFollowUpsLoading(false);
-      setOngoingOrderLoading(false);
     }
   }, [dataLoaded]);
 
@@ -546,11 +530,11 @@ export default function Home({ user }) {
 
   const fetchOrderDetails = useCallback(async () => {
     if (!ongoingOrder?.orderId) {
-      setOrderDetails({ loading: false, data: null, error: null });
+      setOrderDetails({ data: null, error: null });
       return;
     }
 
-    setOrderDetails(prev => ({ ...prev, loading: true, error: null }));
+    setOrderDetails(prev => ({ ...prev, error: null }));
 
     try {
       const response = await fetch(
@@ -574,7 +558,6 @@ export default function Home({ user }) {
 
       const data = await response.json();
       setOrderDetails({
-        loading: false,
         data,
         error: null
       });
@@ -582,7 +565,6 @@ export default function Home({ user }) {
       console.error("Error fetching ongoing order details:", error);
       // No data when API fails
       setOrderDetails({
-        loading: false,
         data: null,
         error: "Failed to load order details"
       });
@@ -792,7 +774,7 @@ export default function Home({ user }) {
 
         {/* Upcoming Event Card */}
         <div className="flex justify-center">
-          {!dataLoaded && loading ? (
+          {!dataLoaded && false ? (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-200 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center animate-pulse">
               <div className="h-4 bg-gray-300 rounded w-24 mb-4"></div>
               <div className="h-8 bg-gray-300 rounded w-32 mb-4"></div>
@@ -878,14 +860,14 @@ export default function Home({ user }) {
                 </div>
               )}
             </div>
-          ) : !loading ? (
+          ) : !false ? (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-gray-600 flex flex-col items-center justify-center p-4">
               <p className="text-sm font-medium">No upcoming events</p>
               <p className="text-xs mt-1 text-gray-500">You don&apos;t have any confirmed bookings yet</p>
             </div>
           ) : (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-100 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center">
-              <p className="text-sm text-gray-600">Loading upcoming events...</p>
+              <p className="text-sm text-gray-600">No upcoming events</p>
             </div>
           )}
         </div>
@@ -917,7 +899,7 @@ export default function Home({ user }) {
         {/* Revenue this month Card */}
         <div className="w-full h-[147px] shadow-lg p-6 bg-transparent font-semibold">
           <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
-          {!dataLoaded && revenueLoading ? (
+          {false ? (
             <div className="my-4 flex flex-col items-center justify-center animate-pulse">
               <div className="h-8 bg-gray-300 rounded w-32 mb-2"></div>
               <div className="h-4 bg-gray-300 rounded w-40"></div>
@@ -942,7 +924,7 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Leads</p>
             </div>
-            {!dataLoaded && statsLoading ? (
+            {false ? (
               <div className="flex flex-col items-center justify-center h-20 animate-pulse">
                 <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
                 <div className="h-4 bg-gray-300 rounded w-20"></div>
@@ -999,7 +981,7 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Confirmed Bookings</p>
             </div>
-            {!dataLoaded && statsLoading ? (
+            {false ? (
               <div className="flex flex-col items-center justify-center h-20 animate-pulse">
                 <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
                 <div className="h-4 bg-gray-300 rounded w-20"></div>
@@ -1081,7 +1063,7 @@ export default function Home({ user }) {
           {/* Chats Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden w-[158px] h-[155px]">
             <p className="font-medium text-gray-800">Chats</p>
-            {!dataLoaded && followUpsLoading ? (
+            {false ? (
               <div className="flex flex-col items-center justify-center h-20 animate-pulse">
                 <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
                 <div className="h-4 bg-gray-300 rounded w-20"></div>
@@ -1136,7 +1118,7 @@ export default function Home({ user }) {
           {/* Calls Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden">
             <p className="font-medium text-gray-800">Calls</p>
-            {!dataLoaded && followUpsLoading ? (
+            {false ? (
               <div className="flex flex-col items-center justify-center h-20 animate-pulse">
                 <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
                 <div className="h-4 bg-gray-300 rounded w-20"></div>
@@ -1319,7 +1301,7 @@ export default function Home({ user }) {
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >
                 <div className="p-6">
-                {orderDetails.loading ? (
+                {false ? (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -1330,7 +1312,7 @@ export default function Home({ user }) {
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-4"
                     />
-                    <p className="text-gray-500">Loading order details...</p>
+                    <p className="text-gray-500">No order details</p>
                   </motion.div>
                 ) : orderDetails.error ? (
                   <motion.div 

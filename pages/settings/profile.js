@@ -20,7 +20,6 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 export default function Settings({ user }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
@@ -113,7 +112,6 @@ export default function Settings({ user }) {
   const confirmBulkDelete = async () => {
     if (selectedPhotos.length === 0) return;
     
-    setLoading(true);
     const updatedPhotos = forceEmptyGallery ? [] : gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
 
     try {
@@ -148,7 +146,6 @@ export default function Settings({ user }) {
       console.error("[Gallery/BulkDelete] Error", error);
       toast.error("Failed to delete photos.");
     } finally {
-      setLoading(false);
       setShowBulkDeleteModal(false);
       setForceEmptyGallery(false);
     }
@@ -272,7 +269,6 @@ export default function Settings({ user }) {
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
 
-    setLoading(true);
     try {
       const uploadPromises = imageFiles.map((file, index) => 
         uploadFile({
@@ -294,7 +290,6 @@ export default function Settings({ user }) {
       console.error('Error uploading photos:', error);
       toast.error('Error uploading photos. Please try again.');
     } finally {
-      setLoading(false);
     }
   };
 
@@ -370,7 +365,6 @@ export default function Settings({ user }) {
     if (!file) return;
     
     try {
-      setLoading(true);
       const uploadedUrl = await uploadFile({
         file: file,
         path: "vendor-documents/",
@@ -386,7 +380,6 @@ export default function Settings({ user }) {
       // Handle error silently
       toast.error('Failed to upload document. Please try again.');
     } finally {
-      setLoading(false);
     }
   };
 
@@ -420,7 +413,6 @@ export default function Settings({ user }) {
     };
 
     try {
-      setLoading(true);
       
       // Send document to backend
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
@@ -455,7 +447,6 @@ export default function Settings({ user }) {
       // Handle error silently
       toast.error('Failed to upload document. Please try again.');
     } finally {
-      setLoading(false);
     }
   };
 
@@ -606,7 +597,6 @@ export default function Settings({ user }) {
 
 
   const fetchSpecialityList = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-speciality`, {
       method: "GET",
       headers: {
@@ -624,7 +614,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setSpecialityList(response);
         }
       })
@@ -633,7 +622,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchOther = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=other`, {
       method: "GET",
       headers: {
@@ -651,7 +639,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setOther({
             groomMakeup: response.other?.groomMakeup || false,
             lgbtqMakeup: response.other?.lgbtqMakeup || false,
@@ -668,7 +655,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchProfile = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=profile`, {
       method: "GET",
       headers: {
@@ -686,7 +672,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setProfile({
             businessName: response.businessName || response.contactName || "",
             businessDescription: response.businessDescription || "",
@@ -706,7 +691,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchAddress = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=businessAddress`,
       {
@@ -727,7 +711,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setAddress({
             place_id: response.place_id || "",
             formatted_address: response.formatted_address || response.address || "",
@@ -751,7 +734,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchGallery = () => {
-    setLoading(true);
     const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=gallery&_=${Date.now()}`;
     fetch(url, {
       method: "GET",
@@ -774,7 +756,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           const coverPhoto = response?.gallery?.coverPhoto || "";
           const photos = Array.isArray(response?.gallery?.photos) ? response.gallery.photos : [];
           setGallery({ coverPhoto, photos, temp: response.temp || 'default' });
@@ -785,7 +766,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchLocationData = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/location`, {
       method: "GET",
       headers: {
@@ -795,7 +775,6 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         let tempList = response;
         let states = tempList.filter((i) => i.locationType === "State");
         let cities = tempList.filter((i) => i.locationType === "City");
@@ -831,7 +810,6 @@ export default function Settings({ user }) {
       });
   };
   const fetchPrices = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=prices`, {
       method: "GET",
       headers: {
@@ -849,7 +827,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setPrices(response.prices);
         }
       })
@@ -859,7 +836,6 @@ export default function Settings({ user }) {
   };
 
   const fetchDocuments = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=documents`, {
       method: "GET",
       headers: {
@@ -877,7 +853,6 @@ export default function Settings({ user }) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setDocuments(response.documents || []);
         }
       })
@@ -886,7 +861,6 @@ export default function Settings({ user }) {
       });
   };
   const updateOther = async () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -899,7 +873,6 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
           // Only refetch data if there was an error
@@ -912,13 +885,11 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
         toast.error("Error updating details.");
       });
   };
   const updatePrices = async () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -938,7 +909,6 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating photo details.");
           // Only refetch data if there was an error
@@ -951,7 +921,6 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -962,7 +931,6 @@ export default function Settings({ user }) {
       return;
     }
     
-    setLoading(true);
     
     try {
       let tempImage = await uploadFile({
@@ -995,17 +963,15 @@ export default function Settings({ user }) {
     } catch (error) {
       toast.error("Failed to upload cover photo. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
 
   const handleDeleteCoverPhoto = () => {
-    if (loading) return;
+    return;
     showDeleteConfirmation('cover');
   };
 
   const deleteCoverPhoto = async () => {
-    setLoading(true);
     try {
       const debugBody = { gallery: { coverPhoto: "" } };
       console.debug("[Gallery/DeleteCover] Request", {
@@ -1038,7 +1004,6 @@ export default function Settings({ user }) {
       console.error("[Gallery/DeleteCover] Error", error);
       toast.error("Failed to delete cover photo. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
   const updatePhoto = async () => {
@@ -1049,7 +1014,6 @@ export default function Settings({ user }) {
         gallery.photos.length
       }`,
     });
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -1065,13 +1029,11 @@ export default function Settings({ user }) {
         fetchGallery();
         setPhoto("");
         photoRef.current.value = null;
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating price details.");
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -1082,7 +1044,6 @@ export default function Settings({ user }) {
       return;
     }
 
-    setLoading(true);
     const uploadPromises = files.map((file, index) => 
       uploadFile({
         file: file,
@@ -1118,7 +1079,6 @@ export default function Settings({ user }) {
       console.error("Error uploading photos:", error);
       toast.error("Failed to upload photos. Please try again.");
     } finally {
-      setLoading(false);
       photoRef.current.value = null;
     }
   };
@@ -1128,12 +1088,11 @@ export default function Settings({ user }) {
   // Note: Removed handleCroppedFilesUpload function as gallery photos are now uploaded directly
 
   const handleDeletePhoto = (index) => {
-    if (loading) return;
+    return;
     showDeleteConfirmation('gallery', index);
   };
 
   const deletePhoto = async (index) => {
-    setLoading(true);
     const updatedPhotos = gallery.photos.filter((_, i) => i !== index);
 
     try {
@@ -1165,11 +1124,9 @@ export default function Settings({ user }) {
       console.error("[Gallery/DeletePhoto] Error", error);
       toast.error("Failed to delete photo. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
   const updateProfile = async () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -1193,7 +1150,6 @@ export default function Settings({ user }) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating details.");
           // Only refetch data if there was an error
@@ -1207,7 +1163,6 @@ export default function Settings({ user }) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -1423,7 +1378,7 @@ export default function Settings({ user }) {
 
   // Update completion status after initial data loads
   useEffect(() => {
-    if (loading === false) {
+    if (true) {
       updateCompletionStatus();
     }
   }, [loading]);
@@ -1991,7 +1946,7 @@ export default function Settings({ user }) {
                 disabled={loading}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
+                {false ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -2132,7 +2087,6 @@ export default function Settings({ user }) {
                               const file = e.target.files[0];
                               if (file) {
                                 try {
-                                  setLoading(true);
                                   const uploadedUrl = await uploadFile({
                                     file: file,
                                     path: "vendor-certificates/",
@@ -2151,7 +2105,6 @@ export default function Settings({ user }) {
                                   // Handle error silently
                                   toast.error('Failed to upload certificate. Please try again.');
                                 } finally {
-                                  setLoading(false);
                                 }
                               }
                             }}
@@ -2362,7 +2315,7 @@ export default function Settings({ user }) {
                 disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length > 500}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
+                {false ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -2450,7 +2403,7 @@ export default function Settings({ user }) {
                 disabled={!prices.bridal || (profile.servicesOffered !== "Hairstylist" && profile.groomMakeup && !prices.groom)}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
+                {false ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -2615,7 +2568,7 @@ export default function Settings({ user }) {
               />
               
               {/* Upload Progress */}
-              {loading && (
+              {false && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2917,7 +2870,7 @@ export default function Settings({ user }) {
                     disabled={loading || !documentType || !documentFrontUrl || !documentBackUrl}
                     className="flex-1 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Uploading...' : 'Save Document'}
+                    Save Document
                   </button>
                 </div>
               </div>
@@ -3036,7 +2989,7 @@ export default function Settings({ user }) {
       )}
 
       {/* Loading indicator for auto-upload */}
-      {loading && (
+      {false && (
         <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
           <div className="flex items-center gap-3">
             <svg className="animate-spin h-4 w-4 text-[#2B3F6C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -3087,7 +3040,7 @@ export default function Settings({ user }) {
                 disabled={loading}
                 className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
               >
-                {loading ? (
+                {false ? (
                   <>
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -3143,7 +3096,7 @@ export default function Settings({ user }) {
                 disabled={loading}
                 className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
               >
-                {loading ? (
+                {false ? (
                   <>
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

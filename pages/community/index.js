@@ -10,7 +10,8 @@ import {
 } from "react-icons/md";
 import { BsPencilSquare, BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
-import { Avatar, Button, TextInput } from "flowbite-react";
+import { Avatar, Button } from "flowbite-react";
+import SearchBox from "@/components/SearchBox";
 import Link from "next/link";
 import { toPriceString } from "@/utils/text";
 import { BiDislike, BiLike, BiSolidDislike, BiSolidLike } from "react-icons/bi";
@@ -18,13 +19,11 @@ import ExpandText from "@/components/text/ExpandText";
 
 export default function Community({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState([]);
   const [search, setSearch] = useState("");
   const [newPostId, setNewPostId] = useState(null);
 
   const fetchCommunity = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community`, {
       method: "GET",
       headers: {
@@ -43,18 +42,15 @@ export default function Community({}) {
       .then((response) => {
         if (response) {
           console.log("Community API Response:", response);
-          setLoading(false);
           setCommunity(response);
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
 
   const addCommunityLike = (_id) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${_id}/like`, {
       method: "POST",
       headers: {
@@ -71,7 +67,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(
             community?.map((i) => (i._id === _id ? response.community : i))
@@ -84,7 +79,6 @@ export default function Community({}) {
   };
 
   const addCommunityDisLike = (_id) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${_id}/dis-like`, {
       method: "POST",
       headers: {
@@ -101,7 +95,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(
             community?.map((i) => (i._id === _id ? response.community : i))
@@ -114,7 +107,6 @@ export default function Community({}) {
   };
 
   const removeCommunityLike = (_id) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${_id}/like`, {
       method: "DELETE",
       headers: {
@@ -131,7 +123,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(
             community?.map((i) => (i._id === _id ? response.community : i))
@@ -144,7 +135,6 @@ export default function Community({}) {
   };
 
   const removeCommunityDisLike = (_id) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${_id}/dis-like`, {
       method: "DELETE",
       headers: {
@@ -161,7 +151,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(
             community?.map((i) => (i._id === _id ? response.community : i))
@@ -233,18 +222,16 @@ export default function Community({}) {
           <BsPencilSquare size={20} />
         </Link>
       </div>
-      <div className="px-4 py-3">
-        <TextInput
-          type="search"
-          icon={MdSearch}
+      <div className="px-4 py-3 flex justify-center">
+        <SearchBox
           placeholder="Search"
-          className="w-full"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          style={{ maxWidth: '100%', width: '100%' }}
         />
       </div>
       <div className="flex flex-col gap-4 pb-4 px-4">
-        {loading ? (
+        {false ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
             <p className="text-gray-500 mt-2">Loading community posts...</p>

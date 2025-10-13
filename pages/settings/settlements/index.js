@@ -22,7 +22,6 @@ import { toPriceString } from "@/utils/text";
 
 export default function Packages({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [months, setMonths] = useState([]);
   const [month, setMonth] = useState("");
   const [display, setDisplay] = useState("");
@@ -31,7 +30,6 @@ export default function Packages({}) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchList = () => {
-    setLoading(true);
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements/transfer`, {
         method: "GET",
@@ -81,7 +79,6 @@ export default function Packages({}) {
         setMonths(uniqueMonthYear);
         setOrders(ordersResponse);
         setSettlements(settlementsResponse);
-        setLoading(false);
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);

@@ -27,7 +27,6 @@ import { toPriceString } from "@/utils/text";
 
 export default function Home({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [showTerms, setShowTerms] = useState(true);
   const [newPackage, setPackage] = useState({
     name: "",
@@ -56,7 +55,6 @@ export default function Home({}) {
   };
 
   const handleSubmit = (redirect) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-package`, {
       method: "POST",
       headers: {
@@ -67,7 +65,6 @@ export default function Home({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error");
         } else if (redirect) {
@@ -83,12 +80,10 @@ export default function Home({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const fetchBookingAmount = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/config?code=MUA-BookingAmount`, {
       method: "GET",
       headers: {
@@ -98,11 +93,9 @@ export default function Home({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         setBookingAmount(response.data);
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -214,7 +207,6 @@ export default function Home({}) {
             <Label value="Package Name" />
             <TextInput
               placeholder="Package Name"
-              disabled={loading}
               value={newPackage?.name}
               onChange={(e) => {
                 setPackage({
@@ -246,7 +238,6 @@ export default function Home({}) {
                       services: temp,
                     });
                   }}
-                  disabled={loading}
                   className="grow"
                 />
                 <MdCancel
@@ -278,7 +269,6 @@ export default function Home({}) {
             <Label value="Package Price" />
             <TextInput
               placeholder="Enter amount (max 5 digits)"
-              disabled={loading}
               type="number"
               max="99999"
               value={newPackage?.price}
@@ -321,12 +311,11 @@ export default function Home({}) {
           </div>
           <Button
             className="mt-4 px-6 text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max mx-auto"
-            disabled={loading}
             onClick={() => {
               handleSubmit(true);
             }}
           >
-            {loading ? "Creating..." : "Create Package"}
+            Create Package
           </Button>
         </div>
       </div>

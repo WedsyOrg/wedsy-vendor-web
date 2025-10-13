@@ -27,7 +27,6 @@ import { toPriceString } from "@/utils/text";
 
 export default function Home({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [newPackage, setPackage] = useState({
     name: "",
     services: [""],
@@ -38,7 +37,6 @@ export default function Home({}) {
   const [bookingAmount, setBookingAmount] = useState({});
   const { packageId } = router.query;
   const fetchBookingAmount = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/config?code=MUA-BookingAmount`, {
       method: "GET",
       headers: {
@@ -48,16 +46,13 @@ export default function Home({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         setBookingAmount(response.data);
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const handleSubmit = (redirect) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-package/${packageId}`,
       {
@@ -71,7 +66,6 @@ export default function Home({}) {
     )
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error");
         } else if (redirect) {
@@ -87,12 +81,10 @@ export default function Home({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const fetchPackage = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-package/${packageId}`,
       {
@@ -113,7 +105,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setPackage(response);
         }
       })
@@ -139,7 +130,6 @@ export default function Home({}) {
             <Label value="Package Name" />
             <TextInput
               placeholder="Package Name"
-              disabled={loading}
               value={newPackage?.name}
               onChange={(e) => {
                 setPackage({
@@ -168,7 +158,6 @@ export default function Home({}) {
                       services: temp,
                     });
                   }}
-                  disabled={loading}
                   className="grow"
                 />
                 <MdCancel
@@ -200,7 +189,6 @@ export default function Home({}) {
             <Label value="Package Price" />
             <TextInput
               placeholder="Package Price"
-              disabled={loading}
               type="number"
               value={newPackage?.price}
               onChange={(e) => {
@@ -229,7 +217,6 @@ export default function Home({}) {
           </div>
           <Button
             className="mt-4 px-6 text-white bg-custom-dark-blue enabled:hover:bg-custom-dark-blue max-w-max mx-auto"
-            disabled={loading}
             onClick={() => {
               handleSubmit(true);
             }}
