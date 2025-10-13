@@ -16,7 +16,7 @@ import {
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
-import { Avatar, Button, Select, TextInput } from "flowbite-react";
+import { Avatar, Button, TextInput } from "flowbite-react";
 import Link from "next/link";
 import { toPriceString } from "@/utils/text";
 
@@ -28,6 +28,7 @@ export default function Packages({}) {
   const [display, setDisplay] = useState("");
   const [orders, setOrders] = useState([]);
   const [settlements, setSettlements] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchList = () => {
     setLoading(true);
@@ -101,14 +102,49 @@ export default function Packages({}) {
       </div>
       <div className="flex flex-col gap-4 px-6">
         <div className="grid grid-cols-2 gap-6">
-          <Select value={month} onChange={(e) => setMonth(e.target.value)}>
-            <option value="">Select</option>
-            {months?.map((i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
-            ))}
-          </Select>
+          <div className="relative">
+            <button
+              className="w-full px-4 py-3 text-left bg-white border-2 border-gray-300 rounded-lg text-black focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors flex items-center justify-between"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <span>{month || "Select"}</span>
+              <MdKeyboardArrowDown className="text-gray-500" />
+            </button>
+            
+            {showDropdown && (
+              <div 
+                className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50"
+                style={{
+                  borderRadius: '10px',
+                  border: '1px solid #D1D5DB'
+                }}
+              >
+                <div 
+                  className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                  onClick={() => {
+                    setMonth("");
+                    setShowDropdown(false);
+                  }}
+                >
+                  Select
+                </div>
+                {months?.map((i) => (
+                  <div key={i}>
+                    <div className="border-t border-gray-200"></div>
+                    <div 
+                      className="px-4 py-3 text-sm font-bold text-black cursor-pointer hover:bg-blue-50"
+                      onClick={() => {
+                        setMonth(i);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      {i}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         {month && (
           <div className="grid grid-cols-2 gap-6 items-center text-sm text-center">
@@ -341,7 +377,8 @@ export default function Packages({}) {
         )}
         <Link
           href={"/settings/settlements/transactions"}
-          className="px-6 rounded-full py-2 bg-rose-900 text-white text-center mt-6"
+          className="px-6 rounded-full py-2 text-white text-center mt-6"
+          style={{ backgroundColor: '#2B3F6C' }}
         >
           View Transaction Details
         </Link>
