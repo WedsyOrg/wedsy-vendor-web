@@ -169,6 +169,7 @@ export default function Packages({}) {
           placeholder="Search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          style={{ maxWidth: '100%', width: '100%' }}
         />
       </div>
 
