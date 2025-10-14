@@ -18,7 +18,7 @@ import ExpandText from "@/components/text/ExpandText";
 
 export default function Community({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [community, setCommunity] = useState({});
   const [search, setSearch] = useState("");
   const [reply, setReply] = useState("");
@@ -26,7 +26,6 @@ export default function Community({}) {
   const { communityId, replyCommunity } = router.query;
 
   const fetchCommunity = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}`, {
       method: "GET",
       headers: {
@@ -44,7 +43,6 @@ export default function Community({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setCommunity(response);
         }
       })
@@ -54,7 +52,6 @@ export default function Community({}) {
   };
 
   const addCommunityReply = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}/reply`, {
       method: "POST",
       headers: {
@@ -72,7 +69,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setReply("");
           setDisplayReply(false);
@@ -85,7 +81,6 @@ export default function Community({}) {
   };
 
   const addCommunityLike = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}/like`, {
       method: "POST",
       headers: {
@@ -102,7 +97,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(response.community);
         }
@@ -113,7 +107,6 @@ export default function Community({}) {
   };
 
   const addCommunityDisLike = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}/dis-like`,
       {
@@ -133,7 +126,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(response.community);
         }
@@ -144,7 +136,6 @@ export default function Community({}) {
   };
 
   const removeCommunityLike = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}/like`, {
       method: "DELETE",
       headers: {
@@ -161,7 +152,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(response.community);
         }
@@ -172,7 +162,6 @@ export default function Community({}) {
   };
 
   const removeCommunityDisLike = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/community/${communityId}/dis-like`,
       {
@@ -192,7 +181,6 @@ export default function Community({}) {
         }
       })
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           setCommunity(response.community);
         }

@@ -74,11 +74,7 @@ export default function Chats() {
 
       {/* Chat List */}
       <div className="px-4">
-        {false ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-dark-blue"></div>
-          </div>
-        ) : chats.length > 0 ? (
+        {chats.length > 0 ? (
           chats
             .filter((chat) => 
               search === "" || 

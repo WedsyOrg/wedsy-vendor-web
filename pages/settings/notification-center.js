@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 
 export default function Settings({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState({
     bidding: false,
     packages: false,
@@ -17,7 +17,6 @@ export default function Settings({}) {
     payment: false,
   });
   const fetchNotifications = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
       method: "GET",
       headers: {
@@ -35,7 +34,6 @@ export default function Settings({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setNotifications(response.notifications);
         }
       })
@@ -44,7 +42,6 @@ export default function Settings({}) {
       });
   };
   const updateNotifications = async (tempNotifications) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -64,13 +61,11 @@ export default function Settings({}) {
       .then((response) => response.json())
       .then((response) => {
         fetchNotifications();
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating notification status.");
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };

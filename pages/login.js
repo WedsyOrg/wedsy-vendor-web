@@ -80,7 +80,6 @@ export default function Login({}) {
     
     setData({
       ...data,
-      loading: true,
       message: "",
       otpMessage: "",
     });
@@ -98,7 +97,6 @@ export default function Login({}) {
       .then((response) => {
         setData({
           ...data,
-          loading: false,
           otpSent: true,
           ReferenceId: response.ReferenceId,
           otpMessage: "OTP sent successfully!",
@@ -112,7 +110,6 @@ export default function Login({}) {
         console.error("There was a problem with the fetch operation:", error);
         setData({
           ...data,
-          loading: false,
           message: "Failed to send OTP. Please try again.",
         });
       });
@@ -139,7 +136,6 @@ export default function Login({}) {
       Otp: "",
       message: "",
       otpMessage: "",
-      loading: true,
     });
     
     // Send OTP directly without calling SendOTP (to bypass otpSent check)
@@ -156,7 +152,6 @@ export default function Login({}) {
       .then((response) => {
         setData({
           ...data,
-          loading: false,
           otpSent: true,
           ReferenceId: response.ReferenceId,
           otpMessage: "OTP resent successfully!",
@@ -172,7 +167,6 @@ export default function Login({}) {
         console.error("There was a problem with the fetch operation:", error);
         setData({
           ...data,
-          loading: false,
           message: "Failed to resend OTP. Please try again.",
         });
       });
@@ -182,7 +176,6 @@ export default function Login({}) {
     setIsSigningIn(true);
     setData({
       ...data,
-      loading: true,
     });
     
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
@@ -202,7 +195,6 @@ export default function Login({}) {
           setData({
             ...data,
             phone: "",
-            loading: false,
             success: true,
             otpSent: false,
             Otp: "",
@@ -220,7 +212,6 @@ export default function Login({}) {
         } else {
           setData({
             ...data,
-            loading: false,
             Otp: "",
             message: response.message,
             otpMessage: "",
@@ -233,7 +224,6 @@ export default function Login({}) {
         setIsSigningIn(false);
         setData({
           ...data,
-          loading: false,
           message: "An error occurred. Please try again.",
         });
       });

@@ -231,12 +231,7 @@ export default function Community({}) {
         />
       </div>
       <div className="flex flex-col gap-4 pb-4 px-4">
-        {false ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
-            <p className="text-gray-500 mt-2">Loading community posts...</p>
-          </div>
-        ) : community?.length === 0 ? (
+        {community?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-6xl text-gray-300 mb-4">📝</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No Community Posts Yet</h3>

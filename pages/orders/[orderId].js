@@ -64,14 +64,6 @@ export default function Packages({}) {
     }
   }, [orderId]);
 
-  if (false) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3F6C]"></div>
-        <p className="mt-4 text-gray-600">Loading order details...</p>
-      </div>
-    );
-  }
 
   if (!order || Object.keys(order).length === 0) {
     return (

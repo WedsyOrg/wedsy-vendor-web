@@ -8,11 +8,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigation } from "@/utils/navigation";
 
 export default function Home({ user }) {
   const router = useRouter();
-  const { navigateTo } = useNavigation();
   const [expandOngoing, setExpandOngoing] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
@@ -774,13 +772,7 @@ export default function Home({ user }) {
 
         {/* Upcoming Event Card */}
         <div className="flex justify-center">
-          {!dataLoaded && false ? (
-            <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-200 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center animate-pulse">
-              <div className="h-4 bg-gray-300 rounded w-24 mb-4"></div>
-              <div className="h-8 bg-gray-300 rounded w-32 mb-4"></div>
-              <div className="h-3 bg-gray-300 rounded w-40"></div>
-            </div>
-          ) : upcomingEvents.length > 0 ? (
+          {upcomingEvents.length > 0 ? (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-[#2B3F6C] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-white p-3 flex flex-col relative overflow-hidden">
               {/* Header with dots and view all */}
               <div className="flex flex-row justify-between items-center mb-1 relative">
@@ -860,14 +852,10 @@ export default function Home({ user }) {
                 </div>
               )}
             </div>
-          ) : !false ? (
+          ) : (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-gray-600 flex flex-col items-center justify-center p-4">
               <p className="text-sm font-medium">No upcoming events</p>
               <p className="text-xs mt-1 text-gray-500">You don&apos;t have any confirmed bookings yet</p>
-            </div>
-          ) : (
-            <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-100 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center">
-              <p className="text-sm text-gray-600">No upcoming events</p>
             </div>
           )}
         </div>
@@ -899,19 +887,10 @@ export default function Home({ user }) {
         {/* Revenue this month Card */}
         <div className="w-full h-[147px] shadow-lg p-6 bg-transparent font-semibold">
           <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
-          {false ? (
-            <div className="my-4 flex flex-col items-center justify-center animate-pulse">
-              <div className="h-8 bg-gray-300 rounded w-32 mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-40"></div>
-            </div>
-          ) : (
-            <>
-              <p className="text-4xl font-semibold text-[#000000] mb-2">{formatCurrency(revenue.thisMonth)}</p>
-              <p className="text-sm text-[#000000">
-                You have {revenue.thisMonthBookings} bookings this month
-              </p>
-            </>
-          )}
+          <p className="text-4xl font-semibold text-[#000000] mb-2">{formatCurrency(revenue.thisMonth)}</p>
+          <p className="text-sm text-[#000000">
+            You have {revenue.thisMonthBookings} bookings this month
+          </p>
         </div>
         {/* End of Revenue this month Card */}
 
@@ -924,54 +903,45 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Leads</p>
             </div>
-            {false ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{stats.leads.total}</p>
+            {stats.leads.breakdown.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{stats.leads.total}</p>
-                {stats.leads.breakdown.length > 0 && (
+                {/* Navigation arrows for leads */}
+                {stats.leads.breakdown.length > 1 && (
                   <>
-                    {/* Navigation arrows for leads */}
-                    {stats.leads.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevLead}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextLead}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{stats.leads.breakdown[currentLeadIndex]?.type || "Packages/ Bookings"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentLeadIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevLead}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextLead}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{stats.leads.breakdown[currentLeadIndex]?.type || "Packages/ Bookings"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentLeadIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -981,54 +951,45 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Confirmed Bookings</p>
             </div>
-            {false ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{stats.confirmedBookings.total}</p>
+            {stats.confirmedBookings.breakdown.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{stats.confirmedBookings.total}</p>
-                {stats.confirmedBookings.breakdown.length > 0 && (
+                {/* Navigation arrows for bookings */}
+                {stats.confirmedBookings.breakdown.length > 1 && (
                   <>
-                    {/* Navigation arrows for bookings */}
-                    {stats.confirmedBookings.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevBooking}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextBooking}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{stats.confirmedBookings.breakdown[currentBookingIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentBookingIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevBooking}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextBooking}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{stats.confirmedBookings.breakdown[currentBookingIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentBookingIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1063,54 +1024,45 @@ export default function Home({ user }) {
           {/* Chats Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden w-[158px] h-[155px]">
             <p className="font-medium text-gray-800">Chats</p>
-            {false ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{followUps.chats.total}</p>
+            {followUps.chats.breakdown.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{followUps.chats.total}</p>
-                {followUps.chats.breakdown.length > 0 && (
+                {/* Navigation arrows for chats */}
+                {followUps.chats.breakdown.length > 1 && (
                   <>
-                    {/* Navigation arrows for chats */}
-                    {followUps.chats.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevChat}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextChat}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{followUps.chats.breakdown[currentChatIndex]?.type || "Packages/ Bookings"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentChatIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevChat}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextChat}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{followUps.chats.breakdown[currentChatIndex]?.type || "Packages/ Bookings"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentChatIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1118,54 +1070,45 @@ export default function Home({ user }) {
           {/* Calls Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden">
             <p className="font-medium text-gray-800">Calls</p>
-            {false ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{followUps.calls.total}</p>
+            {followUps.calls.breakdown.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{followUps.calls.total}</p>
-                {followUps.calls.breakdown.length > 0 && (
+                {/* Navigation arrows for calls */}
+                {followUps.calls.breakdown.length > 1 && (
                   <>
-                    {/* Navigation arrows for calls */}
-                    {followUps.calls.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevCall}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextCall}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{followUps.calls.breakdown[currentCallIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentCallIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevCall}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextCall}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{followUps.calls.breakdown[currentCallIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentCallIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1357,20 +1300,7 @@ export default function Home({ user }) {
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >
                 <div className="p-6">
-                {false ? (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8"
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-4"
-                    />
-                    <p className="text-gray-500">No order details</p>
-                  </motion.div>
-                ) : orderDetails.error ? (
+                {orderDetails.error ? (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}

@@ -19,7 +19,7 @@ import { BiDislike, BiLike, BiSolidDislike, BiSolidLike } from "react-icons/bi";
 
 export default function Reviews({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [search, setSearch] = useState("");
 

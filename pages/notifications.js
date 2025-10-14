@@ -221,27 +221,6 @@ export default function Notifications({}) {
     return notification.message || notification.title;
   };
 
-  if (loading) {
-    return (
-      <>
-        <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
-          <BackIcon />
-          <p className="grow text-lg font-medium">Notifications</p>
-        </div>
-        <div className="flex flex-col gap-4 py-4 px-6">
-          {new Array(5).fill("").map((_, index) => (
-            <div key={index} className="flex flex-col gap-1 pt-4 animate-pulse">
-              <div className="grid grid-cols-4 gap-2">
-                <div className="h-5 bg-gray-300 rounded col-span-3"></div>
-                <div className="h-4 bg-gray-300 rounded"></div>
-              </div>
-              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  }
 
   return (
     <>

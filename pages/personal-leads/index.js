@@ -320,11 +320,7 @@ export default function Leads({}) {
       )}
 
       <div className="bg-white min-h-screen">
-        {false ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
-          </div>
-        ) : leads && leads.length > 0 ? (
+        {leads && leads.length > 0 ? (
           <div className="px-6 py-4 space-y-3">
             {filterLeads(leads)
               .sort((a, b) => {

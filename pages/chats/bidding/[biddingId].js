@@ -25,7 +25,7 @@ import SwipeToAccept from "@/components/button/SwipeToAcceptButton";
 
 export default function Home({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [bidding, setBidding] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(0);
   const { biddingId } = router.query;
@@ -45,7 +45,6 @@ export default function Home({}) {
   const [newNote, setNewNote] = useState("");
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const fetchBookingAmount = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/config?code=MUA-BookingAmount`, {
       method: "GET",
       headers: {
@@ -55,16 +54,13 @@ export default function Home({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         setBookingAmount(response.data);
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const fetchBidding = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order?source=Bidding&biddingId=${biddingId}`,
       {
@@ -85,7 +81,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setBidding(response[0] || {});
         }
       })
@@ -94,7 +89,6 @@ export default function Home({}) {
       });
   };
   const RejectBiddingBid = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${biddingId}/reject-bidding-bid`,
       {
@@ -115,7 +109,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           fetchBidding();
         }
       })
@@ -124,7 +117,6 @@ export default function Home({}) {
       });
   };
   const AcceptBiddingBid = () => {
-    setLoading(true);
     const allNotes = [notes, ...additionalNotes].filter(note => note.trim() !== "");
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${biddingId}/accept-bidding-bid`,
@@ -150,7 +142,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setBidSubmitted(true);
         }
       })
