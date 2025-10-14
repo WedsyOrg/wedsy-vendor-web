@@ -2045,7 +2045,7 @@ export default function Settings({ user }) {
                             awards: newAwards,
                       });
                     }}
-                        className="w-12 h-12 border-2 border-red-500 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                        className="w-12 h-12 border-2 border-[#2B3F6C] rounded-lg flex items-center justify-center text-[#2B3F6C] hover:bg-blue-50 transition-colors"
                       >
                         <span className="text-xl font-bold">×</span>
                       </button>
@@ -2073,7 +2073,7 @@ export default function Settings({ user }) {
                                 awards: newAwards,
                               });
                             }}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600"
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-[#2B3F6C] text-white rounded-full flex items-center justify-center text-sm hover:bg-blue-700"
                           >
                             ×
                           </button>
