@@ -351,11 +351,14 @@ export default function Home({ user }) {
   // Scroll event listener for smooth ongoing order banner movement
   useEffect(() => {
     let ticking = false;
+    let lastScrollY = 0;
     
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
+          const currentScrollY = window.scrollY;
+          setScrollY(currentScrollY);
+          lastScrollY = currentScrollY;
           ticking = false;
         });
         ticking = true;
@@ -366,12 +369,30 @@ export default function Home({ user }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth interpolation for scroll movement
+  // Smooth interpolation for scroll movement with enhanced easing
   useEffect(() => {
     const smoothScroll = () => {
       setSmoothScrollY(prev => {
         const diff = scrollY - prev;
-        return prev + diff * 0.1; // Smooth interpolation factor
+        const absDiff = Math.abs(diff);
+        
+        // Enhanced smooth interpolation with equal response for both directions
+        let interpolationFactor;
+        if (absDiff > 25) {
+          interpolationFactor = 0.5; // Very fast for large jumps
+        } else if (absDiff > 10) {
+          interpolationFactor = 0.35; // Fast for medium movements
+        } else if (absDiff > 3) {
+          interpolationFactor = 0.25; // Medium for small movements
+        } else {
+          interpolationFactor = 0.15; // Slow for tiny movements
+        }
+        
+        // Apply cubic easing for smoother transitions in both directions
+        const easedDiff = diff * interpolationFactor;
+        const newValue = prev + easedDiff;
+        
+        return newValue;
       });
     };
 
@@ -398,7 +419,7 @@ export default function Home({ user }) {
     // Delay opening modal to allow smooth scroll to complete
     setTimeout(() => {
       setShowOrderDetails(true);
-    }, 300);
+    }, 800); // Longer delay for smoother transition
   };
 
   // Handle modal close with smooth scroll
@@ -410,7 +431,7 @@ export default function Home({ user }) {
         top: scrollY,
         behavior: 'smooth'
       });
-    }, 150);
+    }, 400); // Longer delay for smoother transition
   };
 
   const nextEvent = () => {
@@ -786,7 +807,7 @@ export default function Home({ user }) {
                     
                     return (
                       <div
-                        key={index}
+                        key={`event-dot-${index}`}
                         className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                           isActive ? "bg-white" : "bg-black"
                         }`}
@@ -823,7 +844,7 @@ export default function Home({ user }) {
               
               {upcomingEvents[currentEventIndex] && (
                 <div 
-                  key={currentEventIndex}
+                  key={`event-content-${currentEventIndex}`}
                   className="animate-fadeIn flex flex-col flex-1"
                   style={{
                     animation: 'fadeIn 0.5s ease-in-out'
@@ -904,10 +925,10 @@ export default function Home({ user }) {
               <p className="font-medium text-gray-800">Leads</p>
             </div>
             <p className="text-5xl font-semibold text-center">{stats.leads.total}</p>
-            {stats.leads.breakdown.length > 0 && (
+            {stats?.leads?.breakdown?.length > 0 && (
               <>
                 {/* Navigation arrows for leads */}
-                {stats.leads.breakdown.length > 1 && (
+                {stats?.leads?.breakdown?.length > 1 && (
                   <>
                     <button
                       onClick={prevLead}
@@ -933,7 +954,7 @@ export default function Home({ user }) {
                       
                       return (
                         <div
-                          key={index}
+                          key={`lead-dot-${index}`}
                           className={`h-1.5 w-1.5 rounded-full ${
                             isActive ? "bg-black" : "bg-gray-300"
                           }`}
@@ -952,10 +973,10 @@ export default function Home({ user }) {
               <p className="font-medium text-gray-800">Confirmed Bookings</p>
             </div>
             <p className="text-5xl font-semibold text-center">{stats.confirmedBookings.total}</p>
-            {stats.confirmedBookings.breakdown.length > 0 && (
+            {stats?.confirmedBookings?.breakdown?.length > 0 && (
               <>
                 {/* Navigation arrows for bookings */}
-                {stats.confirmedBookings.breakdown.length > 1 && (
+                {stats?.confirmedBookings?.breakdown?.length > 1 && (
                   <>
                     <button
                       onClick={prevBooking}
@@ -981,7 +1002,7 @@ export default function Home({ user }) {
                       
                       return (
                         <div
-                          key={index}
+                          key={`booking-dot-${index}`}
                           className={`h-1.5 w-1.5 rounded-full ${
                             isActive ? "bg-black" : "bg-gray-300"
                           }`}
@@ -1025,10 +1046,10 @@ export default function Home({ user }) {
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden w-[158px] h-[155px]">
             <p className="font-medium text-gray-800">Chats</p>
             <p className="text-5xl font-semibold text-center">{followUps.chats.total}</p>
-            {followUps.chats.breakdown.length > 0 && (
+            {followUps?.chats?.breakdown?.length > 0 && (
               <>
                 {/* Navigation arrows for chats */}
-                {followUps.chats.breakdown.length > 1 && (
+                {followUps?.chats?.breakdown?.length > 1 && (
                   <>
                     <button
                       onClick={prevChat}
@@ -1054,7 +1075,7 @@ export default function Home({ user }) {
                       
                       return (
                         <div
-                          key={index}
+                          key={`chat-dot-${index}`}
                           className={`h-1.5 w-1.5 rounded-full transition-colors ${
                             isActive ? "bg-black" : "bg-gray-300"
                           }`}
@@ -1071,10 +1092,10 @@ export default function Home({ user }) {
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden">
             <p className="font-medium text-gray-800">Calls</p>
             <p className="text-5xl font-semibold text-center">{followUps.calls.total}</p>
-            {followUps.calls.breakdown.length > 0 && (
+            {followUps?.calls?.breakdown?.length > 0 && (
               <>
                 {/* Navigation arrows for calls */}
-                {followUps.calls.breakdown.length > 1 && (
+                {followUps?.calls?.breakdown?.length > 1 && (
                   <>
                     <button
                       onClick={prevCall}
@@ -1100,7 +1121,7 @@ export default function Home({ user }) {
                       
                       return (
                         <div
-                          key={index}
+                          key={`call-dot-${index}`}
                           className={`h-1.5 w-1.5 rounded-full transition-colors ${
                             isActive ? "bg-black" : "bg-gray-300"
                           }`}
@@ -1125,15 +1146,16 @@ export default function Home({ user }) {
           onClick={handleOngoingOrderClick}
           style={{
             zIndex: 50,
-            transform: `translateY(${Math.min(smoothScrollY * 0.015, 3)}px) translateX(${Math.sin(smoothScrollY * 0.01) * 2}px) scale(${1 + Math.sin(smoothScrollY * 0.005) * 0.02})`,
-            transition: 'none' // Disable CSS transition for smooth interpolation
+            transform: `translateY(${scrollY * 0.15}px) translateX(${Math.sin(scrollY * 0.003) * 1.5}px) scale(${1 + Math.sin(scrollY * 0.002) * 0.015})`,
+            transition: 'none' // No CSS transition for immediate response
           }}
         >
           {/* Handle */}
           <div 
             className="mb-2"
             style={{
-              transform: `translateX(${Math.sin(smoothScrollY * 0.02) * 1}px) rotate(${Math.sin(smoothScrollY * 0.01) * 2}deg)`
+              transform: `translateX(${Math.sin(scrollY * 0.005) * 1}px) rotate(${Math.sin(scrollY * 0.003) * 2}deg)`,
+              transition: 'none'
             }}
           >
             <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
@@ -1144,7 +1166,8 @@ export default function Home({ user }) {
             <p 
               className="text-white font-bold text-sm"
               style={{
-                transform: `translateY(${Math.sin(smoothScrollY * 0.008) * 1}px) translateX(${Math.sin(smoothScrollY * 0.015) * 0.5}px)`
+                transform: `translateY(${Math.sin(scrollY * 0.003) * 1}px) translateX(${Math.sin(scrollY * 0.004) * 0.6}px)`,
+                transition: 'none'
               }}
             >
               ONGOING ORDER
@@ -1153,7 +1176,8 @@ export default function Home({ user }) {
               <p 
                 className="text-white font-bold text-sm"
                 style={{
-                  transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
+                  transform: `translateY(${Math.sin(scrollY * 0.003) * 1}px) translateX(${Math.sin(scrollY * 0.004) * 0.6}px)`,
+                  transition: 'none'
                 }}
               >
                 {getCurrentTime()}
@@ -1172,11 +1196,11 @@ export default function Home({ user }) {
             exit={{
               opacity: 0,
               transition: {
-                duration: 0.2,
-                ease: "easeIn"
+                duration: 0.6,
+                ease: "easeInOut"
               }
             }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
             onClick={handleModalClose}
           >
@@ -1188,17 +1212,17 @@ export default function Home({ user }) {
                 opacity: 0,
                 transition: {
                   type: "spring",
-                  stiffness: 400,
-                  damping: 25,
-                  duration: 0.4,
-                  ease: "easeIn"
+                  stiffness: 200,
+                  damping: 20,
+                  duration: 0.8,
+                  ease: "easeInOut"
                 }
               }}
               transition={{ 
                 type: "spring", 
-                stiffness: 300, 
-                damping: 30,
-                duration: 0.5,
+                stiffness: 150, 
+                damping: 25,
+                duration: 1.0,
                 ease: "easeOut"
               }}
               className="w-full max-h-[85vh] bg-[#2B3F6C] flex flex-col"
@@ -1213,11 +1237,11 @@ export default function Home({ user }) {
                   opacity: 0,
                   y: -20,
                   transition: {
-                    duration: 0.3,
-                    ease: "easeIn"
+                    duration: 0.6,
+                    ease: "easeInOut"
                   }
                 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
                 className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" 
                 style={{ borderRadius: '10px 10px 0 0' }}
               >
@@ -1225,7 +1249,7 @@ export default function Home({ user }) {
                 <motion.div 
                   className="mb-3"
                   whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: 0.6 }}
                 >
                   <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
                 </motion.div>
@@ -1240,11 +1264,11 @@ export default function Home({ user }) {
                       x: -20,
                       opacity: 0,
                       transition: {
-                        duration: 0.3,
-                        ease: "easeIn"
+                        duration: 0.6,
+                        ease: "easeInOut"
                       }
                     }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
+                    transition={{ delay: 0.6, duration: 0.8 }}
                   >
                     ONGOING ORDER
                   </motion.p>
@@ -1257,11 +1281,11 @@ export default function Home({ user }) {
                         x: 20,
                         opacity: 0,
                         transition: {
-                          duration: 0.3,
-                          ease: "easeIn"
+                          duration: 0.6,
+                          ease: "easeInOut"
                         }
                       }}
-                      transition={{ delay: 0.4, duration: 0.4 }}
+                      transition={{ delay: 0.8, duration: 0.8 }}
                     >
                       {getCurrentTime()}
                     </motion.p>
@@ -1277,11 +1301,11 @@ export default function Home({ user }) {
                 opacity: 0,
                 y: 20,
                 transition: {
-                  duration: 0.4,
-                  ease: "easeIn"
+                  duration: 0.6,
+                  ease: "easeInOut"
                 }
               }}
-              transition={{ delay: 0.5, duration: 0.5 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
               className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20"
             >
               <motion.div 
@@ -1291,11 +1315,11 @@ export default function Home({ user }) {
                   scale: 0.95,
                   opacity: 0,
                   transition: {
-                    duration: 0.3,
-                    ease: "easeIn"
+                    duration: 0.6,
+                    ease: "easeInOut"
                   }
                 }}
-                transition={{ delay: 0.6, duration: 0.4 }}
+                transition={{ delay: 1.0, duration: 0.8 }}
                 className="bg-white border border-red-300 mb-4 overflow-hidden"
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >
@@ -1304,6 +1328,7 @@ export default function Home({ user }) {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1.2, duration: 0.8 }}
                     className="text-center py-8"
                   >
                     <p className="text-gray-500">{orderDetails.error}</p>
@@ -1312,7 +1337,7 @@ export default function Home({ user }) {
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.4 }}
+                    transition={{ delay: 1.2, duration: 0.8 }}
                     className="space-y-4"
                   >
                     {/* Day and Date - render only when data available */}
@@ -1346,8 +1371,8 @@ export default function Home({ user }) {
                     {/* Services - render only if available */}
                     {orderDetails?.data?.services && orderDetails.data.services.length > 0 && (
                       <div className="space-y-4">
-                        {orderDetails.data.services.map((svc, idx) => (
-                          <div key={idx} className="flex items-start space-x-3">
+                        {orderDetails.data.services?.map((svc, idx) => (
+                          <div key={`service-${idx}-${svc?.id || svc?.name || 'unknown'}`} className="flex items-start space-x-3">
                             <div className="flex items-center space-x-2">
                               <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -1440,9 +1465,9 @@ export default function Home({ user }) {
 
             {/* Events List - Scrollable */}
             <div className="flex-1 overflow-y-auto">
-              {upcomingEvents.map((event, index) => (
+              {upcomingEvents?.map((event, index) => (
                 <div
-                  key={event.id}
+                  key={event?.id || `event-${index}-${event?.customerName || 'unknown'}`}
                   onClick={() => handleEventClick(event)}
                   className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
                 >

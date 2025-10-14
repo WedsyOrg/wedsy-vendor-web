@@ -1381,7 +1381,7 @@ export default function Settings({ user }) {
     if (true) {
       updateCompletionStatus();
     }
-  }, [loading]);
+  }, []);
 
   // Update completion status whenever relevant data changes
   useEffect(() => {
@@ -1533,7 +1533,7 @@ export default function Settings({ user }) {
                     businessName: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
               />
             </div>
@@ -1554,7 +1554,7 @@ export default function Settings({ user }) {
                   });
                     }
                 }}
-                disabled={loading}
+                disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none transition-colors"
               />
                 <div className="text-right text-xs text-gray-500 mt-1">
@@ -1652,7 +1652,7 @@ export default function Settings({ user }) {
                             groomMakeup: true,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
@@ -1668,7 +1668,7 @@ export default function Settings({ user }) {
                             groomMakeup: false,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
@@ -1694,7 +1694,7 @@ export default function Settings({ user }) {
                             onlyHairStyling: true,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
@@ -1710,7 +1710,7 @@ export default function Settings({ user }) {
                             onlyHairStyling: false,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                       <span className="text-sm text-black">No</span>
@@ -1738,7 +1738,7 @@ export default function Settings({ user }) {
                   value={address.formatted_address || ""}
                   onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
                   ref={autocompleteInputRef}
-                  disabled={loading}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
@@ -1757,7 +1757,7 @@ export default function Settings({ user }) {
                       flat_house_number: e.target.value,
                     });
                   }}
-                  disabled={loading}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
@@ -1777,7 +1777,7 @@ export default function Settings({ user }) {
                     });
                   }}
                   ref={inputRef}
-                  disabled={loading}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
@@ -1796,7 +1796,7 @@ export default function Settings({ user }) {
                       city: e.target.value,
                     });
                   }}
-                  disabled={loading}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
@@ -1851,7 +1851,7 @@ export default function Settings({ user }) {
                       postal_code: e.target.value,
                     });
                   }}
-                  disabled={loading}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
@@ -1905,7 +1905,7 @@ export default function Settings({ user }) {
                     ))}
                     <button
                       type="button"
-                  disabled={loading}
+                  disabled={false}
                       onClick={() => setShowDocumentModal(true)}
                       className="w-full px-4 py-2 border border-[#2B3F6C] text-[#2B3F6C] rounded-lg hover:bg-[#2B3F6C] hover:text-white transition-colors text-sm"
                     >
@@ -1915,7 +1915,7 @@ export default function Settings({ user }) {
                 ) : (
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={false}
                     onClick={() => setShowDocumentModal(true)}
                     className="w-full px-4 py-3 border-2 border-dashed border-[#2B3F6C] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                   >
@@ -1943,7 +1943,7 @@ export default function Settings({ user }) {
                       updateProfile();
                     }
                   }}
-                disabled={loading}
+                disabled={false}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {false ? (
@@ -1978,7 +1978,7 @@ export default function Settings({ user }) {
                     experience: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.experience || other.experience.trim() === '') && (
@@ -2002,7 +2002,7 @@ export default function Settings({ user }) {
                     clients: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
               {(!other.clients || other.clients.trim() === '') && (
@@ -2033,7 +2033,7 @@ export default function Settings({ user }) {
                             awards: newAwards,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
                   />
                       <button
@@ -2164,7 +2164,7 @@ export default function Settings({ user }) {
                             makeupProducts: temp,
                           });
                         }}
-                        disabled={loading}
+                        disabled={false}
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-transparent focus:outline-none focus:ring-0 focus:border-[#2B3F6C] text-black placeholder-gray-400"
                         placeholder={`Product ${index + 1}`}
                       />
@@ -2236,7 +2236,7 @@ export default function Settings({ user }) {
                         lgbtqMakeup: true,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                     className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">Yes</span>
@@ -2252,7 +2252,7 @@ export default function Settings({ user }) {
                         lgbtqMakeup: false,
                       });
                     }}
-                    disabled={loading}
+                    disabled={false}
                     className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                   />
                   <span className="text-sm text-black">No</span>
@@ -2277,7 +2277,7 @@ export default function Settings({ user }) {
                   });
                   }
                 }}
-                disabled={loading}
+                disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none bg-transparent"
               />
               <div className="mt-1">
@@ -2312,7 +2312,7 @@ export default function Settings({ user }) {
                   // All validations passed, proceed with update
                   updateOther();
                 }}
-                disabled={loading || !other.experience || !other.clients || !other.usp || other.usp.length > 500}
+                disabled={!other.experience || !other.clients || !other.usp || other.usp.length > 500}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {false ? (
@@ -2347,7 +2347,7 @@ export default function Settings({ user }) {
                     bridal: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
@@ -2367,7 +2367,7 @@ export default function Settings({ user }) {
                     party: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
@@ -2388,7 +2388,7 @@ export default function Settings({ user }) {
                     groom: e.target.value,
                   });
                 }}
-                disabled={loading}
+                disabled={false}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
             </div>
@@ -2442,7 +2442,7 @@ export default function Settings({ user }) {
                             e.stopPropagation();
                             handleDeleteCoverPhoto();
                           }}
-                          disabled={loading}
+                          disabled={false}
                           className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2475,7 +2475,7 @@ export default function Settings({ user }) {
                 }
               }}
                     className="hidden"
-                    disabled={loading}
+                    disabled={false}
                   />
                 </div>
               </div>
@@ -2496,7 +2496,7 @@ export default function Settings({ user }) {
                    onClick={() => {
                      photoRef.current?.click();
                    }}
-                   disabled={loading || gallery.photos.length >= 15}
+                   disabled={gallery.photos.length >= 15}
                    className="w-full px-6 py-3 bg-[#2B3F6C] text-white rounded-xl hover:bg-[#1e2d4a] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
                  >
                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2564,7 +2564,7 @@ export default function Settings({ user }) {
                   }
                 }}
                 className="hidden"
-                disabled={loading || gallery.photos.length >= 15}
+                disabled={gallery.photos.length >= 15}
               />
               
               {/* Upload Progress */}
@@ -2656,7 +2656,7 @@ export default function Settings({ user }) {
                           {!isMultiSelectMode && (
                             <button
                               onClick={() => handleDeletePhoto(item.index)}
-                              disabled={loading}
+                              disabled={false}
                               className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3037,7 +3037,7 @@ export default function Settings({ user }) {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                disabled={loading}
+                disabled={false}
                 className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
               >
                 {false ? (
@@ -3093,7 +3093,7 @@ export default function Settings({ user }) {
               </button>
               <button
                 onClick={confirmBulkDelete}
-                disabled={loading}
+                disabled={false}
                 className="px-6 py-3 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-2"
               >
                 {false ? (
