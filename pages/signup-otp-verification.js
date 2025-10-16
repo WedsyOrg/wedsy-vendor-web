@@ -90,7 +90,6 @@ export default function SignupOtpVerification({}) {
       return;
     }
 
-    setLoading(true);
     setError('');
 
     try {
@@ -123,7 +122,6 @@ export default function SignupOtpVerification({}) {
       console.error("Send OTP error:", error);
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
 
@@ -169,7 +167,6 @@ export default function SignupOtpVerification({}) {
       return;
     }
 
-    setLoading(true);
     setError('');
 
     try {
@@ -246,7 +243,6 @@ export default function SignupOtpVerification({}) {
       // Handle error silently
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
 

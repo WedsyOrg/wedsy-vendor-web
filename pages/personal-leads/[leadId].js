@@ -19,7 +19,7 @@ import { toPriceString } from "@/utils/text";
 
 export default function Lead({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lead, setLead] = useState([]);
   const [display, setDisplay] = useState("Details");
   const [name, setName] = useState("");
@@ -43,7 +43,6 @@ export default function Lead({}) {
   const { leadId } = router.query;
 
   const fetchLead = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead/${leadId}`, {
       method: "GET",
       headers: {
@@ -61,7 +60,6 @@ export default function Lead({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setLead(response);
         }
       })
@@ -71,7 +69,6 @@ export default function Lead({}) {
   };
 
   const handleSubmit = (body) => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead/${leadId}`, {
       method: "PUT",
       headers: {
@@ -84,11 +81,9 @@ export default function Lead({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error");
         } else {
-          setLoading(false);
           setEditDetails(false);
           setAddTask(false);
           setAddTransaction(false);
@@ -96,7 +91,6 @@ export default function Lead({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };

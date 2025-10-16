@@ -5,9 +5,6 @@ import StickFooter from "@/components/layout/StickyFooter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PageTransition from "@/components/PageTransition";
-import PageTransitionLoader from "@/components/PageTransitionLoader";
-import { usePageTransition } from "@/hooks/usePageTransition";
 
 function MyApp({ Component, pageProps }) {
   const [isLandscape, setIsLandscape] = useState(false);
@@ -15,7 +12,6 @@ function MyApp({ Component, pageProps }) {
   const [loading, setLoading] = useState(true);
   const [logIn, setLogIn] = useState(false);
   const [user, setUser] = useState({});
-  const { isLoading } = usePageTransition();
 
   const Logout = () => {
     setLogIn(true);
@@ -140,7 +136,6 @@ function MyApp({ Component, pageProps }) {
           )}
         </div>
       )}
-      <PageTransitionLoader isLoading={isLoading} />
       <ToastContainer
         position="top-right"
         autoClose={5000}

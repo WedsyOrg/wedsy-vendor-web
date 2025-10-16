@@ -23,7 +23,6 @@ import { useNavigation } from "@/utils/navigation";
 
 export default function Packages({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [display, setDisplay] = useState("");
   const [orders, setOrders] = useState([]);
@@ -31,7 +30,6 @@ export default function Packages({}) {
   const { navigateTo } = useNavigation();
 
   const fetchOrders = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order`, {
       method: "GET",
       headers: {
@@ -49,13 +47,11 @@ export default function Packages({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setOrders(response);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        setLoading(false);
       });
   };
 
@@ -141,6 +137,7 @@ export default function Packages({}) {
           placeholder="Search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          style={{ maxWidth: '100%', width: '100%' }}
         />
       </div>
 

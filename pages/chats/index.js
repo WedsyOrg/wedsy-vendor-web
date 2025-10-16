@@ -11,12 +11,9 @@ export default function Chats() {
   const router = useRouter();
   const [chats, setChats] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
   const { navigateTo, back } = useNavigation();
 
   const fetchChats = () => {
-    setLoading(true);
-    
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
       method: "GET",
       headers: {
@@ -32,12 +29,10 @@ export default function Chats() {
         return response.json();
       })
       .then((data) => {
-        setLoading(false);
         setChats(data || []);
       })
       .catch((error) => {
         console.error("Error fetching chats:", error);
-        setLoading(false);
         setChats([]);
       });
   };
@@ -79,11 +74,7 @@ export default function Chats() {
 
       {/* Chat List */}
       <div className="px-4">
-        {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-dark-blue"></div>
-          </div>
-        ) : chats.length > 0 ? (
+        {chats.length > 0 ? (
           chats
             .filter((chat) => 
               search === "" || 

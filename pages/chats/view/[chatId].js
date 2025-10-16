@@ -1032,7 +1032,6 @@ export default function Home({}) {
   const [chat, setChat] = useState({});
   const [search, setSearch] = useState("");
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [displayRequirements, setDisplayRequirements] = useState(null);
   const [hasVendorOffer, setHasVendorOffer] = useState(false);
@@ -1065,8 +1064,7 @@ export default function Home({}) {
   const fetchChatMessages = (showSpinner = true) => {
     if (!chatId) return;
     
-    if (showSpinner) setLoading(true);
-
+    if (showSpinner) 
     console.log("Chat ID:", chatId);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
     console.log("fetchChatMessages - API URL:", apiUrl);
@@ -1138,7 +1136,6 @@ export default function Home({}) {
           setDisplayRequirements(dummyChat.messages.find(m => m.contentType === "BiddingBid" || m.contentType === "BiddingOffer") || null);
           setHasVendorOffer(false);
         }
-        setLoading(false);
         // Mark as read in background (no spinner) - skip for dummy data
         if (!chatId.startsWith("dummy")) {
           fetch(`${apiUrl}/chat/${encodeURIComponent(chatId)}/mark-read`, {
@@ -1159,16 +1156,14 @@ export default function Home({}) {
         setChat(dummyChat);
         setDisplayRequirements(dummyChat.messages.find(m => m.contentType === "BiddingBid" || m.contentType === "BiddingOffer") || null);
         setHasVendorOffer(false);
-        setLoading(false);
         console.log("Using dummy data - User name:", dummyChat.user.name);
       });
   };
   
   const CreateChatMessage = () => {
     const text = content.trim();
-    if (!text || loading) return;
+    if (!text) return;
 
-    setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
 
     fetch(`${apiUrl}/chat/${encodeURIComponent(chatId)}/content/`, {
@@ -1185,7 +1180,7 @@ export default function Home({}) {
         fetchChatMessages(false);
       })
       .catch((e) => console.error("Error sending message:", e))
-      .finally(() => setLoading(false));
+      .finally(() => {});
     };
     
     useEffect(() => {
@@ -1396,7 +1391,7 @@ export default function Home({}) {
             </button>
             <button
                 className="ml-auto inline-flex items-center justify-center rounded-full bg-[#2B3F6C] text-white h-9 w-9 sm:h-10 sm:w-10 disabled:bg-[#A9B4D3]"
-                disabled={loading || !content.trim()}
+                disabled={!content.trim()}
                 onClick={CreateChatMessage}
               >
                 <VscSend size={18} className="sm:w-5 sm:h-5" />

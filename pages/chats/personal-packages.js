@@ -16,12 +16,10 @@ import { toPriceString } from "@/utils/text";
 
 export default function Home({}) {
   const [display, setDisplay] = useState("Pending");
-  const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [selectedSource, setSelectedSource] = useState("Wedsy");
   const router = useRouter();
   const fetchPersonalPackageBooking = () => {
-    setLoading(true);
     const source = selectedSource === "Wedsy" ? "Wedsy-Package" : "Personal-Package";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=${source}`, {
       method: "GET",
@@ -40,7 +38,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setList(response);
         }
       })
@@ -49,7 +46,6 @@ export default function Home({}) {
       });
   };
   const AcceptPersonalPackageBooking = (_id) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/accept-personal-package-booking`,
       {
@@ -70,7 +66,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           fetchPersonalPackageBooking();
         }
       })
@@ -79,7 +74,6 @@ export default function Home({}) {
       });
   };
   const RejectPersonalPackageBooking = (_id) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-personal-package-booking`,
       {
@@ -100,7 +94,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           fetchPersonalPackageBooking();
         }
       })
@@ -241,7 +234,7 @@ export default function Home({}) {
                     <div className="uppercase flex flex-row w-full justify-end items-center text-xs absolute bottom-0 right-0">
                       <span
                         onClick={() => {
-                          if (!loading) {
+                          {
                             RejectPersonalPackageBooking(item._id);
                           }
                         }}
@@ -252,7 +245,7 @@ export default function Home({}) {
                       </span>
                       <span
                         onClick={() => {
-                          if (!loading) {
+                          {
                             AcceptPersonalPackageBooking(item._id);
                           }
                         }}

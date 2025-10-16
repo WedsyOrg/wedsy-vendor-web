@@ -8,15 +8,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigation } from "@/utils/navigation";
 
 export default function Home({ user }) {
   const router = useRouter();
-  const { navigateTo } = useNavigation();
   const [expandOngoing, setExpandOngoing] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [revenue, setRevenue] = useState({
@@ -28,23 +25,19 @@ export default function Home({ user }) {
     count: 0,
     amount: 0
   });
-  const [revenueLoading, setRevenueLoading] = useState(false);
   const [stats, setStats] = useState({
     leads: { total: 0, breakdown: [] },
     confirmedBookings: { total: 0, breakdown: [] }
   });
-  const [statsLoading, setStatsLoading] = useState(false);
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
   const [currentBookingIndex, setCurrentBookingIndex] = useState(0);
   const [followUps, setFollowUps] = useState({
     calls: { total: 0, breakdown: [] },
     chats: { total: 0, breakdown: [] }
   });
-  const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const [currentCallIndex, setCurrentCallIndex] = useState(0);
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [ongoingOrder, setOngoingOrder] = useState(null);
-  const [ongoingOrderLoading, setOngoingOrderLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -57,7 +50,6 @@ export default function Home({ user }) {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
-    loading: false,
     data: {
       user: {
         name: "Priya Sharma"
@@ -240,11 +232,6 @@ export default function Home({ user }) {
   const fetchAllDashboardData = useCallback(async () => {
     if (dataLoaded) return; // Prevent multiple calls
     
-    setLoading(true);
-    setRevenueLoading(true);
-    setStatsLoading(true);
-    setFollowUpsLoading(true);
-    setOngoingOrderLoading(true);
     
     try {
       // Fetch all data in parallel
@@ -332,11 +319,6 @@ export default function Home({ user }) {
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
-      setLoading(false);
-      setRevenueLoading(false);
-      setStatsLoading(false);
-      setFollowUpsLoading(false);
-      setOngoingOrderLoading(false);
     }
   }, [dataLoaded]);
 
@@ -369,11 +351,14 @@ export default function Home({ user }) {
   // Scroll event listener for smooth ongoing order banner movement
   useEffect(() => {
     let ticking = false;
+    let lastScrollY = 0;
     
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
+          const currentScrollY = window.scrollY;
+          setScrollY(currentScrollY);
+          lastScrollY = currentScrollY;
           ticking = false;
         });
         ticking = true;
@@ -384,12 +369,30 @@ export default function Home({ user }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth interpolation for scroll movement
+  // Smooth interpolation for scroll movement with enhanced easing
   useEffect(() => {
     const smoothScroll = () => {
       setSmoothScrollY(prev => {
         const diff = scrollY - prev;
-        return prev + diff * 0.1; // Smooth interpolation factor
+        const absDiff = Math.abs(diff);
+        
+        // Enhanced smooth interpolation with equal response for both directions
+        let interpolationFactor;
+        if (absDiff > 25) {
+          interpolationFactor = 0.5; // Very fast for large jumps
+        } else if (absDiff > 10) {
+          interpolationFactor = 0.35; // Fast for medium movements
+        } else if (absDiff > 3) {
+          interpolationFactor = 0.25; // Medium for small movements
+        } else {
+          interpolationFactor = 0.15; // Slow for tiny movements
+        }
+        
+        // Apply cubic easing for smoother transitions in both directions
+        const easedDiff = diff * interpolationFactor;
+        const newValue = prev + easedDiff;
+        
+        return newValue;
       });
     };
 
@@ -416,7 +419,7 @@ export default function Home({ user }) {
     // Delay opening modal to allow smooth scroll to complete
     setTimeout(() => {
       setShowOrderDetails(true);
-    }, 300);
+    }, 800); // Longer delay for smoother transition
   };
 
   // Handle modal close with smooth scroll
@@ -428,7 +431,7 @@ export default function Home({ user }) {
         top: scrollY,
         behavior: 'smooth'
       });
-    }, 150);
+    }, 400); // Longer delay for smoother transition
   };
 
   const nextEvent = () => {
@@ -546,11 +549,11 @@ export default function Home({ user }) {
 
   const fetchOrderDetails = useCallback(async () => {
     if (!ongoingOrder?.orderId) {
-      setOrderDetails({ loading: false, data: null, error: null });
+      setOrderDetails({ data: null, error: null });
       return;
     }
 
-    setOrderDetails(prev => ({ ...prev, loading: true, error: null }));
+    setOrderDetails(prev => ({ ...prev, error: null }));
 
     try {
       const response = await fetch(
@@ -574,7 +577,6 @@ export default function Home({ user }) {
 
       const data = await response.json();
       setOrderDetails({
-        loading: false,
         data,
         error: null
       });
@@ -582,7 +584,6 @@ export default function Home({ user }) {
       console.error("Error fetching ongoing order details:", error);
       // No data when API fails
       setOrderDetails({
-        loading: false,
         data: null,
         error: "Failed to load order details"
       });
@@ -792,13 +793,7 @@ export default function Home({ user }) {
 
         {/* Upcoming Event Card */}
         <div className="flex justify-center">
-          {!dataLoaded && loading ? (
-            <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-200 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center animate-pulse">
-              <div className="h-4 bg-gray-300 rounded w-24 mb-4"></div>
-              <div className="h-8 bg-gray-300 rounded w-32 mb-4"></div>
-              <div className="h-3 bg-gray-300 rounded w-40"></div>
-            </div>
-          ) : upcomingEvents.length > 0 ? (
+          {upcomingEvents.length > 0 ? (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-[#2B3F6C] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-white p-3 flex flex-col relative overflow-hidden">
               {/* Header with dots and view all */}
               <div className="flex flex-row justify-between items-center mb-1 relative">
@@ -812,7 +807,7 @@ export default function Home({ user }) {
                     
                     return (
                       <div
-                        key={index}
+                        key={`event-dot-${index}`}
                         className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                           isActive ? "bg-white" : "bg-black"
                         }`}
@@ -849,7 +844,7 @@ export default function Home({ user }) {
               
               {upcomingEvents[currentEventIndex] && (
                 <div 
-                  key={currentEventIndex}
+                  key={`event-content-${currentEventIndex}`}
                   className="animate-fadeIn flex flex-col flex-1"
                   style={{
                     animation: 'fadeIn 0.5s ease-in-out'
@@ -878,14 +873,10 @@ export default function Home({ user }) {
                 </div>
               )}
             </div>
-          ) : !loading ? (
+          ) : (
             <div className="w-[344px] h-[147px] rounded-[15px] bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] text-gray-600 flex flex-col items-center justify-center p-4">
               <p className="text-sm font-medium">No upcoming events</p>
               <p className="text-xs mt-1 text-gray-500">You don&apos;t have any confirmed bookings yet</p>
-            </div>
-          ) : (
-            <div className="w-[344px] h-[147px] rounded-[15px] bg-gray-100 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center">
-              <p className="text-sm text-gray-600">Loading upcoming events...</p>
             </div>
           )}
         </div>
@@ -917,19 +908,10 @@ export default function Home({ user }) {
         {/* Revenue this month Card */}
         <div className="w-full h-[147px] shadow-lg p-6 bg-transparent font-semibold">
           <p className="text-sm font-semibold text-[#000000] mb-2 ">Revenue this month</p>
-          {!dataLoaded && revenueLoading ? (
-            <div className="my-4 flex flex-col items-center justify-center animate-pulse">
-              <div className="h-8 bg-gray-300 rounded w-32 mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-40"></div>
-            </div>
-          ) : (
-            <>
-              <p className="text-4xl font-semibold text-[#000000] mb-2">{formatCurrency(revenue.thisMonth)}</p>
-              <p className="text-sm text-[#000000">
-                You have {revenue.thisMonthBookings} bookings this month
-              </p>
-            </>
-          )}
+          <p className="text-4xl font-semibold text-[#000000] mb-2">{formatCurrency(revenue.thisMonth)}</p>
+          <p className="text-sm text-[#000000">
+            You have {revenue.thisMonthBookings} bookings this month
+          </p>
         </div>
         {/* End of Revenue this month Card */}
 
@@ -942,54 +924,45 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Leads</p>
             </div>
-            {!dataLoaded && statsLoading ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{stats.leads.total}</p>
+            {stats?.leads?.breakdown?.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{stats.leads.total}</p>
-                {stats.leads.breakdown.length > 0 && (
+                {/* Navigation arrows for leads */}
+                {stats?.leads?.breakdown?.length > 1 && (
                   <>
-                    {/* Navigation arrows for leads */}
-                    {stats.leads.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevLead}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextLead}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{stats.leads.breakdown[currentLeadIndex]?.type || "Packages/ Bookings"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentLeadIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevLead}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextLead}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{stats.leads.breakdown[currentLeadIndex]?.type || "Packages/ Bookings"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentLeadIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={`lead-dot-${index}`}
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -999,54 +972,45 @@ export default function Home({ user }) {
             <div className="flex justify-between items-center">
               <p className="font-medium text-gray-800">Confirmed Bookings</p>
             </div>
-            {!dataLoaded && statsLoading ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{stats.confirmedBookings.total}</p>
+            {stats?.confirmedBookings?.breakdown?.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{stats.confirmedBookings.total}</p>
-                {stats.confirmedBookings.breakdown.length > 0 && (
+                {/* Navigation arrows for bookings */}
+                {stats?.confirmedBookings?.breakdown?.length > 1 && (
                   <>
-                    {/* Navigation arrows for bookings */}
-                    {stats.confirmedBookings.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevBooking}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextBooking}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{stats.confirmedBookings.breakdown[currentBookingIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentBookingIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevBooking}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextBooking}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{stats.confirmedBookings.breakdown[currentBookingIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentBookingIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={`booking-dot-${index}`}
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1081,54 +1045,45 @@ export default function Home({ user }) {
           {/* Chats Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden w-[158px] h-[155px]">
             <p className="font-medium text-gray-800">Chats</p>
-            {!dataLoaded && followUpsLoading ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{followUps.chats.total}</p>
+            {followUps?.chats?.breakdown?.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{followUps.chats.total}</p>
-                {followUps.chats.breakdown.length > 0 && (
+                {/* Navigation arrows for chats */}
+                {followUps?.chats?.breakdown?.length > 1 && (
                   <>
-                    {/* Navigation arrows for chats */}
-                    {followUps.chats.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevChat}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextChat}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{followUps.chats.breakdown[currentChatIndex]?.type || "Packages/ Bookings"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentChatIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevChat}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextChat}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{followUps.chats.breakdown[currentChatIndex]?.type || "Packages/ Bookings"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentChatIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={`chat-dot-${index}`}
+                          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1136,54 +1091,45 @@ export default function Home({ user }) {
           {/* Calls Card */}
           <div className="flex flex-col gap-2 shadow-lg rounded-xl p-4 bg-white relative overflow-hidden">
             <p className="font-medium text-gray-800">Calls</p>
-            {!dataLoaded && followUpsLoading ? (
-              <div className="flex flex-col items-center justify-center h-20 animate-pulse">
-                <div className="h-12 bg-gray-300 rounded w-16 mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-20"></div>
-              </div>
-            ) : (
+            <p className="text-5xl font-semibold text-center">{followUps.calls.total}</p>
+            {followUps?.calls?.breakdown?.length > 0 && (
               <>
-                <p className="text-5xl font-semibold text-center">{followUps.calls.total}</p>
-                {followUps.calls.breakdown.length > 0 && (
+                {/* Navigation arrows for calls */}
+                {followUps?.calls?.breakdown?.length > 1 && (
                   <>
-                    {/* Navigation arrows for calls */}
-                    {followUps.calls.breakdown.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevCall}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
-                        >
-                          <MdChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={nextCall}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
-                        >
-                          <MdChevronRight size={16} />
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="flex flex-row items-center justify-between">
-                      <p className="text-xs text-gray-600">{followUps.calls.breakdown[currentCallIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
-                      <div className="flex flex-row justify-center gap-1 items-center">
-                        {Array.from({ length: 3 }, (_, index) => {
-                          // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
-                          const isActive = (currentCallIndex % 3) === index;
-                          
-                          return (
-                            <div
-                              key={index}
-                              className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                                isActive ? "bg-black" : "bg-gray-300"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <button
+                      onClick={prevCall}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors "
+                    >
+                      <MdChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={nextCall}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2  rounded-full p-1 hover:bg-gray-300 transition-colors"
+                    >
+                      <MdChevronRight size={16} />
+                    </button>
                   </>
                 )}
+                
+                <div className="flex flex-row items-center justify-between">
+                  <p className="text-xs text-gray-600">{followUps.calls.breakdown[currentCallIndex]?.type || "Total/This month/ Packages/ Bidding/Personal"}</p>
+                  <div className="flex flex-row justify-center gap-1 items-center">
+                    {Array.from({ length: 3 }, (_, index) => {
+                      // Cyclic dot calculation: 0, 1, 2, 0, 1, 2...
+                      const isActive = (currentCallIndex % 3) === index;
+                      
+                      return (
+                        <div
+                          key={`call-dot-${index}`}
+                          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                            isActive ? "bg-black" : "bg-gray-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -1200,15 +1146,16 @@ export default function Home({ user }) {
           onClick={handleOngoingOrderClick}
           style={{
             zIndex: 50,
-            transform: `translateY(${Math.min(smoothScrollY * 0.015, 3)}px) translateX(${Math.sin(smoothScrollY * 0.01) * 2}px) scale(${1 + Math.sin(smoothScrollY * 0.005) * 0.02})`,
-            transition: 'none' // Disable CSS transition for smooth interpolation
+            transform: `translateY(${scrollY * 0.15}px) translateX(${Math.sin(scrollY * 0.003) * 1.5}px) scale(${1 + Math.sin(scrollY * 0.002) * 0.015})`,
+            transition: 'none' // No CSS transition for immediate response
           }}
         >
           {/* Handle */}
           <div 
             className="mb-2"
             style={{
-              transform: `translateX(${Math.sin(smoothScrollY * 0.02) * 1}px) rotate(${Math.sin(smoothScrollY * 0.01) * 2}deg)`
+              transform: `translateX(${Math.sin(scrollY * 0.005) * 1}px) rotate(${Math.sin(scrollY * 0.003) * 2}deg)`,
+              transition: 'none'
             }}
           >
             <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
@@ -1219,16 +1166,18 @@ export default function Home({ user }) {
             <p 
               className="text-white font-bold text-sm"
               style={{
-                transform: `translateY(${Math.sin(smoothScrollY * 0.008) * 1}px) translateX(${Math.sin(smoothScrollY * 0.015) * 0.5}px)`
+                transform: `translateY(${Math.sin(scrollY * 0.003) * 1}px) translateX(${Math.sin(scrollY * 0.004) * 0.6}px)`,
+                transition: 'none'
               }}
             >
               ONGOING ORDER
             </p>
-            {ongoingOrder && (
+            {ongoingOrder && (stats?.amountToReceive ?? 0) > 0 && (
               <p 
                 className="text-white font-bold text-sm"
                 style={{
-                  transform: `translateY(${Math.sin(smoothScrollY * 0.012) * 1}px) translateX(${Math.sin(smoothScrollY * 0.018) * 0.5}px)`
+                  transform: `translateY(${Math.sin(scrollY * 0.003) * 1}px) translateX(${Math.sin(scrollY * 0.004) * 0.6}px)`,
+                  transition: 'none'
                 }}
               >
                 {getCurrentTime()}
@@ -1244,20 +1193,36 @@ export default function Home({ user }) {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{
+              opacity: 0,
+              transition: {
+                duration: 0.6,
+                ease: "easeInOut"
+              }
+            }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end"
             onClick={handleModalClose}
           >
             <motion.div 
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
+              exit={{
+                y: "100%",
+                opacity: 0,
+                transition: {
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 20,
+                  duration: 0.8,
+                  ease: "easeInOut"
+                }
+              }}
               transition={{ 
                 type: "spring", 
-                stiffness: 400, 
-                damping: 20,
-                duration: 0.4,
+                stiffness: 150, 
+                damping: 25,
+                duration: 1.0,
                 ease: "easeOut"
               }}
               className="w-full max-h-[85vh] bg-[#2B3F6C] flex flex-col"
@@ -1268,7 +1233,15 @@ export default function Home({ user }) {
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
+                exit={{
+                  opacity: 0,
+                  y: -20,
+                  transition: {
+                    duration: 0.6,
+                    ease: "easeInOut"
+                  }
+                }}
+                transition={{ delay: 0.4, duration: 0.8 }}
                 className="px-6 py-4 flex flex-col items-center sticky top-0 z-10 flex-shrink-0" 
                 style={{ borderRadius: '10px 10px 0 0' }}
               >
@@ -1276,7 +1249,7 @@ export default function Home({ user }) {
                 <motion.div 
                   className="mb-3"
                   whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.6 }}
                 >
                   <div className="bg-white rounded-2xl w-[84px] h-[7px]"></div>
                 </motion.div>
@@ -1287,16 +1260,32 @@ export default function Home({ user }) {
                     className="text-white font-bold text-lg"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.3 }}
+                    exit={{
+                      x: -20,
+                      opacity: 0,
+                      transition: {
+                        duration: 0.6,
+                        ease: "easeInOut"
+                      }
+                    }}
+                    transition={{ delay: 0.6, duration: 0.8 }}
                   >
                     ONGOING ORDER
                   </motion.p>
-                  {ongoingOrder && (
+                  {ongoingOrder && (stats?.amountToReceive ?? 0) > 0 && (
                     <motion.p 
                       className="text-white font-bold text-lg"
                       initial={{ x: 20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
+                      exit={{
+                        x: 20,
+                        opacity: 0,
+                        transition: {
+                          duration: 0.6,
+                          ease: "easeInOut"
+                        }
+                      }}
+                      transition={{ delay: 0.8, duration: 0.8 }}
                     >
                       {getCurrentTime()}
                     </motion.p>
@@ -1308,34 +1297,38 @@ export default function Home({ user }) {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
+              exit={{
+                opacity: 0,
+                y: 20,
+                transition: {
+                  duration: 0.6,
+                  ease: "easeInOut"
+                }
+              }}
+              transition={{ delay: 0.8, duration: 0.8 }}
               className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-20"
             >
               <motion.div 
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
+                exit={{
+                  scale: 0.95,
+                  opacity: 0,
+                  transition: {
+                    duration: 0.6,
+                    ease: "easeInOut"
+                  }
+                }}
+                transition={{ delay: 1.0, duration: 0.8 }}
                 className="bg-white border border-red-300 mb-4 overflow-hidden"
                 style={{ borderRadius: '10px 10px 10px 10px' }}
               >
                 <div className="p-6">
-                {orderDetails.loading ? (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8"
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-4"
-                    />
-                    <p className="text-gray-500">Loading order details...</p>
-                  </motion.div>
-                ) : orderDetails.error ? (
+                {orderDetails.error ? (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1.2, duration: 0.8 }}
                     className="text-center py-8"
                   >
                     <p className="text-gray-500">{orderDetails.error}</p>
@@ -1344,7 +1337,7 @@ export default function Home({ user }) {
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.4 }}
+                    transition={{ delay: 1.2, duration: 0.8 }}
                     className="space-y-4"
                   >
                     {/* Day and Date - render only when data available */}
@@ -1378,8 +1371,8 @@ export default function Home({ user }) {
                     {/* Services - render only if available */}
                     {orderDetails?.data?.services && orderDetails.data.services.length > 0 && (
                       <div className="space-y-4">
-                        {orderDetails.data.services.map((svc, idx) => (
-                          <div key={idx} className="flex items-start space-x-3">
+                        {orderDetails.data.services?.map((svc, idx) => (
+                          <div key={`service-${idx}-${svc?.id || svc?.name || 'unknown'}`} className="flex items-start space-x-3">
                             <div className="flex items-center space-x-2">
                               <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -1472,9 +1465,9 @@ export default function Home({ user }) {
 
             {/* Events List - Scrollable */}
             <div className="flex-1 overflow-y-auto">
-              {upcomingEvents.map((event, index) => (
+              {upcomingEvents?.map((event, index) => (
                 <div
-                  key={event.id}
+                  key={event?.id || `event-${index}-${event?.customerName || 'unknown'}`}
                   onClick={() => handleEventClick(event)}
                   className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
                 >

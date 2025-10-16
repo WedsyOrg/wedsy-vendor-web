@@ -26,7 +26,6 @@ export default function Home({}) {
     },
   });
   const handleSubmit = () => {
-    setLoading(true);
     let date = new Date();
     let formattedDate = date.toISOString().split("T")[0];
     let hours = String(date.getHours()).padStart(2, "0");
@@ -63,7 +62,6 @@ export default function Home({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error");
         } else {
@@ -71,7 +69,6 @@ export default function Home({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };

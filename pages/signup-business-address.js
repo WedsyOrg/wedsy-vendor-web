@@ -220,7 +220,7 @@ export default function SignupBusinessAddress({}) {
 
     // Set processing flags immediately
     setIsProcessing(true);
-    setData(prev => ({ ...prev, loading: true, message: "", otpSent: false }));
+    setData(prev => ({ ...prev, message: "", otpSent: false }));
     
     // Combine all data for step 2
     const step2Data = {
@@ -252,7 +252,6 @@ export default function SignupBusinessAddress({}) {
         if (response.ReferenceId) {
           setData(prev => ({ 
             ...prev, 
-            loading: false, 
             success: true,
             otpSent: true,
             message: "" 
@@ -267,7 +266,6 @@ export default function SignupBusinessAddress({}) {
         } else {
           setData(prev => ({
             ...prev,
-            loading: false,
             message: response.message || "Failed to send OTP. Please try again.",
           }));
           setIsProcessing(false);
@@ -281,7 +279,6 @@ export default function SignupBusinessAddress({}) {
           // API not available, simulating OTP send for testing
           setData(prev => ({ 
             ...prev, 
-            loading: false, 
             success: true,
             otpSent: true,
             message: "" 
@@ -296,7 +293,6 @@ export default function SignupBusinessAddress({}) {
         } else {
           setData(prev => ({
             ...prev,
-            loading: false,
             message: "Network error. Please try again.",
           }));
           setIsProcessing(false);

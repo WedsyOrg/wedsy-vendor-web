@@ -11,7 +11,6 @@ export default function Settings({}) {
   const [calls, setCalls] = useState([]);
   const [filteredCalls, setFilteredCalls] = useState([]);
   const [chats, setChats] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState("January");
 
   useEffect(() => {
@@ -63,7 +62,6 @@ export default function Settings({}) {
 
   const fetchCalls = async () => {
     try {
-      setLoading(true);
       // Try to fetch real calls data from stats API
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/stats/list?key=vendor-call`, {
         method: "GET",
@@ -95,7 +93,6 @@ export default function Settings({}) {
       console.error("Error fetching calls:", error);
       setCalls([]);
     } finally {
-      setLoading(false);
     }
   };
 
@@ -184,7 +181,7 @@ export default function Settings({}) {
         {/* Calls List */}
         <div className="mt-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Calls</h3>
-          {loading ? (
+          {false ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="bg-white rounded-lg p-4 shadow-sm animate-pulse">

@@ -11,14 +11,15 @@ import {
 } from "react-icons/md";
 import { BsPencilSquare, BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
-import { Avatar, Button, Rating, TextInput } from "flowbite-react";
+import { Avatar, Button, Rating } from "flowbite-react";
+import SearchBox from "@/components/SearchBox";
 import Link from "next/link";
 import { toPriceString } from "@/utils/text";
 import { BiDislike, BiLike, BiSolidDislike, BiSolidLike } from "react-icons/bi";
 
 export default function Reviews({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [search, setSearch] = useState("");
 
@@ -30,15 +31,15 @@ export default function Reviews({}) {
           REVIEWS
         </p>
       </div>
-      <div className="flex items-center gap-3 px-4  ">
-        <TextInput
-          type="search"
-          icon={MdSearch}
-          placeholder="Search"
-          className="my-4 grow"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex items-center gap-3 px-4">
+        <div className="my-4 grow flex justify-center">
+          <SearchBox
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ maxWidth: '100%', width: '100%' }}
+          />
+        </div>
       </div>
       <div className="px-6 grid grid-cols-2 gap-4 items-center">
         <p className="font-medium text-xl">Ratings & Reviews</p>
@@ -100,39 +101,60 @@ export default function Reviews({}) {
         </div>
       </div>
       <div className="flex flex-col gap-4 pb-4 px-6 divide-y-2">
-        {new Array(3)
-          .fill("")
-          // reviews
-          // ?.filter((i) =>
-          //   search
-          //     ? i.title.toLowerCase().includes(search.toLowerCase()) ||
-          //       i.body.toLowerCase().includes(search.toLowerCase())
-          //     : true
-          // )
+        {[
+          {
+            title: "Perfect Product!",
+            review: "Excellent product from flipkart. Use this example to show the number of reviews a product received next to the average stars and scores.",
+            product: "Colour Gold, Black",
+            rating: 5
+          },
+          {
+            title: "Great Service",
+            review: "Amazing wedding planning service. The team was professional and delivered everything on time. Highly recommended for your special day.",
+            product: "Wedding Package, Silver",
+            rating: 4
+          },
+          {
+            title: "Outstanding Quality",
+            review: "The decorations were beautiful and the photography was exceptional. Our guests were impressed with the attention to detail.",
+            product: "Decor Package, Rose Gold",
+            rating: 5
+          }
+        ]
+          .filter((item, index) => {
+            // Filter based on search term
+            if (!search) return true;
+            const searchLower = search.toLowerCase();
+            return (
+              item.title.toLowerCase().includes(searchLower) ||
+              item.review.toLowerCase().includes(searchLower) ||
+              item.product.toLowerCase().includes(searchLower)
+            );
+          })
           .map((item, index) => (
             <>
               <div className="flex flex-col gap-4 py-4" key={index}>
                 <div className="flex flex-row gap-2 items-center">
                   <Rating>
-                    <Rating.Star className="text-gray-500" />
-                    <Rating.Star className="text-gray-500" />
-                    <Rating.Star className="text-gray-500" />
-                    <Rating.Star className="text-gray-500" />
-                    <Rating.Star filled={false} />
+                    {[...Array(5)].map((_, starIndex) => (
+                      <Rating.Star 
+                        key={starIndex}
+                        className="text-gray-500" 
+                        filled={starIndex < item.rating}
+                      />
+                    ))}
                     <p className="ml-2 font-semibold text-gray-500 dark:text-gray-400">
-                      5
+                      {item.rating}
                     </p>
                   </Rating>
                   <div className="h-1 w-1 rounded-full bg-gray-500" />
-                  <p>Perfect Product!</p>
+                  <p>{item.title}</p>
                 </div>
                 <div className="text-gray-400 text-sm -mt-4">
-                  Review for: Colour Gold, Black
+                  Review for: {item.product}
                 </div>
                 <p className="">
-                  Excellent product from flipkart. Use this example to show the
-                  number of reviews a product received next to the average stars
-                  and scores.
+                  {item.review}
                 </p>
                 <div className="flex flex-row gap-4 items-center">
                   <Button

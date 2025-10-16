@@ -19,7 +19,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Leads({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState("");
   const [sendingReminder, setSendingReminder] = useState({});
@@ -31,7 +30,6 @@ export default function Leads({}) {
   });
 
   const fetchLeads = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead`, {
       method: "GET",
       headers: {
@@ -49,13 +47,11 @@ export default function Leads({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setLeads(response);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        setLoading(false);
         // Add sample data for demonstration
         setLeads([
           {
@@ -324,11 +320,7 @@ export default function Leads({}) {
       )}
 
       <div className="bg-white min-h-screen">
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B3F6C]"></div>
-          </div>
-        ) : leads && leads.length > 0 ? (
+        {leads && leads.length > 0 ? (
           <div className="px-6 py-4 space-y-3">
             {filterLeads(leads)
               .sort((a, b) => {

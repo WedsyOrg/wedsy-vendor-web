@@ -235,12 +235,7 @@ export default function FindHairstylist() {
 
       {/* Results */}
       <div className="p-3 sm:p-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-dark-blue mb-4"></div>
-            <p className="text-sm text-gray-600">Finding hairstylists...</p>
-          </div>
-        ) : filteredHairstylists.length === 0 ? (
+        {filteredHairstylists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-center">
               <p className="text-lg font-semibold text-gray-600 mb-2">No Hairstylists Found</p>

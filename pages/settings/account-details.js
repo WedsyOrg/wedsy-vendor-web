@@ -12,7 +12,6 @@ export default function Settings({}) {
   const inputRef = useRef(null);
   const autocompleteInputRef = useRef(null);
   const googleInstanceRef = useRef(null);
-  const [loading, setLoading] = useState(true);
   const [razorPaySetupCompleted, setRazorPayStatusCompleted] = useState(null);
   const [accountCreated, setAccountCreated] = useState(null);
   const [productCreated, setProductCreated] = useState(null);
@@ -157,7 +156,6 @@ export default function Settings({}) {
   };
 
   const fetchAccount = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/settlements?checkStatus=true`, {
       method: "GET",
       headers: {
@@ -175,7 +173,6 @@ export default function Settings({}) {
       })
       .then((response) => {
         if (response.message === "success") {
-          setLoading(false);
           setAccountCreated(response?.accountCreated);
           if (response?.accountCreated) {
             setAccountDetails(response?.accountDetails);
@@ -191,7 +188,6 @@ export default function Settings({}) {
       });
   };
   const fetchAccountDetails = () => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=accountDetails`,
       {
@@ -212,7 +208,6 @@ export default function Settings({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setAccountDetails(response.accountDetails);
         }
       })
@@ -221,7 +216,6 @@ export default function Settings({}) {
       });
   };
   const updateAccountDetails = async () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
       method: "PUT",
       headers: {
@@ -235,7 +229,6 @@ export default function Settings({}) {
       .then((response) => response.json())
       .then((response) => {
         fetchAccountDetails();
-        setLoading(false);
         if (response.message !== "success") {
           toast.error("Error updating account details.", {
             position: "top-right",
@@ -248,13 +241,11 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
 
   const createSettlementAccount = async () => {
-    setLoading(true);
     
     // Debug: Log the data being sent
     console.log("Sending account creation data:", accountCreationData);
@@ -322,7 +313,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       router.push("/login");
       return;
     }
@@ -337,7 +327,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -351,7 +340,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -365,7 +353,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -379,7 +366,6 @@ export default function Settings({}) {
         pauseOnHover: true,
         draggable: true,
       });
-      setLoading(false);
       return;
     }
     
@@ -458,7 +444,6 @@ export default function Settings({}) {
           })
             .then((response) => response.json())
             .then((response) => {
-              setLoading(false);
               if (response.message === "success") {
                 fetchAccount();
               } else {
@@ -473,7 +458,6 @@ export default function Settings({}) {
               }
             })
             .catch((error) => {
-              setLoading(false);
               console.error(
                 "There was a problem with the fetch operation:",
                 error
@@ -491,12 +475,10 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
   const updateSettlementAccount = async () => {
-    setLoading(true);
     
     // Show loading toast
     toast.info("Updating bank details...", {
@@ -518,7 +500,6 @@ export default function Settings({}) {
     })
       .then((response) => response.json())
       .then((response) => {
-        setLoading(false);
         if (response.message === "success") {
           toast.success("Bank details updated successfully!", {
             position: "top-right",
@@ -541,7 +522,6 @@ export default function Settings({}) {
         }
       })
       .catch((error) => {
-        setLoading(false);
         console.error("There was a problem with the fetch operation:", error);
       });
   };
@@ -709,7 +689,7 @@ export default function Settings({}) {
                 <Label value="Account Name" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your business name"
-                  disabled={loading}
+                  disabled={false}
                   value={accountCreationData?.legal_business_name}
                   onChange={(e) => {
                     setAccountCreationData({
@@ -718,6 +698,7 @@ export default function Settings({}) {
                     });
                   }}
                   className="w-full"
+                  style={{ color: '#2B3F6C' }}
                 />
                 {userProfile?.businessName && (
                   <p className="text-xs text-blue-600">
@@ -779,7 +760,7 @@ export default function Settings({}) {
                   <Label value="Business PAN" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Enter your PAN number"
-                    disabled={loading}
+                    disabled={false}
                     value={accountCreationData?.pan}
                     onChange={(e) => {
                       setAccountCreationData({
@@ -794,7 +775,7 @@ export default function Settings({}) {
                   <Label value="GST Number" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Enter your GST number"
-                    disabled={loading}
+                    disabled={false}
                     value={accountCreationData?.gst}
                     onChange={(e) => {
                       setAccountCreationData({
@@ -815,7 +796,7 @@ export default function Settings({}) {
                   <Label value="Search Address" className="text-sm font-medium text-gray-700" />
                   <TextInput
                     placeholder="Start typing your address..."
-                    disabled={loading}
+                    disabled={false}
                     ref={autocompleteInputRef}
                     className="w-full"
                   />
@@ -840,7 +821,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -861,7 +842,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -885,7 +866,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -906,7 +887,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -927,7 +908,7 @@ export default function Settings({}) {
                           },
                         });
                       }}
-                      disabled={loading}
+                      disabled={false}
                       className="w-full"
                     />
                   </div>
@@ -941,7 +922,7 @@ export default function Settings({}) {
                 placeholder="Country"
                 readOnly={true}
                 value={accountCreationData?.addresses?.registered?.country || "India"}
-                disabled={loading}
+                disabled={false}
                 className="w-full bg-gray-50"
               />
             </div>
@@ -950,7 +931,6 @@ export default function Settings({}) {
               <Button
                 className="px-6 py-2 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-full transition-colors"
                 disabled={
-                  loading ||
                   !accountCreationData?.legal_business_name ||
                   !accountCreationData?.business_type ||
                   !accountCreationData?.category ||
@@ -967,7 +947,7 @@ export default function Settings({}) {
                 }
                 onClick={createSettlementAccount}
               >
-                {loading ? "Processing..." : "Next"}
+                Next
               </Button>
             </div>
           </div>
@@ -984,7 +964,7 @@ export default function Settings({}) {
                 <Label value="Account Name" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter account holder name"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.beneficiary_name || userProfile?.businessName || ""}
                   onChange={(e) => {
                     setProductData({
@@ -993,6 +973,7 @@ export default function Settings({}) {
                     });
                   }}
                   className="w-full"
+                  style={{ color: '#2B3F6C' }}
                 />
                 {userProfile?.businessName && (
                   <p className="text-xs text-blue-600">
@@ -1005,7 +986,7 @@ export default function Settings({}) {
                 <Label value="Account Number" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your account number"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.account_number}
                   onChange={(e) => {
                     setProductData({
@@ -1023,7 +1004,7 @@ export default function Settings({}) {
                 <Label value="IFSC Code" className="text-sm font-medium text-gray-700" />
                 <TextInput
                   placeholder="Enter your bank's IFSC code"
-                  disabled={loading}
+                  disabled={false}
                   value={productData?.ifsc_code}
                   onChange={(e) => {
                     setProductData({
@@ -1041,14 +1022,13 @@ export default function Settings({}) {
               <Button
                 className="px-8 py-3 bg-[#2B3F6C] hover:bg-[#1e2d4a] text-white font-semibold rounded-lg transition-colors"
                 disabled={
-                  loading ||
                   !productData?.beneficiary_name ||
                   !productData?.account_number ||
                   !productData?.ifsc_code
                 }
                 onClick={updateSettlementAccount}
               >
-                {loading ? "Updating..." : "Update Bank Details"}
+                Update Bank Details
               </Button>
             </div>
           </div>

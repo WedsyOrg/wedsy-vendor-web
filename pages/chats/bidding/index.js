@@ -54,7 +54,6 @@ export default function Home({}) {
   const [primaryTab, setPrimaryTab] = useState("Bidding");
   const [secondaryTab, setSecondaryTab] = useState("Pending");
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [biddingList, setBiddingList] = useState([]);
   const [packageList, setPackageList] = useState([]);
   const [biddingCount, setBiddingCount] = useState(0);
@@ -115,7 +114,6 @@ export default function Home({}) {
   };
 
   const fetchBidding = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=Bidding`, {
       method: "GET",
       headers: {
@@ -134,22 +132,18 @@ export default function Home({}) {
       .then((response) => {
         console.log("Bidding API Response:", response);
         if (response) {
-          setLoading(false);
           setBiddingList(response);
         } else {
-          setLoading(false);
           setBiddingList([]);
         }
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        setLoading(false);
         setBiddingList([]);
       });
   };
 
   const fetchPackages = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/order?source=Personal-Package`, {
       method: "GET",
       headers: {
@@ -167,7 +161,6 @@ export default function Home({}) {
       })
       .then((response) => {
         console.log("Packages API Response:", response);
-        setLoading(false);
         const data = Array.isArray(response) ? response : [];
         if (data.length === 0) {
           setPackageList(DUMMY_PACKAGES);
@@ -178,13 +171,11 @@ export default function Home({}) {
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
         // Use dummy data on failure for a demonstrable UI
-        setLoading(false);
         setPackageList(DUMMY_PACKAGES);
       });
   };
 
   const RejectBiddingBid = (_id) => {
-    setLoading(true);
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/order/${_id}/reject-bidding-bid`,
       {
@@ -205,7 +196,6 @@ export default function Home({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           fetchBidding();
         }
       })
@@ -324,14 +314,6 @@ export default function Home({}) {
       </div>
       <div className="flex flex-col gap-0 pb-4">
         {primaryTab === "Bidding" && (() => {
-          if (loading) {
-            return (
-              <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-custom-dark-blue mb-4"></div>
-                <p className="text-sm text-gray-600">Loading bidding requests...</p>
-              </div>
-            );
-          }
           
           const filteredBiddingList = biddingList.filter((item) =>
             secondaryTab === "Pending"
@@ -460,7 +442,7 @@ export default function Home({}) {
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!loading && !isDeclined) {
+                        if (!isDeclined) {
                           setDecliningBidId(item?.bidding?._id);
                           setShowDeclineConfirm(true);
                         }
@@ -476,7 +458,7 @@ export default function Home({}) {
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!loading && !isDeclined) {
+                        if (!isDeclined) {
                           router.push(`/chats/bidding/${item?.bidding?._id}`);
                         }
                       }}
@@ -587,7 +569,7 @@ export default function Home({}) {
                       className="w-8 h-8 rounded-md bg-white border border-custom-dark-blue flex items-center justify-center hover:bg-gray-50 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!loading) {
+                        {
                           console.log("Reject package:", item._id);
                         }
                       }}
@@ -598,7 +580,7 @@ export default function Home({}) {
                       className="w-8 h-8 rounded-md bg-custom-dark-blue flex items-center justify-center hover:bg-blue-800 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!loading) {
+                        {
                           console.log("Accept package:", item._id);
                         }
                       }}

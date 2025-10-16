@@ -22,12 +22,10 @@ import { toPriceString } from "@/utils/text";
 
 export default function Packages({}) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [packages, setPackages] = useState([]);
   const [show, setShow] = useState([]);
 
   const fetchPackages = () => {
-    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-package`, {
       method: "GET",
       headers: {
@@ -45,7 +43,6 @@ export default function Packages({}) {
       })
       .then((response) => {
         if (response) {
-          setLoading(false);
           setPackages(response);
         }
       })
