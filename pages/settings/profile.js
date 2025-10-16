@@ -1,56 +1,48 @@
 import BackIcon from "@/components/icons/BackIcon";
-import { uploadFile } from "@/utils/file";
-import {
-  Button,
-  Checkbox,
-  FileInput,
-  Label,
-  Select,
-  Textarea,
-  TextInput,
-} from "flowbite-react";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
-import { BsPlusCircle } from "react-icons/bs";
-import { MdArrowBackIos, MdCancel } from "react-icons/md";
-import { toast } from "react-toastify";
-import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+import {uploadFile} from "@/utils/file";
+import {useRouter} from "next/router";
+import {useEffect, useRef, useState} from "react";
+import {MdCancel} from "react-icons/md";
+import {toast} from "react-toastify";
+import ReactCrop, {
+  centerCrop,
+  makeAspectCrop,
+} from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
-export default function Settings({ user }) {
+export default function Settings({user}) {
   const router = useRouter();
-  
+
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
     servicesOffered: false,
     state: false,
-    documentType: false
+    documentType: false,
   });
   const [specialityList, setSpecialityList] = useState([]);
 
   const toggleDropdown = (dropdownName) => {
-    setDropdowns(prev => ({
+    setDropdowns((prev) => ({
       ...prev,
-      [dropdownName]: !prev[dropdownName]
+      [dropdownName]: !prev[dropdownName],
     }));
   };
 
   const selectOption = (field, value, isAddress = false) => {
     if (isAddress) {
-      setAddress(prev => ({
+      setAddress((prev) => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }));
     } else {
-      setProfile(prev => ({
+      setProfile((prev) => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }));
     }
-    setDropdowns(prev => ({
+    setDropdowns((prev) => ({
       ...prev,
-      [field]: false
+      [field]: false,
     }));
   };
 
@@ -62,47 +54,33 @@ export default function Settings({ user }) {
   };
 
   const handleDeleteConfirm = async () => {
-    if (deleteType === 'cover') {
+    if (deleteType === "cover") {
       await deleteCoverPhoto();
-    } else if (deleteType === 'gallery' && deleteIndex !== null) {
+    } else if (deleteType === "gallery" && deleteIndex !== null) {
       await deletePhoto(deleteIndex);
     }
     setShowDeleteModal(false);
-    setDeleteType('');
+    setDeleteType("");
     setDeleteIndex(null);
   };
 
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
-    setDeleteType('');
+    setDeleteType("");
     setDeleteIndex(null);
   };
 
-  // Multi-select functions
-  const toggleMultiSelectMode = () => {
-    setIsMultiSelectMode(!isMultiSelectMode);
-    if (isMultiSelectMode) {
-      setSelectedPhotos([]);
-    }
-  };
 
   const togglePhotoSelection = (index) => {
-    setSelectedPhotos(prev => {
+    setSelectedPhotos((prev) => {
       if (prev.includes(index)) {
-        return prev.filter(i => i !== index);
+        return prev.filter((i) => i !== index);
       } else {
         return [...prev, index];
       }
     });
   };
 
-  const selectAllPhotos = () => {
-    setSelectedPhotos(gallery.photos.map((_, index) => index));
-  };
-
-  const deselectAllPhotos = () => {
-    setSelectedPhotos([]);
-  };
 
   const handleBulkDelete = () => {
     if (selectedPhotos.length === 0) return;
@@ -111,31 +89,50 @@ export default function Settings({ user }) {
 
   const confirmBulkDelete = async () => {
     if (selectedPhotos.length === 0) return;
-    
-    const updatedPhotos = forceEmptyGallery ? [] : gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
+
+    const updatedPhotos = forceEmptyGallery
+      ? []
+      : gallery.photos.filter((_, index) => !selectedPhotos.includes(index));
 
     try {
-      const debugBody = { gallery: { photos: updatedPhotos } };
-      console.debug("[Gallery/BulkDelete] Request", { selected: selectedPhotos.length, forceEmptyGallery, body: debugBody });
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(debugBody),
+      const debugBody = {gallery: {photos: updatedPhotos}};
+      console.debug("[Gallery/BulkDelete] Request", {
+        selected: selectedPhotos.length,
+        forceEmptyGallery,
+        body: debugBody,
       });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(debugBody),
+        }
+      );
 
       const raw = await response.text();
       let result;
-      try { result = JSON.parse(raw); } catch { result = { raw }; }
-      console.debug("[Gallery/BulkDelete] Response", { status: response.status, ok: response.ok, result });
-      
+      try {
+        result = JSON.parse(raw);
+      } catch {
+        result = {raw};
+      }
+      console.debug("[Gallery/BulkDelete] Response", {
+        status: response.status,
+        ok: response.ok,
+        result,
+      });
+
       if (result.message === "success") {
         // Update UI immediately
-        setGallery((prev) => ({ ...prev, photos: updatedPhotos }));
+        setGallery((prev) => ({...prev, photos: updatedPhotos}));
         fetchGallery();
-        toast.success(`${selectedPhotos.length} photo(s) deleted successfully!`);
+        toast.success(
+          `${selectedPhotos.length} photo(s) deleted successfully!`
+        );
         setSelectedPhotos([]);
         setIsMultiSelectMode(false);
         setForceEmptyGallery(false);
@@ -157,34 +154,33 @@ export default function Settings({ user }) {
 
   // Crop utility functions
   const onImageLoad = (e) => {
-    const { width, height } = e.currentTarget;
+    const {width, height} = e.currentTarget;
     const crop = centerCrop(
       makeAspectCrop(
         {
-          unit: '%',
+          unit: "%",
           width: 95,
         },
-        2.5 / 3.5, // Cover photo aspect ratio (2.5" x 3.5")
+        2.5 / 3.5, 
         width,
         height
       ),
       width,
       height
     );
-    // Initialize with Facebook-style properties
     setCrop({
       ...crop,
       scale: 1,
       x: 0,
-      y: 0
+      y: 0,
     });
   };
 
   const getCroppedImg = (image, crop, fileName) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     if (!ctx) {
-      throw new Error('No 2d context');
+      throw new Error("No 2d context");
     }
 
     const scaleX = image.naturalWidth / image.width;
@@ -195,7 +191,7 @@ export default function Settings({ user }) {
     canvas.height = crop.height * pixelRatio * scaleY;
 
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
 
     ctx.drawImage(
       image,
@@ -213,13 +209,13 @@ export default function Settings({ user }) {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            console.error('Canvas is empty');
+            console.error("Canvas is empty");
             return;
           }
           blob.name = fileName;
           resolve(blob);
         },
-        'image/jpeg',
+        "image/jpeg",
         0.95
       );
     });
@@ -232,29 +228,29 @@ export default function Settings({ user }) {
       const croppedImageBlob = await getCroppedImg(
         imgRef.current,
         completedCrop,
-        'cropped-image.jpg'
+        "cropped-image.jpg"
       );
-      
-      if (cropType === 'cover') {
+
+      if (cropType === "cover") {
         setCoverPhoto(croppedImageBlob);
         // Auto-upload the cropped cover photo immediately
         updateCoverPhoto(croppedImageBlob);
       }
-      
+
       setShowCropModal(false);
-      setImgSrc('');
+      setImgSrc("");
       setCrop(undefined);
       setCompletedCrop(undefined);
     } catch (error) {
-      console.error('Error cropping image:', error);
-      toast.error('Error cropping image. Please try again.');
+      console.error("Error cropping image:", error);
+      toast.error("Error cropping image. Please try again.");
     }
   };
 
   const handleFileSelect = (file, type) => {
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.addEventListener('load', () => {
+      reader.addEventListener("load", () => {
         setImgSrc(reader.result);
         setCropType(type);
         setShowCropModal(true);
@@ -265,30 +261,34 @@ export default function Settings({ user }) {
 
   const handleGalleryFileSelect = async (files) => {
     if (!files || files.length === 0) return;
-    
-    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+
+    const imageFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
     if (imageFiles.length === 0) return;
 
     try {
-      const uploadPromises = imageFiles.map((file, index) => 
+      const uploadPromises = imageFiles.map((file, index) =>
         uploadFile({
           file: file,
           path: "vendor-gallery/",
-          id: `${new Date().getTime()}-${gallery.temp || 'default'}-photo-${gallery.photos.length + index}`
+          id: `${new Date().getTime()}-${gallery.temp || "default"}-photo-${
+            gallery.photos.length + index
+          }`,
         })
       );
       const uploadedUrls = await Promise.all(uploadPromises);
-      
+
       const newPhotos = [...gallery.photos, ...uploadedUrls];
-      setGallery(prev => ({ ...prev, photos: newPhotos }));
-      
+      setGallery((prev) => ({...prev, photos: newPhotos}));
+
       // Update completion status
       updateCompletionStatus();
-      
+
       toast.success(`${uploadedUrls.length} photo(s) uploaded successfully!`);
     } catch (error) {
-      console.error('Error uploading photos:', error);
-      toast.error('Error uploading photos. Please try again.');
+      console.error("Error uploading photos:", error);
+      toast.error("Error uploading photos. Please try again.");
     } finally {
     }
   };
@@ -310,25 +310,30 @@ export default function Settings({ user }) {
 
   const prevImage = () => {
     if (!gallery?.photos?.length) return;
-    setCurrentImageIndex((prev) => (prev - 1 + gallery.photos.length) % gallery.photos.length);
+    setCurrentImageIndex(
+      (prev) => (prev - 1 + gallery.photos.length) % gallery.photos.length
+    );
   };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.select-field') && !event.target.closest('.dropdown-option')) {
+      if (
+        !event.target.closest(".select-field") &&
+        !event.target.closest(".dropdown-option")
+      ) {
         setDropdowns({
           speciality: false,
           servicesOffered: false,
           state: false,
-          documentType: false
+          documentType: false,
         });
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -337,18 +342,18 @@ export default function Settings({ user }) {
     if (!showImageViewer || !gallery?.photos) return;
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         closeImageViewer();
-      } else if (event.key === 'ArrowLeft') {
+      } else if (event.key === "ArrowLeft") {
         prevImage();
-      } else if (event.key === 'ArrowRight') {
+      } else if (event.key === "ArrowRight") {
         nextImage();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [showImageViewer, gallery?.photos?.length]);
   const [display, setDisplay] = useState("Profile");
@@ -359,80 +364,82 @@ export default function Settings({ user }) {
   const [documentFrontUrl, setDocumentFrontUrl] = useState("");
   const [documentBackUrl, setDocumentBackUrl] = useState("");
   const [documents, setDocuments] = useState([]);
-  
+
   // Document upload handlers
   const handleDocumentUpload = async (side, file) => {
     if (!file) return;
-    
+
     try {
       const uploadedUrl = await uploadFile({
         file: file,
         path: "vendor-documents/",
-        id: `${new Date().getTime()}-${side}-document`
+        id: `${new Date().getTime()}-${side}-document`,
       });
-      
-      if (side === 'front') {
+
+      if (side === "front") {
         setDocumentFrontUrl(uploadedUrl);
       } else {
         setDocumentBackUrl(uploadedUrl);
       }
     } catch (error) {
       // Handle error silently
-      toast.error('Failed to upload document. Please try again.');
+      toast.error("Failed to upload document. Please try again.");
     } finally {
     }
   };
 
   const handleSaveDocument = async () => {
     if (!documentType) {
-      toast.error('Please select a document type');
+      toast.error("Please select a document type");
       return;
     }
-    
+
     if (!documentFrontUrl || !documentBackUrl) {
-      toast.error('Please upload both front and back images');
+      toast.error("Please upload both front and back images");
       return;
     }
 
     // Create document object according to the model
     const newDocument = {
       name: documentType,
-      front: { 
+      front: {
         url: documentFrontUrl,
         uploadedAt: new Date(),
-        fileSize: documentFront?.size || 0
+        fileSize: documentFront?.size || 0,
       },
-      back: { 
+      back: {
         url: documentBackUrl,
         uploadedAt: new Date(),
-        fileSize: documentBack?.size || 0
+        fileSize: documentBack?.size || 0,
       },
       status: "pending",
       verifiedAt: null,
-      rejectionReason: ""
+      rejectionReason: "",
     };
 
     try {
-      
       // Send document to backend
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          documents: [newDocument]
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            documents: [newDocument],
+          }),
+        }
+      );
 
       const result = await response.json();
-      
+
       if (result.message === "success") {
         // Update local state
         setDocuments([newDocument]);
-        toast.success('Document uploaded successfully!');
-        
+        toast.success("Document uploaded successfully!");
+
         // Close modal and reset
         setShowDocumentModal(false);
         setDocumentFrontUrl("");
@@ -441,11 +448,11 @@ export default function Settings({ user }) {
         setDocumentBack(null);
         setDocumentType("Aadhar Card");
       } else {
-        toast.error('Failed to upload document. Please try again.');
+        toast.error("Failed to upload document. Please try again.");
       }
     } catch (error) {
       // Handle error silently
-      toast.error('Failed to upload document. Please try again.');
+      toast.error("Failed to upload document. Please try again.");
     } finally {
     }
   };
@@ -488,12 +495,12 @@ export default function Settings({ user }) {
   });
   const [coverPhoto, setCoverPhoto] = useState(null);
   const [photo, setPhoto] = useState(null);
-  
+
   // Delete confirmation modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteType, setDeleteType] = useState(''); // 'cover' or 'gallery'
+  const [deleteType, setDeleteType] = useState(""); // 'cover' or 'gallery'
   const [deleteIndex, setDeleteIndex] = useState(null); // For gallery photos
-  
+
   // Multi-select states for gallery
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -504,13 +511,13 @@ export default function Settings({ user }) {
   const inputRef = useRef(null);
   const autocompleteInputRef = useRef(null);
   const googleInstanceRef = useRef(null);
-  
+
   // Crop functionality states
   const [crop, setCrop] = useState();
   const [completedCrop, setCompletedCrop] = useState();
-  const [imgSrc, setImgSrc] = useState('');
+  const [imgSrc, setImgSrc] = useState("");
   const [showCropModal, setShowCropModal] = useState(false);
-  const [cropType, setCropType] = useState(''); // 'cover' only now
+  const [cropType, setCropType] = useState(""); // 'cover' only now
   const imgRef = useRef(null);
 
   // Image viewer state
@@ -527,7 +534,6 @@ export default function Settings({ user }) {
     awards: [],
   });
 
-
   // Functions to check completion status
   const checkProfileCompletion = () => {
     // Check all required text fields with strict validation
@@ -539,20 +545,28 @@ export default function Settings({ user }) {
     const state = address.state?.trim();
     const formattedAddress = address.formatted_address?.trim();
     const postalCode = address.postal_code?.trim();
-    
+
     // All fields must have meaningful content (at least 2 characters for most fields)
-    const textFieldsValid = 
-      businessName && businessName.length >= 2 &&
-      businessDescription && businessDescription.length >= 10 &&
-      speciality && speciality.length >= 2 &&
-      servicesOffered && servicesOffered.length >= 2 &&
-      city && city.length >= 2 &&
-      state && state.length >= 2 &&
-      formattedAddress && formattedAddress.length >= 10 &&
-      postalCode && postalCode.length >= 6;
-    
+    const textFieldsValid =
+      businessName &&
+      businessName.length >= 2 &&
+      businessDescription &&
+      businessDescription.length >= 10 &&
+      speciality &&
+      speciality.length >= 2 &&
+      servicesOffered &&
+      servicesOffered.length >= 2 &&
+      city &&
+      city.length >= 2 &&
+      state &&
+      state.length >= 2 &&
+      formattedAddress &&
+      formattedAddress.length >= 10 &&
+      postalCode &&
+      postalCode.length >= 6;
+
     const hasDocuments = documents && documents.length > 0;
-    
+
     // Only return true if ALL conditions are met
     return textFieldsValid && hasDocuments;
   };
@@ -561,30 +575,42 @@ export default function Settings({ user }) {
     const experience = other.experience?.trim();
     const clients = other.clients?.trim();
     const usp = other.usp?.trim();
-    
+
     // Only return true if ALL fields have meaningful content
-    return experience && experience.length >= 1 &&
-           clients && clients.length >= 1 &&
-           usp && usp.length >= 10;
+    return (
+      experience &&
+      experience.length >= 1 &&
+      clients &&
+      clients.length >= 1 &&
+      usp &&
+      usp.length >= 10
+    );
   };
 
   const checkPricesCompletion = () => {
     // Only return true if ALL prices are greater than 0
-    return prices && 
-           typeof prices.party === 'number' && prices.party > 0 &&
-           typeof prices.bridal === 'number' && prices.bridal > 0 &&
-           typeof prices.groom === 'number' && prices.groom > 0;
+    return (
+      prices &&
+      typeof prices.party === "number" &&
+      prices.party > 0 &&
+      typeof prices.bridal === "number" &&
+      prices.bridal > 0 &&
+      typeof prices.groom === "number" &&
+      prices.groom > 0
+    );
   };
 
   const checkGalleryCompletion = () => {
     // Only return true if both cover photo and gallery photos exist
-    return gallery && 
-           gallery.coverPhoto && 
-           typeof gallery.coverPhoto === 'string' && 
-           gallery.coverPhoto.length > 0 &&
-           gallery.photos && 
-           Array.isArray(gallery.photos) && 
-           gallery.photos.length > 0;
+    return (
+      gallery &&
+      gallery.coverPhoto &&
+      typeof gallery.coverPhoto === "string" &&
+      gallery.coverPhoto.length > 0 &&
+      gallery.photos &&
+      Array.isArray(gallery.photos) &&
+      gallery.photos.length > 0
+    );
   };
 
   // Update completion status
@@ -594,7 +620,6 @@ export default function Settings({ user }) {
     const pricesCompleted = checkPricesCompletion();
     const galleryCompleted = checkGalleryCompletion();
   };
-
 
   const fetchSpecialityList = () => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor-speciality`, {
@@ -645,7 +670,10 @@ export default function Settings({ user }) {
             experience: response.other?.experience || "",
             clients: response.other?.clients || "",
             usp: response.other?.usp || "",
-            makeupProducts: response.other?.makeupProducts?.length > 0 ? response.other?.makeupProducts : [""],
+            makeupProducts:
+              response.other?.makeupProducts?.length > 0
+                ? response.other?.makeupProducts
+                : [""],
             awards: response.other?.awards || [],
           });
         }
@@ -680,7 +708,9 @@ export default function Settings({ user }) {
               JSON.stringify(response.servicesOffered) ===
               JSON.stringify(["Hairstylist", "MUA"])
                 ? "Both"
-                : response.servicesOffered?.[0] || response.serviceOffered || "",
+                : response.servicesOffered?.[0] ||
+                  response.serviceOffered ||
+                  "",
             groomMakeup: response.groomMakeup || false,
             onlyHairStyling: response.onlyHairStyling || false,
           });
@@ -713,7 +743,8 @@ export default function Settings({ user }) {
         if (response) {
           setAddress({
             place_id: response.place_id || "",
-            formatted_address: response.formatted_address || response.address || "",
+            formatted_address:
+              response.formatted_address || response.address || "",
             address_components: response.address_components || [],
             city: response.city || "",
             postal_code: response.postal_code || response.pincode || "",
@@ -734,7 +765,9 @@ export default function Settings({ user }) {
       });
   };
   const fetchGallery = () => {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=gallery&_=${Date.now()}`;
+    const url = `${
+      process.env.NEXT_PUBLIC_API_URL
+    }/auth/vendor?searchFor=gallery&_=${Date.now()}`;
     fetch(url, {
       method: "GET",
       cache: "no-store",
@@ -757,8 +790,10 @@ export default function Settings({ user }) {
       .then((response) => {
         if (response) {
           const coverPhoto = response?.gallery?.coverPhoto || "";
-          const photos = Array.isArray(response?.gallery?.photos) ? response.gallery.photos : [];
-          setGallery({ coverPhoto, photos, temp: response.temp || 'default' });
+          const photos = Array.isArray(response?.gallery?.photos)
+            ? response.gallery.photos
+            : [];
+          setGallery({coverPhoto, photos, temp: response.temp || "default"});
         }
       })
       .catch((error) => {
@@ -794,13 +829,13 @@ export default function Settings({ user }) {
                           let tempPincodes = pincodes.filter(
                             (l) => l.parent == k._id
                           );
-                          resolve2({ ...k, pincodes: tempPincodes });
+                          resolve2({...k, pincodes: tempPincodes});
                         });
                       })
-                    ).then((result) => resolve1({ ...j, areas: result }));
+                    ).then((result) => resolve1({...j, areas: result}));
                   });
                 })
-              ).then((result) => resolve({ ...i, cities: result }));
+              ).then((result) => resolve({...i, cities: result}));
             });
           })
         ).then((result) => setLocationData(result));
@@ -836,13 +871,16 @@ export default function Settings({ user }) {
   };
 
   const fetchDocuments = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=documents`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
+    fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=documents`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    )
       .then((response) => {
         if (!response.ok) {
           router.push("/login");
@@ -927,31 +965,33 @@ export default function Settings({ user }) {
   const updateCoverPhoto = async (imageBlob = null) => {
     const imageToUpload = imageBlob || coverPhoto;
     if (!imageToUpload) {
-      toast.error('No image selected for upload');
+      toast.error("No image selected for upload");
       return;
     }
-    
-    
+
     try {
       let tempImage = await uploadFile({
         file: imageToUpload,
         path: "vendor-gallery/",
         id: `${new Date().getTime()}-${gallery.temp}-coverphoto`,
       });
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { coverPhoto: tempImage },
-        }),
-      });
-      
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            gallery: {coverPhoto: tempImage},
+          }),
+        }
+      );
+
       const result = await response.json();
-      
+
       if (result.message === "success") {
         await fetchGallery();
         setCoverPhoto("");
@@ -967,40 +1007,50 @@ export default function Settings({ user }) {
   };
 
   const handleDeleteCoverPhoto = () => {
-    return;
-    showDeleteConfirmation('cover');
+    showDeleteConfirmation("cover");
   };
 
   const deleteCoverPhoto = async () => {
     try {
-      const debugBody = { gallery: { coverPhoto: "" } };
+      const debugBody = {gallery: {coverPhoto: ""}};
       console.debug("[Gallery/DeleteCover] Request", {
         url: `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
         body: debugBody,
       });
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(debugBody),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(debugBody),
+        }
+      );
 
       const raw = await response.text();
       let result;
-      try { result = JSON.parse(raw); } catch { result = { raw }; }
-      console.debug("[Gallery/DeleteCover] Response", { status: response.status, ok: response.ok, result });
-      
+      try {
+        result = JSON.parse(raw);
+      } catch {
+        result = {raw};
+      }
+      console.debug("[Gallery/DeleteCover] Response", {
+        status: response.status,
+        ok: response.ok,
+        result,
+      });
+
       if (result.message === "success") {
-        setGallery((prev) => ({ ...prev, coverPhoto: "" }));
+        setGallery((prev) => ({...prev, coverPhoto: ""}));
         fetchGallery();
         toast.success("Cover photo deleted successfully!");
       } else {
         toast.error("Error deleting cover photo.");
       }
     } catch (error) {
-        // Handle error silently
+      // Handle error silently
       console.error("[Gallery/DeleteCover] Error", error);
       toast.error("Failed to delete cover photo. Please try again.");
     } finally {
@@ -1021,7 +1071,7 @@ export default function Settings({ user }) {
         authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({
-        gallery: { photos: [...gallery?.photos, tempImage] },
+        gallery: {photos: [...gallery?.photos, tempImage]},
       }),
     })
       .then((response) => response.json())
@@ -1044,11 +1094,13 @@ export default function Settings({ user }) {
       return;
     }
 
-    const uploadPromises = files.map((file, index) => 
+    const uploadPromises = files.map((file, index) =>
       uploadFile({
         file: file,
         path: "vendor-gallery/",
-        id: `${new Date().getTime()}-${gallery.temp}-photo-${gallery.photos.length + index}`,
+        id: `${new Date().getTime()}-${gallery.temp}-photo-${
+          gallery.photos.length + index
+        }`,
       })
     );
 
@@ -1056,19 +1108,22 @@ export default function Settings({ user }) {
       const uploadedUrls = await Promise.all(uploadPromises);
       const newPhotos = [...gallery.photos, ...uploadedUrls];
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          gallery: { photos: newPhotos },
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            gallery: {photos: newPhotos},
+          }),
+        }
+      );
 
       const result = await response.json();
-      
+
       if (result.message === "success") {
         fetchGallery();
         toast.success(`${files.length} photo(s) uploaded successfully!`);
@@ -1089,38 +1144,49 @@ export default function Settings({ user }) {
 
   const handleDeletePhoto = (index) => {
     return;
-    showDeleteConfirmation('gallery', index);
+    showDeleteConfirmation("gallery", index);
   };
 
   const deletePhoto = async (index) => {
     const updatedPhotos = gallery.photos.filter((_, i) => i !== index);
 
     try {
-      const debugBody = { gallery: { photos: updatedPhotos } };
-      console.debug("[Gallery/DeletePhoto] Request", { index, body: debugBody });
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(debugBody),
-      });
+      const debugBody = {gallery: {photos: updatedPhotos}};
+      console.debug("[Gallery/DeletePhoto] Request", {index, body: debugBody});
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(debugBody),
+        }
+      );
 
       const raw = await response.text();
       let result;
-      try { result = JSON.parse(raw); } catch { result = { raw }; }
-      console.debug("[Gallery/DeletePhoto] Response", { status: response.status, ok: response.ok, result });
-      
+      try {
+        result = JSON.parse(raw);
+      } catch {
+        result = {raw};
+      }
+      console.debug("[Gallery/DeletePhoto] Response", {
+        status: response.status,
+        ok: response.ok,
+        result,
+      });
+
       if (result.message === "success") {
-        setGallery((prev) => ({ ...prev, photos: updatedPhotos }));
+        setGallery((prev) => ({...prev, photos: updatedPhotos}));
         fetchGallery();
         toast.success("Photo deleted successfully!");
       } else {
         toast.error("Error deleting photo.");
       }
     } catch (error) {
-        // Handle error silently
+      // Handle error silently
       console.error("[Gallery/DeletePhoto] Error", error);
       toast.error("Failed to delete photo. Please try again.");
     } finally {
@@ -1171,12 +1237,12 @@ export default function Settings({ user }) {
   const loadGoogleMaps = () => {
     return new Promise((resolve, reject) => {
       if (typeof window === "undefined") return resolve(null);
-      
+
       // Check if Google Maps is already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
         return resolve(window.google);
       }
-      
+
       // Check if script is already being loaded
       const existing = document.getElementById("gmaps-script");
       if (existing) {
@@ -1188,15 +1254,19 @@ export default function Settings({ user }) {
         });
         return;
       }
-      
+
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-      
+
       if (!apiKey) {
-        console.warn("Google Maps API key not found. Google Maps autocomplete will be disabled.");
-        console.warn("Please set NEXT_PUBLIC_GOOGLE_MAPS_KEY in your environment variables");
+        console.warn(
+          "Google Maps API key not found. Google Maps autocomplete will be disabled."
+        );
+        console.warn(
+          "Please set NEXT_PUBLIC_GOOGLE_MAPS_KEY in your environment variables"
+        );
         return resolve(null);
       }
-      
+
       const script = document.createElement("script");
       script.id = "gmaps-script";
       script.async = true;
@@ -1207,11 +1277,11 @@ export default function Settings({ user }) {
         console.error("Google Maps API loading timeout");
         resolve(null);
       }, 10000); // 10 second timeout
-      
+
       script.onload = () => {
         clearTimeout(timeout);
         console.log("Google Maps script loaded successfully");
-        
+
         // Double-check that everything is available
         if (window.google && window.google.maps && window.google.maps.places) {
           resolve(window.google);
@@ -1220,13 +1290,13 @@ export default function Settings({ user }) {
           resolve(null);
         }
       };
-      
+
       script.onerror = (error) => {
         clearTimeout(timeout);
         console.error("Failed to load Google Maps API:", error);
         resolve(null);
       };
-      
+
       document.head.appendChild(script);
     });
   };
@@ -1243,28 +1313,36 @@ export default function Settings({ user }) {
     const init = async () => {
       try {
         const google = await loadGoogleMaps();
-        
+
         if (!google?.maps?.places) {
           return;
         }
-        
+
         // Wait for the input ref to be available
         if (!autocompleteInputRef.current) {
           setTimeout(init, 100);
           return;
         }
-        
+
         googleInstanceRef.current = google;
         const center = new google.maps.LatLng(12.9716, 77.5946); // Bengaluru
-        const circle = new google.maps.Circle({ center, radius: 60000 }); // 60km radius
-        
+        const circle = new google.maps.Circle({center, radius: 60000}); // 60km radius
+
         try {
-          autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
-            types: ["geocode"],
-            componentRestrictions: { country: "in" },
-            fields: ["address_components", "formatted_address", "place_id", "geometry"],
-            strictBounds: true,
-          });
+          autocomplete = new google.maps.places.Autocomplete(
+            autocompleteInputRef.current,
+            {
+              types: ["geocode"],
+              componentRestrictions: {country: "in"},
+              fields: [
+                "address_components",
+                "formatted_address",
+                "place_id",
+                "geometry",
+              ],
+              strictBounds: true,
+            }
+          );
           autocomplete.setBounds(circle.getBounds());
         } catch (error) {
           console.error("Error creating autocomplete instance:", error);
@@ -1275,44 +1353,51 @@ export default function Settings({ user }) {
           const place = autocomplete.getPlace();
           if (!place) return;
           const formatted = place.formatted_address || "";
-          
+
           if (!isBengaluruAddress(formatted)) {
             toast.error("We currently support only Bengaluru addresses.");
-            if (autocompleteInputRef.current) autocompleteInputRef.current.value = "";
+            if (autocompleteInputRef.current)
+              autocompleteInputRef.current.value = "";
             return;
           }
-          
+
           // Extract address components
           const addressComponents = place.address_components || [];
           let state = "";
           let city = "";
           let area = "";
           let pincode = "";
-          
+
           // Parse address components
-          addressComponents.forEach(component => {
+          addressComponents.forEach((component) => {
             const types = component.types;
             if (types.includes("administrative_area_level_1")) {
               state = component.long_name;
-            } else if (types.includes("locality") || types.includes("administrative_area_level_2")) {
+            } else if (
+              types.includes("locality") ||
+              types.includes("administrative_area_level_2")
+            ) {
               city = component.long_name;
-            } else if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+            } else if (
+              types.includes("sublocality") ||
+              types.includes("sublocality_level_1")
+            ) {
               area = component.long_name;
             } else if (types.includes("postal_code")) {
               pincode = component.long_name;
             }
           });
-          
+
           // Additional check for pincode
           if (!pincode) {
-            addressComponents.forEach(component => {
+            addressComponents.forEach((component) => {
               const name = component.long_name || component.short_name || "";
               if (/^\d{6}$/.test(name)) {
                 pincode = name;
               }
             });
           }
-          
+
           // If pincode is not found, try to extract from formatted address
           if (!pincode) {
             const pincodePatterns = [
@@ -1321,7 +1406,7 @@ export default function Settings({ user }) {
               /pincode[:\s]*(\d{6})/i,
               /pin[:\s]*(\d{6})/i,
             ];
-            
+
             for (const pattern of pincodePatterns) {
               const match = formatted.match(pattern);
               if (match) {
@@ -1330,10 +1415,10 @@ export default function Settings({ user }) {
               }
             }
           }
-          
+
           // Auto-fill address fields
-          setAddress(prev => ({ 
-            ...prev, 
+          setAddress((prev) => ({
+            ...prev,
             formatted_address: formatted,
             state: state || prev.state,
             city: city || prev.city,
@@ -1346,7 +1431,7 @@ export default function Settings({ user }) {
                 lat: place.geometry?.location?.lat() || 0,
                 lng: place.geometry?.location?.lng() || 0,
               },
-            }
+            },
           }));
         });
       } catch (error) {
@@ -1356,8 +1441,10 @@ export default function Settings({ user }) {
     init();
     return () => {
       if (autocomplete) {
-        try { 
-          googleInstanceRef.current?.maps?.event?.clearInstanceListeners(autocomplete);
+        try {
+          googleInstanceRef.current?.maps?.event?.clearInstanceListeners(
+            autocomplete
+          );
         } catch (e) {
           console.warn("Error clearing autocomplete listeners:", e);
         }
@@ -1393,7 +1480,8 @@ export default function Settings({ user }) {
         .pac-container {
           z-index: 9999 !important;
           border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .pac-item {
           padding: 8px 12px;
@@ -1410,8 +1498,8 @@ export default function Settings({ user }) {
           font-weight: 600;
         }
         .select-field {
-          background: #FFFFFF;
-          border: 1px solid #D1D5DB;
+          background: #ffffff;
+          border: 1px solid #d1d5db;
           border-radius: 6px;
           padding: 12px 16px;
           padding-right: 40px;
@@ -1425,11 +1513,11 @@ export default function Settings({ user }) {
         }
         .select-field:focus {
           outline: none !important;
-          border-color: #2B3F6C !important;
+          border-color: #2b3f6c !important;
           box-shadow: none !important;
         }
         .select-field:hover {
-          border-color: #2B3F6C;
+          border-color: #2b3f6c;
         }
         .dropdown-option {
           padding: 12px 16px;
@@ -1438,11 +1526,11 @@ export default function Settings({ user }) {
           transition: background-color 0.2s;
         }
         .dropdown-option:hover {
-          background-color: #F3F4F6;
+          background-color: #f3f4f6;
         }
         .dropdown-option.selected {
-          background-color: #FEF2F2;
-          color: #2B3F6C;
+          background-color: #fef2f2;
+          color: #2b3f6c;
         }
         .scrollbar-hide {
           -ms-overflow-style: none;
@@ -1458,54 +1546,54 @@ export default function Settings({ user }) {
             <BackIcon />
           </div>
           <div className="flex flex-row items-start border-b border-gray-200 overflow-x-auto scrollbar-hide justify-center">
-          <div
-            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
-              display === "Profile" 
-                ? "text-[#2B3F6C] border-[#2B3F6C]" 
-                : "text-gray-500 border-transparent hover:text-gray-700"
-            }`}
-            onClick={() => {
-              setDisplay("Profile");
-            }}
-          >
-            Profile
-          </div>
-          <div
-            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
-              display === "About you" 
-                ? "text-[#2B3F6C] border-[#2B3F6C]" 
-                : "text-gray-500 border-transparent hover:text-gray-700"
-            }`}
-            onClick={() => {
-              setDisplay("About you");
-            }}
-          >
-            About you
-          </div>
-          <div
-            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
-              display === "Prices" 
-                ? "text-[#2B3F6C] border-[#2B3F6C]" 
-                : "text-gray-500 border-transparent hover:text-gray-700"
-            }`}
-            onClick={() => {
-              setDisplay("Prices");
-            }}
-          >
-            Prices
-          </div>
-          <div
-            className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
-              display === "Gallery" 
-                ? "text-[#2B3F6C] border-[#2B3F6C]" 
-                : "text-gray-500 border-transparent hover:text-gray-700"
-            }`}
-            onClick={() => {
-              setDisplay("Gallery");
-            }}
-          >
-            Gallery
-          </div>
+            <div
+              className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
+                display === "Profile"
+                  ? "text-[#2B3F6C] border-[#2B3F6C]"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setDisplay("Profile");
+              }}
+            >
+              Profile
+            </div>
+            <div
+              className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
+                display === "About you"
+                  ? "text-[#2B3F6C] border-[#2B3F6C]"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setDisplay("About you");
+              }}
+            >
+              About you
+            </div>
+            <div
+              className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
+                display === "Prices"
+                  ? "text-[#2B3F6C] border-[#2B3F6C]"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setDisplay("Prices");
+              }}
+            >
+              Prices
+            </div>
+            <div
+              className={`font-semibold text-sm py-3 px-4 text-center flex-shrink-0 border-b-2 transition-colors min-w-fit ${
+                display === "Gallery"
+                  ? "text-[#2B3F6C] border-[#2B3F6C]"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setDisplay("Gallery");
+              }}
+            >
+              Gallery
+            </div>
           </div>
         </div>
         {display === "Profile" && (
@@ -1525,18 +1613,18 @@ export default function Settings({ user }) {
                 </label>
                 <input
                   type="text"
-                placeholder="Display name / Business Name"
-                value={profile.businessName || ""}
-                onChange={(e) => {
-                  setProfile({
-                    ...profile,
-                    businessName: e.target.value,
-                  });
-                }}
-                disabled={false}
+                  placeholder="Display name / Business Name"
+                  value={profile.businessName || ""}
+                  onChange={(e) => {
+                    setProfile({
+                      ...profile,
+                      businessName: e.target.value,
+                    });
+                  }}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
-              />
-            </div>
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
@@ -1545,21 +1633,21 @@ export default function Settings({ user }) {
                 <textarea
                   placeholder="Share a little about your passion for makeup and what drives you as an artist..."
                   rows={4}
-                value={profile.businessDescription || ""}
-                onChange={(e) => {
+                  value={profile.businessDescription || ""}
+                  onChange={(e) => {
                     if (e.target.value.length <= 350) {
-                  setProfile({
-                    ...profile,
-                    businessDescription: e.target.value,
-                  });
+                      setProfile({
+                        ...profile,
+                        businessDescription: e.target.value,
+                      });
                     }
-                }}
-                disabled={false}
+                  }}
+                  disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none transition-colors"
-              />
+                />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {profile.businessDescription.length}/350 characters
-            </div>
+                </div>
               </div>
 
               <div>
@@ -1569,20 +1657,40 @@ export default function Settings({ user }) {
                 <div className="relative">
                   <div
                     className="select-field"
-                    onClick={() => toggleDropdown('speciality')}
+                    onClick={() => toggleDropdown("speciality")}
                   >
-                    {profile.speciality ? specialityList.find(opt => opt.title === profile.speciality)?.title : 'Select Speciality'}
-                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                    {profile.speciality
+                      ? specialityList.find(
+                          (opt) => opt.title === profile.speciality
+                        )?.title
+                      : "Select Speciality"}
+                    <svg
+                      width="10"
+                      height="9"
+                      viewBox="0 0 10 9"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      <path
+                        d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z"
+                        fill="#4F4F4F"
+                      />
                     </svg>
                   </div>
                   {dropdowns.speciality && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                      {specialityList?.map(option => (
+                      {specialityList?.map((option) => (
                         <div
                           key={option._id}
-                          className={`dropdown-option ${profile.speciality === option.title ? 'selected' : ''}`}
-                          onClick={() => selectOption('speciality', option.title)}
+                          className={`dropdown-option ${
+                            profile.speciality === option.title
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            selectOption("speciality", option.title)
+                          }
                         >
                           {option.title}
                         </div>
@@ -1590,7 +1698,7 @@ export default function Settings({ user }) {
                     </div>
                   )}
                 </div>
-            </div>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
@@ -1599,41 +1707,65 @@ export default function Settings({ user }) {
                 <div className="relative">
                   <div
                     className="select-field"
-                    onClick={() => toggleDropdown('servicesOffered')}
+                    onClick={() => toggleDropdown("servicesOffered")}
                   >
-                    {profile.servicesOffered ? 
-                      (profile.servicesOffered === 'MUA' ? 'MUA' : 
-                       profile.servicesOffered === 'Hairstylist' ? 'Hairstylist' : 
-                       profile.servicesOffered === 'Both' ? 'Both' : 'Select Service') 
-                      : 'Select Service'}
-                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                    {profile.servicesOffered
+                      ? profile.servicesOffered === "MUA"
+                        ? "MUA"
+                        : profile.servicesOffered === "Hairstylist"
+                        ? "Hairstylist"
+                        : profile.servicesOffered === "Both"
+                        ? "Both"
+                        : "Select Service"
+                      : "Select Service"}
+                    <svg
+                      width="10"
+                      height="9"
+                      viewBox="0 0 10 9"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      <path
+                        d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z"
+                        fill="#4F4F4F"
+                      />
                     </svg>
                   </div>
                   {dropdowns.servicesOffered && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                       <div
-                        className={`dropdown-option ${profile.servicesOffered === 'Hairstylist' ? 'selected' : ''}`}
-                        onClick={() => selectOption('servicesOffered', 'Hairstylist')}
+                        className={`dropdown-option ${
+                          profile.servicesOffered === "Hairstylist"
+                            ? "selected"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          selectOption("servicesOffered", "Hairstylist")
+                        }
                       >
                         Hairstylist
                       </div>
                       <div
-                        className={`dropdown-option ${profile.servicesOffered === 'MUA' ? 'selected' : ''}`}
-                        onClick={() => selectOption('servicesOffered', 'MUA')}
+                        className={`dropdown-option ${
+                          profile.servicesOffered === "MUA" ? "selected" : ""
+                        }`}
+                        onClick={() => selectOption("servicesOffered", "MUA")}
                       >
                         MUA
                       </div>
                       <div
-                        className={`dropdown-option ${profile.servicesOffered === 'Both' ? 'selected' : ''}`}
-                        onClick={() => selectOption('servicesOffered', 'Both')}
+                        className={`dropdown-option ${
+                          profile.servicesOffered === "Both" ? "selected" : ""
+                        }`}
+                        onClick={() => selectOption("servicesOffered", "Both")}
                       >
                         Both
                       </div>
                     </div>
                   )}
                 </div>
-            </div>
+              </div>
 
               {profile.servicesOffered !== "Hairstylist" && (
                 <div>
@@ -1645,14 +1777,14 @@ export default function Settings({ user }) {
                       <input
                         type="radio"
                         name="groomMakeup"
-                    checked={profile.groomMakeup === true}
-                    onChange={(e) => {
-                      setProfile({
-                        ...profile,
+                        checked={profile.groomMakeup === true}
+                        onChange={(e) => {
+                          setProfile({
+                            ...profile,
                             groomMakeup: true,
-                      });
-                    }}
-                    disabled={false}
+                          });
+                        }}
+                        disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
@@ -1661,20 +1793,20 @@ export default function Settings({ user }) {
                       <input
                         type="radio"
                         name="groomMakeup"
-                    checked={profile.groomMakeup === false}
-                    onChange={(e) => {
-                      setProfile({
-                        ...profile,
+                        checked={profile.groomMakeup === false}
+                        onChange={(e) => {
+                          setProfile({
+                            ...profile,
                             groomMakeup: false,
-                      });
-                    }}
-                    disabled={false}
+                          });
+                        }}
+                        disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
-                  />
+                      />
                       <span className="text-sm text-black">No</span>
                     </label>
+                  </div>
                 </div>
-              </div>
               )}
 
               {profile.servicesOffered !== "Hairstylist" && (
@@ -1687,14 +1819,14 @@ export default function Settings({ user }) {
                       <input
                         type="radio"
                         name="onlyHairStyling"
-                    checked={profile.onlyHairStyling === true}
-                    onChange={(e) => {
-                      setProfile({
-                        ...profile,
+                        checked={profile.onlyHairStyling === true}
+                        onChange={(e) => {
+                          setProfile({
+                            ...profile,
                             onlyHairStyling: true,
-                      });
-                    }}
-                    disabled={false}
+                          });
+                        }}
+                        disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
                       />
                       <span className="text-sm text-black">Yes</span>
@@ -1703,20 +1835,20 @@ export default function Settings({ user }) {
                       <input
                         type="radio"
                         name="onlyHairStyling"
-                    checked={profile.onlyHairStyling === false}
-                    onChange={(e) => {
-                      setProfile({
-                        ...profile,
+                        checked={profile.onlyHairStyling === false}
+                        onChange={(e) => {
+                          setProfile({
+                            ...profile,
                             onlyHairStyling: false,
-                      });
-                    }}
-                    disabled={false}
+                          });
+                        }}
+                        disabled={false}
                         className="w-4 h-4 text-[#2B3F6C] border-2 border-gray-300 focus:ring-[#2B3F6C]"
-                  />
+                      />
                       <span className="text-sm text-black">No</span>
                     </label>
+                  </div>
                 </div>
-              </div>
               )}
             </div>
 
@@ -1725,9 +1857,10 @@ export default function Settings({ user }) {
 
             {/* Address Details Section */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-black">Address details</h3>
-              
-              
+              <h3 className="text-lg font-semibold text-black">
+                Address details
+              </h3>
+
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   Address
@@ -1736,7 +1869,12 @@ export default function Settings({ user }) {
                   type="text"
                   placeholder="Enter your address"
                   value={address.formatted_address || ""}
-                  onChange={(e) => setAddress(prev => ({ ...prev, formatted_address: e.target.value }))}
+                  onChange={(e) =>
+                    setAddress((prev) => ({
+                      ...prev,
+                      formatted_address: e.target.value,
+                    }))
+                  }
                   ref={autocompleteInputRef}
                   disabled={false}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
@@ -1808,26 +1946,42 @@ export default function Settings({ user }) {
                 <div className="relative">
                   <div
                     className="select-field"
-                    onClick={() => toggleDropdown('state')}
+                    onClick={() => toggleDropdown("state")}
                   >
-                    {address.state || 'Select State'}
-                    <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                    {address.state || "Select State"}
+                    <svg
+                      width="10"
+                      height="9"
+                      viewBox="0 0 10 9"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      <path
+                        d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z"
+                        fill="#4F4F4F"
+                      />
                     </svg>
                   </div>
                   {dropdowns.state && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                       <div
-                        className={`dropdown-option ${address.state === 'Karnataka' ? 'selected' : ''}`}
-                        onClick={() => selectOption('state', 'Karnataka', true)}
+                        className={`dropdown-option ${
+                          address.state === "Karnataka" ? "selected" : ""
+                        }`}
+                        onClick={() => selectOption("state", "Karnataka", true)}
                       >
                         Karnataka
                       </div>
                       {locationData?.map((state) => (
                         <div
                           key={state._id}
-                          className={`dropdown-option ${address.state === state.name ? 'selected' : ''}`}
-                          onClick={() => selectOption('state', state.name, true)}
+                          className={`dropdown-option ${
+                            address.state === state.name ? "selected" : ""
+                          }`}
+                          onClick={() =>
+                            selectOption("state", state.name, true)
+                          }
                         >
                           {state.name}
                         </div>
@@ -1855,63 +2009,87 @@ export default function Settings({ user }) {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] transition-colors"
                 />
               </div>
-                
+
               {/* address proof */}
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   Upload address proof
                 </label>
-                
+
                 {documents.length > 0 ? (
                   <div className="space-y-3">
                     {documents.map((doc, index) => (
-                      <div key={index} className="border border-gray-300 rounded-lg p-3">
+                      <div
+                        key={index}
+                        className="border border-gray-300 rounded-lg p-3"
+                      >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-sm">{doc.name}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            doc.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            doc.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                          <span className="font-medium text-sm">
+                            {doc.name}
+                          </span>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              doc.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : doc.status === "rejected"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {doc.status.charAt(0).toUpperCase() +
+                              doc.status.slice(1)}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <p className="text-xs text-gray-600 mb-1">Front</p>
                             {doc.front?.url ? (
-                              <img src={doc.front.url} alt="Front" className="w-16 h-10 object-cover rounded border" />
+                              <img
+                                src={doc.front.url}
+                                alt="Front"
+                                className="w-16 h-10 object-cover rounded border"
+                              />
                             ) : (
                               <div className="w-16 h-10 bg-gray-100 rounded border flex items-center justify-center">
-                                <span className="text-xs text-gray-400">No image</span>
+                                <span className="text-xs text-gray-400">
+                                  No image
+                                </span>
                               </div>
                             )}
                           </div>
                           <div>
                             <p className="text-xs text-gray-600 mb-1">Back</p>
                             {doc.back?.url ? (
-                              <img src={doc.back.url} alt="Back" className="w-16 h-10 object-cover rounded border" />
+                              <img
+                                src={doc.back.url}
+                                alt="Back"
+                                className="w-16 h-10 object-cover rounded border"
+                              />
                             ) : (
                               <div className="w-16 h-10 bg-gray-100 rounded border flex items-center justify-center">
-                                <span className="text-xs text-gray-400">No image</span>
+                                <span className="text-xs text-gray-400">
+                                  No image
+                                </span>
                               </div>
                             )}
                           </div>
                         </div>
-                        {doc.status === 'rejected' && doc.rejectionReason && (
-                          <p className="text-xs text-red-600 mt-2">Reason: {doc.rejectionReason}</p>
+                        {doc.status === "rejected" && doc.rejectionReason && (
+                          <p className="text-xs text-red-600 mt-2">
+                            Reason: {doc.rejectionReason}
+                          </p>
                         )}
                       </div>
                     ))}
                     <button
                       type="button"
-                  disabled={false}
+                      disabled={false}
                       onClick={() => setShowDocumentModal(true)}
                       className="w-full px-4 py-2 border border-[#2B3F6C] text-[#2B3F6C] rounded-lg hover:bg-[#2B3F6C] hover:text-white transition-colors text-sm"
                     >
                       Update Document
                     </button>
-              </div>
+                  </div>
                 ) : (
                   <button
                     type="button"
@@ -1919,14 +2097,25 @@ export default function Settings({ user }) {
                     onClick={() => setShowDocumentModal(true)}
                     className="w-full px-4 py-3 border-2 border-dashed border-[#2B3F6C] rounded-lg text-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
                     </svg>
                     + Upload address proof
                   </button>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  <span className="text-red-500">*</span> Aadhar card / Driving license / Passport (Required)
+                  <span className="text-red-500">*</span> Aadhar card / Driving
+                  license / Passport (Required)
                 </p>
               </div>
             </div>
@@ -1934,28 +2123,50 @@ export default function Settings({ user }) {
             {/* Submit Button */}
             <div className="pt-6 relative mb-8">
               <button
-                  onClick={() => {
-                    if (profile.businessDescription.length > 350) {
-                    toast.error("The profile can have a maximum of 350 Characters.");
-                    } else if (documents.length === 0) {
-                      toast.error("Please upload at least one address proof document (Aadhaar Card, Driving License, or Passport) to complete your profile.");
-                    } else {
-                      updateProfile();
-                    }
-                  }}
+                onClick={() => {
+                  if (profile.businessDescription.length > 350) {
+                    toast.error(
+                      "The profile can have a maximum of 350 Characters."
+                    );
+                  } else if (documents.length === 0) {
+                    toast.error(
+                      "Please upload at least one address proof document (Aadhaar Card, Driving License, or Passport) to complete your profile."
+                    );
+                  } else {
+                    updateProfile();
+                  }
+                }}
                 disabled={false}
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {false ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     {user?.profileCompleted ? "Submitting..." : "Saving..."}
                   </>
+                ) : user?.profileCompleted ? (
+                  "Submit"
                 ) : (
-                  user?.profileCompleted ? "Submit" : "Next"
+                  "Next"
                 )}
               </button>
             </div>
@@ -1966,7 +2177,8 @@ export default function Settings({ user }) {
             {/* Experience Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How many years of experience? <span className="text-red-500">*</span>
+                How many years of experience?{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -1981,15 +2193,18 @@ export default function Settings({ user }) {
                 disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
-              {(!other.experience || other.experience.trim() === '') && (
-                <p className="text-xs text-red-500 mt-1">This field is required</p>
+              {(!other.experience || other.experience.trim() === "") && (
+                <p className="text-xs text-red-500 mt-1">
+                  This field is required
+                </p>
               )}
             </div>
 
             {/* Clients Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How many clients have you served till date? <span className="text-red-500">*</span>
+                How many clients have you served till date?{" "}
+                <span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-gray-500 mb-2">(approx. number)</p>
               <input
@@ -2005,8 +2220,10 @@ export default function Settings({ user }) {
                 disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
               />
-              {(!other.clients || other.clients.trim() === '') && (
-                <p className="text-xs text-red-500 mt-1">This field is required</p>
+              {(!other.clients || other.clients.trim() === "") && (
+                <p className="text-xs text-red-500 mt-1">
+                  This field is required
+                </p>
               )}
             </div>
 
@@ -2015,42 +2232,49 @@ export default function Settings({ user }) {
               <label className="block text-sm font-medium text-black mb-4">
                 Certificate/Awards that you have received
               </label>
-              
+
               {/* Awards List */}
               <div className="space-y-4">
                 {other?.awards?.map((award, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4"
+                  >
                     <div className="flex gap-2 items-center mb-3">
                       <input
                         type="text"
                         placeholder="Award/Certificate Title"
                         value={award.title || ""}
-                    onChange={(e) => {
+                        onChange={(e) => {
                           const newAwards = [...(other?.awards || [])];
-                          newAwards[index] = { ...newAwards[index], title: e.target.value };
-                      setOther({
-                        ...other,
+                          newAwards[index] = {
+                            ...newAwards[index],
+                            title: e.target.value,
+                          };
+                          setOther({
+                            ...other,
                             awards: newAwards,
-                      });
-                    }}
-                    disabled={false}
+                          });
+                        }}
+                        disabled={false}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
-                  />
+                      />
                       <button
                         type="button"
-                    onClick={() => {
-                          const newAwards = other?.awards?.filter((_, i) => i !== index) || [];
-                      setOther({
-                        ...other,
+                        onClick={() => {
+                          const newAwards =
+                            other?.awards?.filter((_, i) => i !== index) || [];
+                          setOther({
+                            ...other,
                             awards: newAwards,
-                      });
-                    }}
+                          });
+                        }}
                         className="w-12 h-12 border-2 border-[#2B3F6C] rounded-lg flex items-center justify-center text-[#2B3F6C] hover:bg-blue-50 transition-colors"
                       >
                         <span className="text-xl font-bold">×</span>
                       </button>
                     </div>
-                    
+
                     {/* Certificate Upload */}
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2067,7 +2291,10 @@ export default function Settings({ user }) {
                             type="button"
                             onClick={() => {
                               const newAwards = [...(other?.awards || [])];
-                              newAwards[index] = { ...newAwards[index], certificate: "" };
+                              newAwards[index] = {
+                                ...newAwards[index],
+                                certificate: "",
+                              };
                               setOther({
                                 ...other,
                                 awards: newAwards,
@@ -2090,20 +2317,27 @@ export default function Settings({ user }) {
                                   const uploadedUrl = await uploadFile({
                                     file: file,
                                     path: "vendor-certificates/",
-                                    id: `${new Date().getTime()}-certificate-${index}`
+                                    id: `${new Date().getTime()}-certificate-${index}`,
                                   });
-                                  
+
                                   const newAwards = [...(other?.awards || [])];
-                                  newAwards[index] = { ...newAwards[index], certificate: uploadedUrl };
+                                  newAwards[index] = {
+                                    ...newAwards[index],
+                                    certificate: uploadedUrl,
+                                  };
                                   setOther({
                                     ...other,
                                     awards: newAwards,
                                   });
-                                  
-                                  toast.success('Certificate uploaded successfully!');
+
+                                  toast.success(
+                                    "Certificate uploaded successfully!"
+                                  );
                                 } catch (error) {
                                   // Handle error silently
-                                  toast.error('Failed to upload certificate. Please try again.');
+                                  toast.error(
+                                    "Failed to upload certificate. Please try again."
+                                  );
                                 } finally {
                                 }
                               }
@@ -2115,16 +2349,28 @@ export default function Settings({ user }) {
                             htmlFor={`certificate-upload-${index}`}
                             className="cursor-pointer flex flex-col items-center justify-center py-4"
                           >
-                            <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            <svg
+                              className="w-8 h-8 text-gray-400 mx-auto mb-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              />
                             </svg>
-                            <p className="text-sm text-gray-600">Click to upload certificate</p>
+                            <p className="text-sm text-gray-600">
+                              Click to upload certificate
+                            </p>
                           </label>
                         </div>
                       )}
                     </div>
-                </div>
-              ))}
+                  </div>
+                ))}
               </div>
 
               {/* Add Award Button */}
@@ -2133,14 +2379,17 @@ export default function Settings({ user }) {
                 onClick={() => {
                   setOther({
                     ...other,
-                    awards: [...(other?.awards || []), { title: "", certificate: "" }],
+                    awards: [
+                      ...(other?.awards || []),
+                      {title: "", certificate: ""},
+                    ],
                   });
                 }}
                 className="w-full px-4 py-3 bg-[#2B3F6C] text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
               >
                 Add Award/Certificate <span className="text-lg">+</span>
               </button>
-              </div>
+            </div>
 
             {/* Makeup Products Section */}
             <div>
@@ -2173,7 +2422,10 @@ export default function Settings({ user }) {
                         <button
                           type="button"
                           onClick={() => {
-                            const newProducts = other?.makeupProducts?.filter((_, i) => i !== index) || [];
+                            const newProducts =
+                              other?.makeupProducts?.filter(
+                                (_, i) => i !== index
+                              ) || [];
                             setOther({
                               ...other,
                               makeupProducts: newProducts,
@@ -2187,7 +2439,7 @@ export default function Settings({ user }) {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Buttons Section */}
                 <div className="flex flex-col gap-4">
                   <button
@@ -2196,7 +2448,10 @@ export default function Settings({ user }) {
                       if ((other?.makeupProducts?.length || 0) < 5) {
                         setOther({
                           ...other,
-                          makeupProducts: [...(other?.makeupProducts || []), ""],
+                          makeupProducts: [
+                            ...(other?.makeupProducts || []),
+                            "",
+                          ],
                         });
                       } else {
                         toast.error("Maximum 5 products allowed");
@@ -2212,12 +2467,11 @@ export default function Settings({ user }) {
                     Add more <span className="text-lg">+</span>
                   </button>
                   <div className="text-xs text-gray-500 text-center">
-                    {(other?.makeupProducts?.length || 0)}/5 products
+                    {other?.makeupProducts?.length || 0}/5 products
                   </div>
                 </div>
               </div>
             </div>
-
 
             {/* LGBTQ Question */}
             <div>
@@ -2257,13 +2511,14 @@ export default function Settings({ user }) {
                   />
                   <span className="text-sm text-black">No</span>
                 </label>
-                </div>
               </div>
+            </div>
 
             {/* USP Section */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                How are you different from other artist? <span className="text-red-500">*</span>
+                How are you different from other artist?{" "}
+                <span className="text-red-500">*</span>
               </label>
               <textarea
                 placeholder="I specialize in creating customized bridal looks that enhance natural beauty while ensuring long-lasting results, using only high-quality, cruelty-free products. My signature style focuses on glowing, radiant skin and timeless elegance, making every client feel confident and camera-ready."
@@ -2271,18 +2526,24 @@ export default function Settings({ user }) {
                 value={other.usp || ""}
                 onChange={(e) => {
                   if (e.target.value.length <= 1000) {
-                  setOther({
-                    ...other,
-                    usp: e.target.value,
-                  });
+                    setOther({
+                      ...other,
+                      usp: e.target.value,
+                    });
                   }
                 }}
                 disabled={false}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 italic focus:outline-none focus:ring-0 focus:border-[#2B3F6C] resize-none bg-transparent"
               />
               <div className="mt-1">
-                <div className={`text-xs ${other.usp.length > 500 ? 'text-red-500' : 'text-gray-500'}`}>
-                  {other.usp.length > 500 ? `Maximum 500 characters allowed (${other.usp.length}/500)` : `${other.usp.length}/500 characters`}
+                <div
+                  className={`text-xs ${
+                    other.usp.length > 500 ? "text-red-500" : "text-gray-500"
+                  }`}
+                >
+                  {other.usp.length > 500
+                    ? `Maximum 500 characters allowed (${other.usp.length}/500)`
+                    : `${other.usp.length}/500 characters`}
                 </div>
               </div>
             </div>
@@ -2292,39 +2553,68 @@ export default function Settings({ user }) {
               <button
                 onClick={() => {
                   // Validate all fields
-                  if (!other.experience || other.experience.trim() === '') {
+                  if (!other.experience || other.experience.trim() === "") {
                     toast.error("Please enter your years of experience.");
                     return;
                   }
-                  if (!other.clients || other.clients.trim() === '') {
-                    toast.error("Please enter the number of clients you've served.");
+                  if (!other.clients || other.clients.trim() === "") {
+                    toast.error(
+                      "Please enter the number of clients you've served."
+                    );
                     return;
                   }
-                  if (!other.usp || other.usp.trim() === '') {
-                    toast.error("Please describe how you're different from other artists.");
+                  if (!other.usp || other.usp.trim() === "") {
+                    toast.error(
+                      "Please describe how you're different from other artists."
+                    );
                     return;
                   }
                   if (other.usp.length > 500) {
-                    toast.error("How are you different from other artist can have a maximum of 500 characters.");
+                    toast.error(
+                      "How are you different from other artist can have a maximum of 500 characters."
+                    );
                     return;
                   }
-                  
+
                   // All validations passed, proceed with update
                   updateOther();
                 }}
-                disabled={!other.experience || !other.clients || !other.usp || other.usp.length > 500}
+                disabled={
+                  !other.experience ||
+                  !other.clients ||
+                  !other.usp ||
+                  other.usp.length > 500
+                }
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {false ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     {user?.profileCompleted ? "Submitting..." : "Saving..."}
                   </>
+                ) : user?.profileCompleted ? (
+                  "Submit"
                 ) : (
-                  user?.profileCompleted ? "Submit" : "Next"
+                  "Next"
                 )}
               </button>
             </div>
@@ -2373,26 +2663,27 @@ export default function Settings({ user }) {
             </div>
 
             {/* Groom Makeup Price - Only show if services include makeup AND groom makeup is selected */}
-            {profile.servicesOffered !== "Hairstylist" && profile.groomMakeup && (
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Groom makeup starting price
-                </label>
-                <input
-                  type="number"
-                placeholder="Groom makeup Starting price"
-                value={prices.groom || ""}
-                onChange={(e) => {
-                  setPrices({
-                    ...prices,
-                    groom: e.target.value,
-                  });
-                }}
-                disabled={false}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
-              />
-            </div>
-            )}
+            {profile.servicesOffered !== "Hairstylist" &&
+              profile.groomMakeup && (
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">
+                    Groom makeup starting price
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Groom makeup Starting price"
+                    value={prices.groom || ""}
+                    onChange={(e) => {
+                      setPrices({
+                        ...prices,
+                        groom: e.target.value,
+                      });
+                    }}
+                    disabled={false}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-[#2B3F6C] bg-transparent"
+                  />
+                </div>
+              )}
 
             {/* Submit Button */}
             <div className="pt-6 relative mb-8">
@@ -2400,19 +2691,42 @@ export default function Settings({ user }) {
                 onClick={() => {
                   updatePrices();
                 }}
-                disabled={!prices.bridal || (profile.servicesOffered !== "Hairstylist" && profile.groomMakeup && !prices.groom)}
+                disabled={
+                  !prices.bridal ||
+                  (profile.servicesOffered !== "Hairstylist" &&
+                    profile.groomMakeup &&
+                    !prices.groom)
+                }
                 className="w-full py-4 bg-[#2B3F6C] text-white font-semibold rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {false ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     {user?.profileCompleted ? "Submitting..." : "Saving..."}
                   </>
+                ) : user?.profileCompleted ? (
+                  "Submit"
                 ) : (
-                  user?.profileCompleted ? "Submit" : "Next"
+                  "Next"
                 )}
               </button>
             </div>
@@ -2423,8 +2737,8 @@ export default function Settings({ user }) {
             {/* Cover Photo Section */}
             <div>
               <label className="block text-lg font-medium text-black mb-2">
-              Cover Photo
-              </label>  
+                Cover Photo
+              </label>
               <div className="flex justify-center">
                 {/* Cover Photo Upload Area */}
                 <div className="relative group">
@@ -2445,19 +2759,39 @@ export default function Settings({ user }) {
                           disabled={false}
                           className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       className="w-40 h-52 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => coverPhotoRef.current?.click()}
                     >
-                      <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      <svg
+                        className="w-12 h-12 text-gray-400 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
                       </svg>
                       <p className="text-xs text-gray-500 text-center px-2">
                         Click to upload
@@ -2465,15 +2799,15 @@ export default function Settings({ user }) {
                     </div>
                   )}
                   <input
-              ref={coverPhotoRef}
+                    ref={coverPhotoRef}
                     type="file"
                     accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  handleFileSelect(file, 'cover');
-                }
-              }}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        handleFileSelect(file, "cover");
+                      }
+                    }}
                     className="hidden"
                     disabled={false}
                   />
@@ -2483,80 +2817,110 @@ export default function Settings({ user }) {
 
             {/* Gallery Photos Section */}
             <div className="w-full">
-               <div className="w-full mb-4">
-                 <div className="mb-4 text-left">
-                   <label className="text-lg font-medium text-black">
+              <div className="w-full mb-4">
+                <div className="mb-4 text-left">
+                  <label className="text-lg font-medium text-black">
                     Gallery
-                   </label>
-                   <p className="text-xs text-gray-500 mt-1">
-                     Upload multiple images at once (max 15 photos)
-                   </p>
-                 </div>
-                 <button
-                   onClick={() => {
-                     photoRef.current?.click();
-                   }}
-                   disabled={gallery.photos.length >= 15}
-                   className="w-full px-6 py-3 bg-[#2B3F6C] text-white rounded-xl hover:bg-[#1e2d4a] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
-                 >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                   </svg>
-                   {gallery.photos.length >= 15 ? 'Max Reached' : 'Add Photos'}
-                 </button>
-               </div>
-              
-               {/* Gallery Controls */}
-               {gallery.photos.length > 0 && (
-                 <div className="mb-4">
-                   {!isMultiSelectMode ? (
-                     /* Show Select button when not in select mode */
-                     <div className="flex items-center justify-left">
-                       <button
-                         onClick={() => setIsMultiSelectMode(true)}
-                         className="px-4 py-2 text-sm font-medium bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-all duration-200 flex items-center gap-2"
-                       >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                         </svg>
-                         Select
-                       </button>
-                     </div>
-                   ) : (
-                     /* Show Delete button when in select mode */
-                     <div className="flex items-center justify-between gap-4">
-                       <button
-                         onClick={() => {
-                           setIsMultiSelectMode(false);
-                           setSelectedPhotos([]);
-                         }}
-                         className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2"
-                       >
-                         Cancel
-                       </button>
-                       <span className="text-sm font-medium text-gray-700">
-                         {selectedPhotos.length} selected
-                       </span>
-                       <button
-                         onClick={handleBulkDelete}
-                         className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2"
-                       >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                         </svg>
-                         Delete ({selectedPhotos.length})
-                       </button>
-                     </div>
-                   )}
-                 </div>
-               )}
-              
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload multiple images at once (max 15 photos)
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    photoRef.current?.click();
+                  }}
+                  disabled={gallery.photos.length >= 15}
+                  className="w-full px-6 py-3 bg-[#2B3F6C] text-white rounded-xl hover:bg-[#1e2d4a] transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  {gallery.photos.length >= 15 ? "Max Reached" : "Add Photos"}
+                </button>
+              </div>
+
+              {/* Gallery Controls */}
+              {gallery.photos.length > 0 && (
+                <div className="mb-4">
+                  {!isMultiSelectMode ? (
+                    /* Show Select button when not in select mode */
+                    <div className="flex items-center justify-left">
+                      <button
+                        onClick={() => setIsMultiSelectMode(true)}
+                        className="px-4 py-2 text-sm font-medium bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-all duration-200 flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Select
+                      </button>
+                    </div>
+                  ) : (
+                    /* Show Delete button when in select mode */
+                    <div className="flex items-center justify-between gap-4">
+                      <button
+                        onClick={() => {
+                          setIsMultiSelectMode(false);
+                          setSelectedPhotos([]);
+                        }}
+                        className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2"
+                      >
+                        Cancel
+                      </button>
+                      <span className="text-sm font-medium text-gray-700">
+                        {selectedPhotos.length} selected
+                      </span>
+                      <button
+                        onClick={handleBulkDelete}
+                        className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Delete ({selectedPhotos.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <input
-              ref={photoRef}
+                ref={photoRef}
                 type="file"
                 accept="image/*"
                 multiple
-              onChange={(e) => {
+                onChange={(e) => {
                   const files = Array.from(e.target.files);
                   if (files.length > 0) {
                     // Upload files directly without cropping
@@ -2566,51 +2930,69 @@ export default function Settings({ user }) {
                 className="hidden"
                 disabled={gallery.photos.length >= 15}
               />
-              
+
               {/* Upload Progress */}
               {false && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-4 w-4 text-blue-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
-                    <span className="text-sm text-blue-800">Uploading photos...</span>
+                    <span className="text-sm text-blue-800">
+                      Uploading photos...
+                    </span>
                   </div>
                 </div>
               )}
-              
+
               {/* Gallery Grid */}
               <div className="grid grid-cols-2 gap-4">
                 {/* Combine all photos and placeholder into a single array for proper ordering */}
                 {(() => {
                   const allItems = [];
-                  
+
                   // Add existing gallery photos
                   gallery.photos.forEach((item, index) => {
                     allItems.push({
-                      type: 'photo',
+                      type: "photo",
                       data: item,
                       index: index,
-                      key: `photo-${index}`
+                      key: `photo-${index}`,
                     });
                   });
-                  
+
                   // Note: Removed cropFiles since gallery photos are now uploaded directly
-                  
+
                   // Add upload placeholder if needed
                   if (allItems.length < 15) {
                     allItems.push({
-                      type: 'placeholder',
+                      type: "placeholder",
                       data: null,
                       index: allItems.length,
-                      key: 'placeholder'
+                      key: "placeholder",
                     });
                   }
-                  
+
                   return allItems.map((item, gridIndex) => (
                     <div key={item.key} className="w-full aspect-square">
-                      {item.type === 'photo' && (
+                      {item.type === "photo" && (
                         <div
                           onClick={() => {
                             if (isMultiSelectMode) {
@@ -2620,9 +3002,10 @@ export default function Settings({ user }) {
                             }
                           }}
                           className={`group relative w-full h-full overflow-hidden rounded-lg transition-all cursor-pointer ${
-                            isMultiSelectMode && selectedPhotos.includes(item.index)
-                              ? 'ring-2 ring-[#2B3F6C] ring-opacity-50'
-                              : ''
+                            isMultiSelectMode &&
+                            selectedPhotos.includes(item.index)
+                              ? "ring-2 ring-[#2B3F6C] ring-opacity-50"
+                              : ""
                           }`}
                         >
                           <img
@@ -2630,28 +3013,40 @@ export default function Settings({ user }) {
                             alt={`Gallery image ${item.index + 1}`}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              console.error('Image failed to load:', item.data);
-                              e.target.src = '/placeholder-image.png'; // Fallback image
+                              console.error("Image failed to load:", item.data);
+                              e.target.src = "/placeholder-image.png"; // Fallback image
                             }}
                           />
-                          
+
                           {/* Selection Checkbox - Only show in multi-select mode */}
                           {isMultiSelectMode && (
                             <div className="absolute top-3 left-3">
-                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                                selectedPhotos.includes(item.index)
-                                  ? 'bg-[#2B3F6C] border-[#2B3F6C]'
-                                  : 'bg-white border-gray-300'
-                              }`}>
+                              <div
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                  selectedPhotos.includes(item.index)
+                                    ? "bg-[#2B3F6C] border-[#2B3F6C]"
+                                    : "bg-white border-gray-300"
+                                }`}
+                              >
                                 {selectedPhotos.includes(item.index) && (
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  <svg
+                                    className="w-4 h-4 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                 )}
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Delete Button - Only show when not in multi-select mode */}
                           {!isMultiSelectMode && (
                             <button
@@ -2659,23 +3054,43 @@ export default function Settings({ user }) {
                               disabled={false}
                               className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 disabled:opacity-50"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
                               </svg>
                             </button>
                           )}
                         </div>
                       )}
-                      
+
                       {/* Note: Removed crop type rendering as gallery photos are now uploaded directly */}
-                      
-                      {item.type === 'placeholder' && (
+
+                      {item.type === "placeholder" && (
                         <div
                           onClick={() => photoRef.current?.click()}
                           className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#2B3F6C] hover:bg-gray-100 transition-colors aspect-[3/4]"
                         >
-                          <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          <svg
+                            className="w-12 h-12 text-gray-400 mb-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
                           </svg>
                           <p className="text-sm text-gray-500 text-center font-medium">
                             Click to add photos
@@ -2700,7 +3115,9 @@ export default function Settings({ user }) {
               <div className="p-6">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-black">Upload Address Proof</h3>
+                  <h3 className="text-lg font-semibold text-black">
+                    Upload Address Proof
+                  </h3>
                   <button
                     onClick={() => setShowDocumentModal(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -2717,38 +3134,63 @@ export default function Settings({ user }) {
                   <div className="relative">
                     <div
                       className="select-field"
-                      onClick={() => toggleDropdown('documentType')}
+                      onClick={() => toggleDropdown("documentType")}
                     >
-                      {documentType || 'Select Document Type'}
-                      <svg width="10" height="9" viewBox="0 0 10 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <path d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z" fill="#4F4F4F"/>
+                      {documentType || "Select Document Type"}
+                      <svg
+                        width="10"
+                        height="9"
+                        viewBox="0 0 10 9"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      >
+                        <path
+                          d="M5.47887 8.71497L9.92626 0.843388C9.97457 0.757914 10 0.660956 10 0.56226C10 0.463564 9.97457 0.366606 9.92626 0.281132C9.87776 0.19533 9.80793 0.12414 9.72384 0.074772C9.63975 0.0254041 9.54438 -0.000388903 9.44739 4.43222e-06L0.552608 4.43222e-06C0.455618 -0.000388903 0.360249 0.0254041 0.276156 0.074772C0.192064 0.12414 0.122236 0.19533 0.0737419 0.281132C0.0254326 0.366606 0 0.463564 0 0.56226C0 0.660956 0.0254326 0.757914 0.0737419 0.843388L4.52113 8.71497C4.56914 8.8015 4.63876 8.87347 4.72288 8.92354C4.80701 8.97362 4.90263 9 5 9C5.09737 9 5.19299 8.97362 5.27712 8.92354C5.36124 8.87347 5.43086 8.8015 5.47887 8.71497ZM1.50483 1.12452H8.49517L5 7.30933L1.50483 1.12452Z"
+                          fill="#4F4F4F"
+                        />
                       </svg>
                     </div>
                     {dropdowns.documentType && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                         <div
-                          className={`dropdown-option ${documentType === 'Aadhar Card' ? 'selected' : ''}`}
+                          className={`dropdown-option ${
+                            documentType === "Aadhar Card" ? "selected" : ""
+                          }`}
                           onClick={() => {
-                            setDocumentType('Aadhar Card');
-                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                            setDocumentType("Aadhar Card");
+                            setDropdowns((prev) => ({
+                              ...prev,
+                              documentType: false,
+                            }));
                           }}
                         >
                           Aadhar Card
                         </div>
                         <div
-                          className={`dropdown-option ${documentType === 'Driving License' ? 'selected' : ''}`}
+                          className={`dropdown-option ${
+                            documentType === "Driving License" ? "selected" : ""
+                          }`}
                           onClick={() => {
-                            setDocumentType('Driving License');
-                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                            setDocumentType("Driving License");
+                            setDropdowns((prev) => ({
+                              ...prev,
+                              documentType: false,
+                            }));
                           }}
                         >
                           Driving License
                         </div>
                         <div
-                          className={`dropdown-option ${documentType === 'Passport' ? 'selected' : ''}`}
+                          className={`dropdown-option ${
+                            documentType === "Passport" ? "selected" : ""
+                          }`}
                           onClick={() => {
-                            setDocumentType('Passport');
-                            setDropdowns(prev => ({ ...prev, documentType: false }));
+                            setDocumentType("Passport");
+                            setDropdowns((prev) => ({
+                              ...prev,
+                              documentType: false,
+                            }));
                           }}
                         >
                           Passport
@@ -2771,7 +3213,7 @@ export default function Settings({ user }) {
                         const file = e.target.files[0];
                         setDocumentFront(file);
                         if (file) {
-                          handleDocumentUpload('front', file);
+                          handleDocumentUpload("front", file);
                         }
                       }}
                       className="hidden"
@@ -2794,10 +3236,22 @@ export default function Settings({ user }) {
                         </div>
                       ) : (
                         <div className="text-center">
-                          <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          <svg
+                            className="w-8 h-8 text-gray-400 mx-auto mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
                           </svg>
-                          <p className="text-sm text-gray-600">Click to upload front image</p>
+                          <p className="text-sm text-gray-600">
+                            Click to upload front image
+                          </p>
                         </div>
                       )}
                     </label>
@@ -2817,7 +3271,7 @@ export default function Settings({ user }) {
                         const file = e.target.files[0];
                         setDocumentBack(file);
                         if (file) {
-                          handleDocumentUpload('back', file);
+                          handleDocumentUpload("back", file);
                         }
                       }}
                       className="hidden"
@@ -2840,10 +3294,22 @@ export default function Settings({ user }) {
                         </div>
                       ) : (
                         <div className="text-center">
-                          <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          <svg
+                            className="w-8 h-8 text-gray-400 mx-auto mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
                           </svg>
-                          <p className="text-sm text-gray-600">Click to upload back image</p>
+                          <p className="text-sm text-gray-600">
+                            Click to upload back image
+                          </p>
                         </div>
                       )}
                     </label>
@@ -2867,7 +3333,12 @@ export default function Settings({ user }) {
                   </button>
                   <button
                     onClick={handleSaveDocument}
-                    disabled={loading || !documentType || !documentFrontUrl || !documentBackUrl}
+                    disabled={
+                      loading ||
+                      !documentType ||
+                      !documentFrontUrl ||
+                      !documentBackUrl
+                    }
                     className="flex-1 px-4 py-2 bg-[#2B3F6C] text-white rounded-lg hover:bg-[#1e2d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Save Document
@@ -2885,13 +3356,11 @@ export default function Settings({ user }) {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-black">
-                  Crop Photo
-                </h3>
+                <h3 className="text-lg font-semibold text-black">Crop Photo</h3>
                 <button
                   onClick={() => {
                     setShowCropModal(false);
-                    setImgSrc('');
+                    setImgSrc("");
                     setCrop(undefined);
                     setCompletedCrop(undefined);
                   }}
@@ -2901,7 +3370,7 @@ export default function Settings({ user }) {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-4 max-h-[60vh] overflow-auto">
               {imgSrc && (
                 <div className="flex flex-col items-center space-y-2">
@@ -2910,9 +3379,9 @@ export default function Settings({ user }) {
                       crop={crop}
                       onChange={(_, percentCrop) => {
                         // Preserve the scale when crop position changes
-                        setCrop(prev => ({
+                        setCrop((prev) => ({
                           ...percentCrop,
-                          scale: prev?.scale || 1
+                          scale: prev?.scale || 1,
                         }));
                       }}
                       onComplete={(c) => setCompletedCrop(c)}
@@ -2928,20 +3397,23 @@ export default function Settings({ user }) {
                         src={imgSrc}
                         onLoad={onImageLoad}
                         className="block max-w-full max-h-[50vh] object-contain"
-                        style={{ 
-                          transform: `scale(${crop?.scale || 1})` 
+                        style={{
+                          transform: `scale(${crop?.scale || 1})`,
                         }}
                         draggable={false}
                       />
                     </ReactCrop>
                   </div>
-                  
+
                   {/* Zoom Controls */}
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => {
-                        const newScale = Math.max(0.5, (crop?.scale || 1) - 0.1);
-                        setCrop(prev => ({ ...prev, scale: newScale }));
+                        const newScale = Math.max(
+                          0.5,
+                          (crop?.scale || 1) - 0.1
+                        );
+                        setCrop((prev) => ({...prev, scale: newScale}));
                       }}
                       className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
@@ -2953,7 +3425,7 @@ export default function Settings({ user }) {
                     <button
                       onClick={() => {
                         const newScale = Math.min(3, (crop?.scale || 1) + 0.1);
-                        setCrop(prev => ({ ...prev, scale: newScale }));
+                        setCrop((prev) => ({...prev, scale: newScale}));
                       }}
                       className="w-8 h-8 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 flex items-center justify-center font-bold text-lg"
                     >
@@ -2963,12 +3435,12 @@ export default function Settings({ user }) {
                 </div>
               )}
             </div>
-            
+
             <div className="p-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 onClick={() => {
                   setShowCropModal(false);
-                  setImgSrc('');
+                  setImgSrc("");
                   setCrop(undefined);
                   setCompletedCrop(undefined);
                 }}
@@ -2990,11 +3462,30 @@ export default function Settings({ user }) {
 
       {/* Loading indicator for auto-upload */}
       {false && (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50" style={{zIndex: 9999}}>
+        <div
+          className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm z-50"
+          style={{zIndex: 9999}}
+        >
           <div className="flex items-center gap-3">
-            <svg className="animate-spin h-4 w-4 text-[#2B3F6C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin h-4 w-4 text-[#2B3F6C]"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             <span className="text-sm text-[#2B3F6C]">Uploading photo...</span>
           </div>
@@ -3009,25 +3500,34 @@ export default function Settings({ user }) {
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {deleteType === 'cover' ? 'Delete Cover Photo' : 'Delete Photo'}
+                {deleteType === "cover" ? "Delete Cover Photo" : "Delete Photo"}
               </h3>
               <button
                 onClick={handleDeleteCancel}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
-              {deleteType === 'cover' 
-                ? 'Are you sure you want to delete the cover photo?' 
-                : 'Are you sure you want to delete this photo?'
-              }
+              {deleteType === "cover"
+                ? "Are you sure you want to delete the cover photo?"
+                : "Are you sure you want to delete this photo?"}
             </p>
-            
+
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleDeleteCancel}
@@ -3042,16 +3542,41 @@ export default function Settings({ user }) {
               >
                 {false ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                     Delete
                   </>
@@ -3074,16 +3599,28 @@ export default function Settings({ user }) {
                 onClick={cancelBulkDelete}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete {selectedPhotos.length} selected photo{selectedPhotos.length > 1 ? 's' : ''}? This action cannot be undone.
+              Are you sure you want to delete {selectedPhotos.length} selected
+              photo{selectedPhotos.length > 1 ? "s" : ""}? This action cannot be
+              undone.
             </p>
-            
+
             <div className="flex gap-3 justify-end">
               <button
                 onClick={cancelBulkDelete}
@@ -3098,18 +3635,44 @@ export default function Settings({ user }) {
               >
                 {false ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
-                    Delete {selectedPhotos.length} Photo{selectedPhotos.length > 1 ? 's' : ''}
+                    Delete {selectedPhotos.length} Photo
+                    {selectedPhotos.length > 1 ? "s" : ""}
                   </>
                 )}
               </button>
@@ -3127,8 +3690,18 @@ export default function Settings({ user }) {
               onClick={closeImageViewer}
               className="absolute top-4 right-4 w-10 h-10 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
 
@@ -3141,8 +3714,18 @@ export default function Settings({ user }) {
                 }}
                 className="absolute left-4 w-12 h-12 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
             )}
@@ -3166,8 +3749,18 @@ export default function Settings({ user }) {
                 }}
                 className="absolute right-4 w-12 h-12 bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             )}
@@ -3179,10 +3772,7 @@ export default function Settings({ user }) {
           </div>
 
           {/* Click anywhere to close */}
-          <div 
-            className="absolute inset-0 -z-10" 
-            onClick={closeImageViewer}
-          />
+          <div className="absolute inset-0 -z-10" onClick={closeImageViewer} />
         </div>
       )}
     </>
