@@ -23,6 +23,30 @@ export default function Community({}) {
   const [search, setSearch] = useState("");
   const [newPostId, setNewPostId] = useState(null);
 
+  const getCreatedAtTime = (item) => {
+    const t = item?.createdAt ? new Date(item.createdAt).getTime() : NaN;
+    return Number.isFinite(t) ? t : null;
+  };
+
+  const sortCommunityNewestFirst = (list) => {
+    // Stable sort: preserve original order when createdAt is missing/equal.
+    return (list || [])
+      .map((item, idx) => ({ item, idx }))
+      .sort((a, b) => {
+        // Always pin the "just created" post to the top (when present).
+        if (newPostId) {
+          if (a.item?._id === newPostId && b.item?._id !== newPostId) return -1;
+          if (b.item?._id === newPostId && a.item?._id !== newPostId) return 1;
+        }
+
+        const ta = getCreatedAtTime(a.item);
+        const tb = getCreatedAtTime(b.item);
+        if (ta !== null && tb !== null && ta !== tb) return tb - ta; // newest first
+        return a.idx - b.idx;
+      })
+      .map(({ item }) => item);
+  };
+
   const fetchCommunity = () => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community`, {
       method: "GET",
@@ -245,7 +269,7 @@ export default function Community({}) {
             </Link>
           </div>
         ) : (
-          community
+          sortCommunityNewestFirst(community)
             ?.filter((i) =>
               search
                 ? i.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -254,7 +278,7 @@ export default function Community({}) {
             )
             .map((item, index) => (
             <div 
-              key={index} 
+              key={item?._id || index} 
               className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-700 transform ${
                 newPostId === item._id 
                   ? 'animate-pulse border-[#2B3F6C] shadow-lg scale-105 animate-bounce' 

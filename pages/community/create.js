@@ -25,6 +25,7 @@ import Link from "next/link";
 
 export default function Home({ user }) {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [display, setDisplay] = useState("Create");
   // Create, Post, Success
   const [community, setCommunity] = useState({
@@ -34,6 +35,8 @@ export default function Home({ user }) {
     anonymous: false,
   });
   const handleSubmit = () => {
+    if (loading) return;
+    setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/community`, {
       method: "POST",
       headers: {
@@ -56,6 +59,10 @@ export default function Home({ user }) {
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
+        toast.error("There was a problem posting to the community.");
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
   return (
