@@ -90,119 +90,167 @@ export default function Home({}) {
     }
   };
 
-  const fetchOrders = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/order`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          router.push("/login");
-          return;
-        } else {
-          return response.json();
+  const formatISODate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const fetchCalendarData = async () => {
+    // Fetch for the current visible month (inclusive)
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startDate = formatISODate(start);
+    const endDate = formatISODate(end);
+
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Content-Type": "application/json",
+      authorization: `Bearer ${token}`,
+    };
+
+    try {
+      // Orders are the primary data source for this page. Personal leads are additive.
+      const [ordersRes, personalLeadsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/order`, { method: "GET", headers }),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead/calendar?startDate=${encodeURIComponent(
+            startDate
+          )}&endDate=${encodeURIComponent(endDate)}`,
+          { method: "GET", headers }
+        ).catch(() => null),
+      ]);
+
+      // Keep existing behavior: if orders API fails auth, redirect to login.
+      if (!ordersRes?.ok) {
+        router.push("/login");
+        return;
+      }
+
+      const ordersJson = await ordersRes.json();
+
+      // Personal leads are optional. If the endpoint is missing/failed, proceed with orders only.
+      let personalLeadEvents = [];
+      if (personalLeadsRes?.ok) {
+        const personalLeadsJson = await personalLeadsRes.json();
+        personalLeadEvents = personalLeadsJson?.list || [];
+      }
+
+      setOrders(ordersJson);
+
+      let tempList = [];
+      let tempData = {};
+
+      // Orders -> calendar
+      (ordersJson || []).forEach((order) => {
+        let tempDate = null;
+        let tempTime = null;
+        let tempLocation = null;
+        if (order.source === "Personal-Package") {
+          tempDate = new Date(order?.vendorPersonalPackageBooking?.date);
+          tempTime = order?.vendorPersonalPackageBooking?.time;
+          tempLocation =
+            order?.vendorPersonalPackageBooking?.address?.formatted_address;
+        } else if (order.source === "Wedsy-Package") {
+          tempDate = new Date(order?.wedsyPackageBooking?.date);
+          tempTime = order?.wedsyPackageBooking?.time;
+          tempLocation = order?.wedsyPackageBooking?.address?.formatted_address;
         }
-      })
-      .then((response) => {
-        if (response) {
-          setOrders(response);
-          let tempList = [];
-          let tempData = {};
-          response.forEach((order) => {
-            let tempDate = null;
-            let tempTime = null;
-            let tempLocation = null;
-            if (order.source === "Personal-Package") {
-              tempDate = new Date(order?.vendorPersonalPackageBooking?.date);
-              tempTime = order?.vendorPersonalPackageBooking?.time;
-              tempLocation =
-                order?.vendorPersonalPackageBooking?.address?.formatted_address;
-            } else if (order.source === "Wedsy-Package") {
-              tempDate = new Date(order?.wedsyPackageBooking?.date);
-              tempTime = order?.wedsyPackageBooking?.time;
-              tempLocation =
-                order?.wedsyPackageBooking?.address?.formatted_address;
-            }
-            if (order.source === "Bidding") {
-              order?.biddingBooking?.events?.forEach((event) => {
-                let tDate = new Date(event?.date);
-                let tTime = event?.time;
-                let tLocation = event?.location;
-                let t = tDate.toLocaleDateString();
-                if (!tempList.includes(t)) {
-                  tempList.push(t);
-                }
-                if (t in tempData) {
-                  tempData[t].push({
-                    order: order,
-                    name: order?.user?.name,
-                    location: tLocation,
-                    time: tTime,
-                    source: order?.source,
-                  });
-                } else {
-                  tempData[t] = [
-                    {
-                      order: order,
-                      name: order?.user?.name,
-                      location: tLocation,
-                      time: tTime,
-                      source: order?.source,
-                    },
-                  ];
-                }
+
+        if (order.source === "Bidding") {
+          order?.biddingBooking?.events?.forEach((event) => {
+            const tDate = new Date(event?.date);
+            const tTime = event?.time;
+            const tLocation = event?.location;
+            const t = tDate.toLocaleDateString();
+            if (!tempList.includes(t)) tempList.push(t);
+            if (t in tempData) {
+              tempData[t].push({
+                order,
+                name: order?.user?.name,
+                location: tLocation,
+                time: tTime,
+                source: order?.source,
               });
             } else {
-              let temp = tempDate.toLocaleDateString();
-              if (!tempList.includes(temp)) {
-                tempList.push(temp);
-              }
-              if (temp in tempData) {
-                tempData[temp].push({
-                  order: order,
+              tempData[t] = [
+                {
+                  order,
                   name: order?.user?.name,
-                  location: tempLocation,
-                  time: tempTime,
-                  source:
-                    order.source === "Personal-Package"
-                      ? "Personal"
-                      : order.source === "Wedsy-Package"
-                      ? "Package"
-                      : order?.source,
-                });
-              } else {
-                tempData[temp] = [
-                  {
-                    order: order,
-                    name: order?.user?.name,
-                    location: tempLocation,
-                    time: tempTime,
-                    source:
-                      order.source === "Personal-Package"
-                        ? "Personal"
-                        : order.source === "Wedsy-Package"
-                        ? "Package"
-                        : order?.source,
-                  },
-                ];
-              }
+                  location: tLocation,
+                  time: tTime,
+                  source: order?.source,
+                },
+              ];
             }
           });
-          setActiveDates(tempList);
-          setEvents(tempData);
+        } else if (tempDate) {
+          const t = tempDate.toLocaleDateString();
+          if (!tempList.includes(t)) tempList.push(t);
+          const sourceLabel =
+            order.source === "Personal-Package"
+              ? "Personal"
+              : order.source === "Wedsy-Package"
+              ? "Package"
+              : order?.source;
+
+          if (t in tempData) {
+            tempData[t].push({
+              order,
+              name: order?.user?.name,
+              location: tempLocation,
+              time: tempTime,
+              source: sourceLabel,
+            });
+          } else {
+            tempData[t] = [
+              {
+                order,
+                name: order?.user?.name,
+                location: tempLocation,
+                time: tempTime,
+                source: sourceLabel,
+              },
+            ];
+          }
         }
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
       });
+
+      // Personal Leads -> calendar
+      (personalLeadEvents || []).forEach((ev) => {
+        // Parse as local date to avoid timezone shifts
+        const d = ev?.date ? new Date(`${ev.date}T00:00:00`) : null;
+        if (!d || Number.isNaN(d.getTime())) return;
+        const key = d.toLocaleDateString();
+        if (!tempList.includes(key)) tempList.push(key);
+
+        const entry = {
+          leadId: ev?.leadId,
+          name: ev?.name,
+          phone: ev?.phone,
+          notes: ev?.notes,
+          location: "",
+          time: ev?.time || "",
+          source: "Personal Lead",
+          type: "personal-lead",
+        };
+
+        if (key in tempData) tempData[key].push(entry);
+        else tempData[key] = [entry];
+      });
+
+      setActiveDates(tempList);
+      setEvents(tempData);
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchCalendarData();
+    // Re-fetch when month changes so personal-lead events stay in sync with the visible month
+  }, [currentDate]);
 
   const days = getDaysInMonth(currentDate);
   return (

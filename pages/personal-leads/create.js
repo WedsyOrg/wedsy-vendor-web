@@ -16,6 +16,7 @@ export default function Home({}) {
   const [lead, setLead] = useState({
     name: "",
     phone: "",
+    eventType: "",
     eventInfo: [{ date: "", time: "" }],
     notes: "",
     tasks: [{ task: "", date: "", time: "" }],
@@ -135,6 +136,26 @@ export default function Home({}) {
               <div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Event Details</h3>
                 
+                {/* Event Type */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Event type
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Eg: Wedding, Engagement, Birthday"
+                    disabled={loading}
+                    value={lead?.eventType}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2B3F6C] focus:border-[#2B3F6C] text-center"
+                    onChange={(e) => {
+                      setLead({
+                        ...lead,
+                        eventType: e.target.value,
+                      });
+                    }}
+                  />
+                </div>
+
                 {/* Event Date and Time in a grid */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>

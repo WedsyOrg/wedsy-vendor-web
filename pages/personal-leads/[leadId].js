@@ -2,6 +2,7 @@ import BackIcon from "@/components/icons/BackIcon";
 import { useEffect, useState } from "react";
 import {
   MdEdit,
+  MdDelete,
 } from "react-icons/md";
 import { BsPlusCircle } from "react-icons/bs";
 import { useRouter } from "next/router";
@@ -25,6 +26,7 @@ export default function Lead({}) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [eventType, setEventType] = useState("");
   const [editDetails, setEditDetails] = useState(false);
   const [editEventDates, setEditEventDates] = useState(false);
   const [editPayment, setEditPayment] = useState(false);
@@ -40,6 +42,7 @@ export default function Lead({}) {
     time: "",
   });
   const [addTransaction, setAddTransaction] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
   const { leadId } = router.query;
 
   const fetchLead = () => {
@@ -95,6 +98,66 @@ export default function Lead({}) {
       });
   };
 
+  const sendPaymentReminder = async () => {
+    if (!leadId) return;
+    setSendingReminder(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead/${leadId}/payment-reminder`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ notes: "" }),
+        }
+      );
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.message !== "success") {
+        throw new Error(json?.error || "Failed to send reminder");
+      }
+
+      toast.success(`Payment reminder sent! (Total sent: ${json.remindersSentCount})`);
+      fetchLead();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to send payment reminder");
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
+  const deleteTransaction = async (transactionId) => {
+    if (!leadId || !transactionId) return;
+    try {
+      const ok = window.confirm("Delete this payment entry?");
+      if (!ok) return;
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/vendor-personal-lead/${leadId}/transactions/${transactionId}`,
+        {
+          method: "DELETE",
+          headers: {
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.message !== "success") {
+        throw new Error(json?.error || "Failed to delete transaction");
+      }
+
+      toast.success("Payment deleted");
+      fetchLead();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to delete payment");
+    }
+  };
+
   useEffect(() => {
     fetchLead();
   }, []);
@@ -132,6 +195,7 @@ export default function Lead({}) {
             setName(lead?.name);
             setPhone(lead?.phone);
             setNotes(lead?.notes || "");
+            setEventType(lead?.eventType || "");
             setEditDetails(true);
           }}
         />
@@ -183,11 +247,22 @@ export default function Lead({}) {
                 }}
               />
             </div>
+            <div>
+              <Label value="Event Type" />
+              <TextInput
+                placeholder="Eg: Wedding, Engagement"
+                disabled={loading}
+                value={eventType}
+                onChange={(e) => {
+                  setEventType(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </Modal.Body>
         <Modal.Footer>
           <Button
-            onClick={() => handleSubmit({ name, phone, notes })}
+            onClick={() => handleSubmit({ name, phone, notes, eventType })}
             disabled={!name || !phone}
             color="dark"
           >
@@ -530,6 +605,14 @@ export default function Lead({}) {
                 <span>Edit</span>
               </button>
             </div>
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-900 mb-2">Event type</p>
+              <div className="bg-blue-100 rounded-lg p-3 border border-blue-200">
+                <p className="text-gray-700 text-sm">
+                  {lead?.eventType || "-"}
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-900 mb-2">Event date</p>
@@ -685,7 +768,18 @@ export default function Lead({}) {
 
           {/* Payment History */}
           <div>
-            <p className="text-lg font-semibold text-gray-900 mb-4">Payment History</p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-lg font-semibold text-gray-900">Payment History</p>
+              <button
+                className="text-sm px-3 py-2 rounded-lg bg-[#2B3F6C] text-white disabled:opacity-60"
+                disabled={sendingReminder}
+                onClick={sendPaymentReminder}
+              >
+                {sendingReminder
+                  ? "Sending..."
+                  : `Send Payment Reminder (${lead?.payment?.remindersSentCount || 0})`}
+              </button>
+            </div>
             
             <div className="space-y-4">
               {lead?.payment?.transactions?.map((item, index) => (
@@ -702,7 +796,12 @@ export default function Lead({}) {
                     <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white text-sm">
                       {item.method || "UPI/Cash"}
                     </button>
-                    <MdEdit className="text-gray-600 cursor-pointer" size={16} />
+                    <MdDelete
+                      className="text-red-600 cursor-pointer"
+                      size={18}
+                      title="Delete"
+                      onClick={() => deleteTransaction(item?._id)}
+                    />
                   </div>
                 </div>
               ))}
