@@ -23,7 +23,7 @@ import { RxDashboard } from "react-icons/rx";
 import { toPriceString } from "@/utils/text";
 import SwipeToAccept from "@/components/button/SwipeToAcceptButton";
 
-export default function Home({}) {
+export default function Home({ }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [bidding, setBidding] = useState([]);
@@ -126,8 +126,8 @@ export default function Home({}) {
           "Content-Type": "application/json",
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ 
-          bid: parseInt(bid) || 0, 
+        body: JSON.stringify({
+          bid: parseInt(bid) || 0,
           vendor_notes: allNotes.join(" | ")
         }),
       }
@@ -284,11 +284,10 @@ export default function Home({}) {
           {bidding?.bidding?.events?.map((item, index) => (
             <div
               key={index}
-              className={`cursor-pointer px-6 py-1 font-medium rounded-full text-sm whitespace-nowrap ${
-                selectedEvent === index
+              className={`cursor-pointer px-6 py-1 font-medium rounded-full text-sm whitespace-nowrap ${selectedEvent === index
                   ? "bg-[#2B3F6C] text-white"
                   : "bg-white text-[#2B3F6C]"
-              }`}
+                }`}
               onClick={() => {
                 setSelectedEvent(index);
               }}
@@ -356,9 +355,8 @@ export default function Home({}) {
           {bidding?.bidding?.events?.map((_, index) => (
             <div
               key={index}
-              className={`h-2 w-2 border border-black rounded-full ${
-                selectedEvent === index ? "bg-black" : "bg-white"
-              }`}
+              className={`h-2 w-2 border border-black rounded-full ${selectedEvent === index ? "bg-black" : "bg-white"
+                }`}
             />
           ))}
         </div>
@@ -370,34 +368,36 @@ export default function Home({}) {
 
       {/*best bid received section */}
       {bidding?.lowestBid?.bid && (
-        <div className="py-3 flex flex-row gap-8 justify-center items-center bg-[#2B3F6C] text-white">
+        <div className="py-3 flex flex-row gap-8 justify-center items-center bg-[#840032] text-white">
           <span className="font-semibold">Best Bid Received</span>
           <span className="font-semibold">{toPriceString(bidding?.lowestBid?.bid)}</span>
         </div>
       )}
-      {/* Your Bid - Only show after bid is submitted */}
-      {bidSubmitted && (
+      {/* Your Bid - Show if vendor has already submitted (status.accepted) OR just submitted now */}
+      {((bidding?.status?.accepted && bidding?.bid > 0) || bidSubmitted) && (
         <div className="py-3 flex flex-row gap-8 justify-center items-center bg-[#2B3F6C] text-white mb-6">
           <span className="font-semibold px-4">Your Bid</span>
-          <span className="font-semibold px-4">{toPriceString(parseInt(bid))}</span>
+          <span className="font-semibold px-4">
+            {toPriceString(bidSubmitted ? parseInt(bid) : bidding?.bid)}
+          </span>
         </div>
       )}
       {/*end */}
 
-      {bidSubmitted && (
+      {/* Show success message if vendor has submitted a bid */}
+      {((bidding?.status?.accepted && bidding?.bid > 0) || bidSubmitted) && (
         <>
           <div className="bg-white px-8 py-6">
             <p className="text-sm font-bold text-[#2B3F6C] mb-2 text-center">Your Quote has been sent successfully!</p>
             <p className="text-xs text-black mb-6 text-center">You&apos;ll be notified when customer accepts the bid!</p>
-            
-            
-            
-            {additionalNotes.length > 0 && (
+
+            {/* Show notes from saved bid or current session */}
+            {(bidding?.vendor_notes || additionalNotes.length > 0) && (
               <div>
                 <p className="text-sm font-semibold text-[#2B3F6C] mb-2">NOTES</p>
                 <div className="bg-[#FFDA57] rounded-lg p-4">
                   <p className="text-black font-medium text-center">
-                    {additionalNotes.join(" ")}
+                    {bidSubmitted ? additionalNotes.join(" ") : bidding?.vendor_notes}
                   </p>
                 </div>
               </div>
@@ -406,7 +406,7 @@ export default function Home({}) {
         </>
       )}
 
-      
+
       {!bidding?.status?.accepted && !bidding?.status?.rejected && !bidSubmitted && (
         <>
 
@@ -440,12 +440,11 @@ export default function Home({}) {
             <>
               <div className="bg-white px-8 py-6">
                 <div className="relative mb-4">
-                  <label 
-                    className={`absolute left-0 transition-all duration-200 pointer-events-none ${
-                      bid || isQuoteFocused
+                  <label
+                    className={`absolute left-0 transition-all duration-200 pointer-events-none ${bid || isQuoteFocused
                         ? 'text-xs text-gray-500 -top-2'
                         : 'text-sm text-black top-0'
-                    }`}
+                      }`}
                   >
                     ENTER YOUR QUOTE
                   </label>
@@ -459,10 +458,10 @@ export default function Home({}) {
                     style={{ outline: 'none', boxShadow: 'none' }}
                   />
                 </div>
-                
+
                 {showPayableToWedsy && (
                   <>
-                    
+
                     <p className="text-sm text-gray-600 mb-2">Payable to Wedsy</p>
                     <div className="text-xl font-bold text-black border-b-2 border-[#2B3F6C] pb-2 mb-4 text-right">
                       {toPriceString(wedsyAmount)}
@@ -543,7 +542,7 @@ export default function Home({}) {
                   </div>
                 ))}
               </div>
-              
+
               <div className="grid grid-cols-2 mt-6 ">
                 <button
                   className="text-[#2B2F6C] font-semibold border-2 py-3 px-6 border-blue-100 uppercase"
@@ -555,11 +554,10 @@ export default function Home({}) {
                 </button>
                 <button
                   disabled={!bid}
-                  className={`font-semibold border py-2 px-6 uppercase ${
-                    bid 
-                      ? "text-white bg-green-600 border-green-600 cursor-pointer hover:bg-blue-700" 
+                  className={`font-semibold border py-2 px-6 uppercase ${bid
+                      ? "text-white bg-green-600 border-green-600 cursor-pointer hover:bg-blue-700"
                       : "text-gray-400 bg-green-100 border-green-100 cursor-not-allowed"
-                  }`}
+                    }`}
                   onClick={() => {
                     if (bid) {
                       setConfirm(true);
@@ -588,7 +586,7 @@ export default function Home({}) {
                     <p className="text-lg font-bold text-black">{toPriceString(vendorAmount)}</p>
                   </div>
                 </div>
-                
+
                 {additionalNotes.length > 0 && (
                   <div className="mt-6">
                     <div className="bg-[#FFDA57] rounded-lg p-4">
@@ -631,7 +629,7 @@ export default function Home({}) {
                 Are you sure you want to decline ?
               </h3>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 className="flex-1 py-3 px-4 border border-[#2B3F6C] bg-white text-[#2B3F6C] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
