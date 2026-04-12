@@ -124,7 +124,7 @@ export default function Settings({}) {
   };
 
   const fetchUserProfile = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=profile`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=profile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -142,11 +142,39 @@ export default function Settings({}) {
         if (response) {
           setUserProfile(response);
           // Autofill account name from profile if not already set
-          if (response.businessName && !accountCreationData.legal_business_name) {
+          const fallbackBusinessName = response.businessName || response.name || "";
+          if (fallbackBusinessName && !accountCreationData.legal_business_name) {
             setAccountCreationData(prev => ({
               ...prev,
-              legal_business_name: response.businessName
+              legal_business_name: fallbackBusinessName
             }));
+          }
+
+          // Autofill registered address from vendor businessAddress if available and empty in form
+          const ba = response.businessAddress;
+          if (ba && typeof ba === "object") {
+            setAccountCreationData(prev => {
+              const current = prev?.addresses?.registered || {};
+              const isEmpty =
+                !current.street1 && !current.city && !current.state && !current.postal_code;
+              if (!isEmpty) return prev;
+
+              const formatted = ba.formatted_address || "";
+              return {
+                ...prev,
+                addresses: {
+                  ...prev.addresses,
+                  registered: {
+                    ...prev.addresses.registered,
+                    street1: current.street1 || formatted || "",
+                    city: current.city || ba.city || "",
+                    state: current.state || ba.state || "",
+                    postal_code: current.postal_code || ba.postal_code || ba.postalCode || "",
+                    country: current.country || ba.country || "India",
+                  }
+                }
+              };
+            });
           }
         }
       })
@@ -189,7 +217,7 @@ export default function Settings({}) {
   };
   const fetchAccountDetails = () => {
     fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=accountDetails`,
+      `${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=accountDetails`,
       {
         method: "GET",
         headers: {

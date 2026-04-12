@@ -3,10 +3,12 @@ import { useRouter } from "next/router";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { usePageTransition } from "@/hooks/usePageTransition";
+import { useSignup } from "@/context/SignupContext";
 
 export default function SignupOtpVerification({}) {
   let router = useRouter();
   const { isTransitioning, navigateWithTransition } = usePageTransition();
+  const { signupDocs, setSignupDocs } = useSignup();
   const [isVisible, setIsVisible] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,7 @@ export default function SignupOtpVerification({}) {
   const [otpSent, setOtpSent] = useState(false);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [lastOtpTime, setLastOtpTime] = useState(0);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
   
   const otpInputs = useRef([]);
 
@@ -94,19 +97,21 @@ export default function SignupOtpVerification({}) {
 
     try {
       // Use the same API structure as the working login page
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: mobileNo
+          phone: mobileNo,
+          purpose: "signup",
         }),
       });
 
       const result = await response.json();
 
-      if (result.ReferenceId) {
+      const referenceId = result.referenceId || result.ReferenceId;
+      if (referenceId) {
         // Success - store ReferenceId and reset timer
         setResendTimer(60);
         setOtpSent(true);
@@ -114,7 +119,7 @@ export default function SignupOtpVerification({}) {
         setLastOtpTime(now);
         
         // Store ReferenceId for verification
-        localStorage.setItem("otpReferenceId", result.ReferenceId);
+        localStorage.setItem("otpReferenceId", referenceId);
       } else {
         setError(result.message || "Failed to send OTP");
       }
@@ -170,6 +175,16 @@ export default function SignupOtpVerification({}) {
     setError('');
 
     try {
+      // Docs MUST be selected on Signup (step 1). No doc upload UI on OTP page.
+      const docType = signupDocs?.documentType || "Aadhar Card";
+      const docFront = signupDocs?.documentFront || null;
+      const docBack = signupDocs?.documentBack || null;
+      if (!docFront || !docBack) {
+        setError("Please upload your document photos on the Signup page first.");
+        setTimeout(() => navigateWithTransition("/signup", "right"), 400);
+        return;
+      }
+
       // Get ReferenceId from localStorage
       const referenceId = localStorage.getItem("otpReferenceId");
       
@@ -181,33 +196,55 @@ export default function SignupOtpVerification({}) {
       // Get all signup data
       const step1Data = JSON.parse(localStorage.getItem("signup-step1") || "{}");
       const step2Data = JSON.parse(localStorage.getItem("signup-step2") || "{}");
+
+      const mapServicesOffered = (val) => {
+        if (Array.isArray(val)) return val;
+        if (val === "both") return ["MUA", "Hairstylist"];
+        if (val === "makeup") return ["MUA"];
+        if (val === "hair") return ["Hairstylist"];
+        // fallback: keep as a single entry if unknown
+        return val ? [String(val)] : [];
+      };
       
       const requestBody = {
         name: step1Data.contactName,
         phone: mobileNumber,
         email: step1Data.emailId,
         gender: step1Data.gender,
-        servicesOffered: step1Data.serviceOffered,
+        servicesOffered: mapServicesOffered(step1Data.serviceOffered),
         category: step1Data.category,
-        Otp: otpString,
-        ReferenceId: referenceId,
-        // Include address data from step2
+        otp: otpString,
+        referenceId,
+        // Structured address payload for backend Vendor.businessAddress
+        businessAddress: step2Data.businessAddress || null,
+        // Backward-compatible copies (server can ignore)
         state: step2Data.state,
         city: step2Data.city,
         area: step2Data.area,
         address: step2Data.address,
         googleMaps: step2Data.googleMaps,
-        pincode: step2Data.pincode
+        pincode: step2Data.pincode,
       };
       
       
-      // Use the vendor signup endpoint (not login endpoint)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor`, {
+      // Use the vendor auth signup endpoint (OTP-verified)
+      setUploadingDocs(true);
+      const formData = new FormData();
+      Object.entries(requestBody).forEach(([k, v]) => {
+        if (v === undefined) return;
+        if (k === "servicesOffered" || k === "businessAddress") {
+          formData.append(k, JSON.stringify(v));
+        } else {
+          formData.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+        }
+      });
+      formData.append("documentType", docType);
+      formData.append("documentFront", docFront);
+      formData.append("documentBack", docBack);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/signup`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+        body: formData,
       });
 
       const result = await response.json();
@@ -231,6 +268,14 @@ export default function SignupOtpVerification({}) {
         localStorage.removeItem("signup-step1");
         localStorage.removeItem("signup-step2");
         localStorage.removeItem("otpReferenceId");
+        // Clear in-memory doc files after successful signup
+        try {
+          setSignupDocs({
+            documentType: "Aadhar Card",
+            documentFront: null,
+            documentBack: null,
+          });
+        } catch (_) {}
         
         // Redirect to dashboard with transition
         setTimeout(() => {
@@ -243,6 +288,7 @@ export default function SignupOtpVerification({}) {
       // Handle error silently
       setError("Network error. Please try again.");
     } finally {
+      setUploadingDocs(false);
     }
   };
 
@@ -418,7 +464,7 @@ export default function SignupOtpVerification({}) {
             <div className="flex justify-center">
               <button
                 onClick={handleVerifyOtp}
-                disabled={loading || otp.some(digit => !digit)}
+                disabled={loading || uploadingDocs || otp.some(digit => !digit)}
                 style={{
                   width: '140px',
                   height: '50px',
@@ -430,9 +476,7 @@ export default function SignupOtpVerification({}) {
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  "Register"
-                )}
+                ) : uploadingDocs ? "Uploading..." : "Register"}
               </button>
             </div>
           </div>

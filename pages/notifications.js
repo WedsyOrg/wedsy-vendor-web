@@ -2,7 +2,7 @@ import BackIcon from "@/components/icons/BackIcon";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
-export default function Notifications({}) {
+export default function Notifications({ }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotifications, setSelectedNotifications] = useState(new Set());
@@ -44,10 +44,10 @@ export default function Notifications({}) {
           authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
+      setNotifications(prev =>
+        prev.map(notif =>
           notif._id === notificationId ? { ...notif, read: true } : notif
         )
       );
@@ -83,27 +83,28 @@ export default function Notifications({}) {
 
   const deleteSelectedNotifications = async () => {
     if (selectedNotifications.size === 0) return;
-    
+
     setDeleting(true);
     try {
-      const deletePromises = Array.from(selectedNotifications).map(id => 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notification/${id}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notification/delete-selected`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          ids: Array.from(selectedNotifications)
         })
-      );
+      });
 
-      await Promise.all(deletePromises);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.filter(notif => !selectedNotifications.has(notif._id))
-      );
-      setSelectedNotifications(new Set());
-      setIsSelectionMode(false);
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev =>
+          prev.filter(notif => !selectedNotifications.has(notif._id))
+        );
+        setSelectedNotifications(new Set());
+        setIsSelectionMode(false);
+      }
     } catch (error) {
       console.error("Error deleting selected notifications:", error);
     } finally {
@@ -113,7 +114,7 @@ export default function Notifications({}) {
 
   const deleteAllNotifications = async () => {
     if (notifications.length === 0) return;
-    
+
     setDeleting(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notification`, {
@@ -160,12 +161,12 @@ export default function Notifications({}) {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -227,7 +228,7 @@ export default function Notifications({}) {
       <div className="sticky top-0 w-full flex flex-row items-center gap-3 px-6 border-b py-3 shadow-lg bg-white z-10">
         <BackIcon />
         <p className="grow text-lg font-medium">Notifications</p>
-        
+
         {!isSelectionMode ? (
           <>
             {notifications.filter(n => !n.read).length > 0 && (
@@ -289,7 +290,7 @@ export default function Notifications({}) {
           </div>
         </div>
       )}
-      
+
       <div className="flex flex-col gap-4 py-4 px-6 divide-y-2">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
@@ -298,8 +299,8 @@ export default function Notifications({}) {
           </div>
         ) : (
           notifications.map((notification, index) => (
-            <div 
-              key={notification._id} 
+            <div
+              key={notification._id}
               className={`flex flex-col gap-1 pt-4 ${!notification.read ? 'bg-blue-50' : ''} ${isSelectionMode ? 'cursor-default' : 'cursor-pointer'}`}
             >
               <div className="flex items-start gap-3">
@@ -311,7 +312,7 @@ export default function Notifications({}) {
                     className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                 )}
-                
+
                 <div className="flex-1" onClick={() => !isSelectionMode && !notification.read && markAsRead(notification._id)}>
                   <div className="grid grid-cols-4 gap-2">
                     <div className="text-xl font-medium col-span-3">

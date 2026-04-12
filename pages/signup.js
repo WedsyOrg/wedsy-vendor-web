@@ -3,10 +3,12 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect } from "react";
 import { usePageTransition } from "@/hooks/usePageTransition";
+import { useSignup } from "@/context/SignupContext";
 
 export default function Signup({}) {
   let router = useRouter();
   const { isTransitioning, navigateWithTransition } = usePageTransition();
+  const { signupDocs, setSignupDocs } = useSignup();
   const [data, setData] = useState({
     contactName: "",
     mobileNo: "",
@@ -70,6 +72,15 @@ export default function Signup({}) {
   };
 
   const handleSignup = () => {
+    // Documents are required
+    if (!signupDocs?.documentFront || !signupDocs?.documentBack) {
+      setData((prev) => ({
+        ...prev,
+        message: "Please upload both document photos (front and back).",
+      }));
+      return;
+    }
+
     // Store form data in localStorage for multi-step signup
     const signupData = {
       contactName: data.contactName,
@@ -389,6 +400,53 @@ export default function Signup({}) {
         )}
       </div>
               ))}
+            </div>
+          </div>
+
+          {/* Document Selection (Required) */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-gray-900">Upload Address Proof (Required)</h3>
+            <p className="text-xs text-gray-500">
+              Select the document and upload both photos. We will verify it.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-700">Document Type</label>
+              <select
+                value={signupDocs?.documentType || "Aadhar Card"}
+                onChange={(e) =>
+                  setSignupDocs((prev) => ({ ...prev, documentType: e.target.value }))
+                }
+                className="input-field"
+              >
+                <option value="Aadhar Card">Aadhar Card</option>
+                <option value="Driving License">Driving License</option>
+                <option value="Passport">Passport</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-700">Document Front Photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setSignupDocs((prev) => ({ ...prev, documentFront: e.target.files?.[0] || null }))
+                }
+                className="w-full text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-700">Document Back Photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setSignupDocs((prev) => ({ ...prev, documentBack: e.target.files?.[0] || null }))
+                }
+                className="w-full text-sm"
+              />
             </div>
           </div>
 

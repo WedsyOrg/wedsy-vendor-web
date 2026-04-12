@@ -5,6 +5,7 @@ import StickFooter from "@/components/layout/StickyFooter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { SignupProvider } from "@/context/SignupContext";
 
 function MyApp({ Component, pageProps }) {
   const [isLandscape, setIsLandscape] = useState(false);
@@ -20,7 +21,7 @@ function MyApp({ Component, pageProps }) {
     router.push("/login");
   };
   const CheckLogin = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -107,34 +108,38 @@ function MyApp({ Component, pageProps }) {
           </div>
         </>
       ) : (
-        <div className="bg-white text-black flex flex-col h-screen w-screen">
-          <div className="grow overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={router.asPath}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeInOut"
-                }}
-                className="h-full overflow-scroll"
-              >
-                <Component
-                  {...pageProps}
-                  userLoggedIn={!logIn}
-                  user={user}
-                  CheckLogin={CheckLogin}
-                  Logout={Logout}
-                />
-              </motion.div>
-            </AnimatePresence>
+        // IMPORTANT: Keep SignupProvider OUTSIDE the keyed motion.div.
+        // Otherwise it will remount on every route change and lose selected files during signup flow.
+        <SignupProvider>
+          <div className="bg-white text-black flex flex-col h-screen w-screen">
+            <div className="grow overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={router.asPath}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeInOut"
+                  }}
+                  className="h-full overflow-scroll"
+                >
+                  <Component
+                    {...pageProps}
+                    userLoggedIn={!logIn}
+                    user={user}
+                    CheckLogin={CheckLogin}
+                    Logout={Logout}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            {router?.pathname !== "/login" && router?.pathname !== "/signup" && (
+              <StickFooter />
+            )}
           </div>
-          {router?.pathname !== "/login" && router?.pathname !== "/signup" && (
-            <StickFooter />
-          )}
-        </div>
+        </SignupProvider>
       )}
       <ToastContainer
         position="top-right"

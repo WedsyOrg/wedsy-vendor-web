@@ -17,7 +17,7 @@ export default function Settings({}) {
     payment: false,
   });
   const fetchNotifications = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

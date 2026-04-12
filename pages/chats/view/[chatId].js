@@ -427,12 +427,13 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
     }
   }, [editRequirements, chat, bidding, events]);
 
-  // Initialize newPrice from chat content
+  // Keep offer amount in sync when the selected chat line updates (e.g. new offer after edit)
   useEffect(() => {
-    if ((newPrice === null || newPrice === undefined) && chat?.content) {
-      setNewPrice(chat?.content);
+    if (chat?.content === undefined || chat?.content === null || chat?.content === "") {
+      return;
     }
-  }, [chat, newPrice]);
+    setNewPrice(String(chat.content));
+  }, [chat?._id, chat?.content]);
   return (
     <>
       <div className="bg-[#2B3F6C] text-white flex flex-row items-center p-3 sm:p-4">
@@ -1045,6 +1046,17 @@ export default function Home({}) {
   const requestIdRef = useRef(0);
   const lastFetchTimeRef = useRef(0);
 
+  useEffect(() => {
+    if (
+      displayRequirements?.content === undefined ||
+      displayRequirements?.content === null ||
+      displayRequirements?.content === ""
+    ) {
+      return;
+    }
+    setNewPrice(String(displayRequirements.content));
+  }, [displayRequirements?._id, displayRequirements?.content]);
+
   // Trigger slide-in animation when component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1092,31 +1104,25 @@ export default function Home({}) {
           let display = null;
           let vendorOfferExists = false;
 
-          // Get current vendor ID from chat participants
-          const currentVendorId = response?.participants?.find(p => p?.role === "vendor")?._id;
-          console.log("Current vendor ID:", currentVendorId);
+          // API returns messages sorted by createdAt descending (newest first).
+          const msgs = response.messages || [];
+          const currentVendorId = response?.participants?.find(
+            (p) => p?.role === "vendor"
+          )?._id;
+          const vid = currentVendorId ? String(currentVendorId) : "";
+          const senderMatchesVendor = (m) => {
+            if (!vid) return m?.sender?.role === "vendor";
+            const sid = m?.sender?.id ?? m?.sender?._id;
+            if (!sid) return m?.sender?.role === "vendor";
+            return String(sid) === vid;
+          };
 
-          for (let i = (response?.messages?.length || 0) - 1; i >= 0; i--) {
-            let temp = response?.messages[i];
+          vendorOfferExists = msgs.some(
+            (m) => m?.contentType === "BiddingOffer" && senderMatchesVendor(m)
+          );
 
-            // Check if vendor has already made an offer
-            if (temp?.contentType === "BiddingOffer") {
-              console.log("Found BiddingOffer at index", i, ":", temp);
-              console.log("Sender:", temp?.sender);
-              console.log("Sender ID:", temp?.sender?._id);
-              console.log("Sender role:", temp?.sender?.role);
-
-              // Check if this offer is from the current vendor
-              if (
-                temp?.sender?.role === "vendor" ||
-                temp?.sender?._id === currentVendorId ||
-                temp?.sender?._id?.toString() === currentVendorId?.toString()
-              ) {
-                console.log("This is a vendor offer!");
-                vendorOfferExists = true;
-              }
-            }
-
+          for (let i = 0; i < msgs.length; i++) {
+            const temp = msgs[i];
             if (
               temp?.contentType === "BiddingBid" ||
               temp?.contentType === "BiddingOffer"
@@ -1125,7 +1131,6 @@ export default function Home({}) {
               break;
             }
           }
-          console.log("Final vendorOfferExists:", vendorOfferExists);
           setDisplayRequirements(display);
           setHasVendorOffer(vendorOfferExists);
         } else {
@@ -1274,20 +1279,13 @@ export default function Home({}) {
           id="chat-container"
           className="flex-1 overflow-y-auto p-2 bg-white flex flex-col-reverse gap-2 hide-scrollbar"
         >
-          {(() => {
-            const cutoff = Date.now() - 60 * 1000;
-            const filtered = (chat?.messages || []).filter((m) => {
-              const ts = m?.createdAt ? new Date(m.createdAt).getTime() : 0;
-              return ts >= cutoff;
-            });
-            return filtered.length > 0 ? (
-              filtered.map((item) => (
-                <ChatMessage chat={item} key={item?._id || item?.id || Math.random()} />
-              ))
-            ) : (
-              <div className="text-center text-gray-500 py-4">No messages yet</div>
-            );
-          })()}
+          {(chat?.messages || []).length > 0 ? (
+            (chat.messages || []).map((item) => (
+              <ChatMessage chat={item} key={item?._id || item?.id || Math.random()} />
+            ))
+          ) : (
+            <div className="text-center text-gray-500 py-4">No messages yet</div>
+          )}
         </div>
         <div className="bg-white sticky bottom-0">
           {showMakeOffer && displayRequirements?._id && (

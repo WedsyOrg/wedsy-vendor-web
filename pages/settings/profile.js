@@ -12,6 +12,7 @@ import "react-image-crop/dist/ReactCrop.css";
 
 export default function Settings({user}) {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [dropdowns, setDropdowns] = useState({
     speciality: false,
@@ -370,6 +371,7 @@ export default function Settings({user}) {
     if (!file) return;
 
     try {
+      setLoading(true);
       const uploadedUrl = await uploadFile({
         file: file,
         path: "vendor-documents/",
@@ -385,6 +387,7 @@ export default function Settings({user}) {
       // Handle error silently
       toast.error("Failed to upload document. Please try again.");
     } finally {
+      setLoading(false);
     }
   };
 
@@ -418,6 +421,7 @@ export default function Settings({user}) {
     };
 
     try {
+      setLoading(true);
       // Send document to backend
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/vendor/`,
@@ -454,6 +458,7 @@ export default function Settings({user}) {
       // Handle error silently
       toast.error("Failed to upload document. Please try again.");
     } finally {
+      setLoading(false);
     }
   };
 
@@ -647,7 +652,7 @@ export default function Settings({user}) {
       });
   };
   const fetchOther = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=other`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=other`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -683,7 +688,7 @@ export default function Settings({user}) {
       });
   };
   const fetchProfile = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=profile`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=profile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -722,7 +727,7 @@ export default function Settings({user}) {
   };
   const fetchAddress = () => {
     fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=businessAddress`,
+      `${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=businessAddress`,
       {
         method: "GET",
         headers: {
@@ -741,17 +746,21 @@ export default function Settings({user}) {
       })
       .then((response) => {
         if (response) {
+          // Backend returns `{ businessAddress: {...} }`
+          const ba = response.businessAddress || response;
           setAddress({
-            place_id: response.place_id || "",
+            place_id: ba.place_id || "",
             formatted_address:
-              response.formatted_address || response.address || "",
-            address_components: response.address_components || [],
-            city: response.city || "",
-            postal_code: response.postal_code || response.pincode || "",
-            locality: response.locality || "",
-            state: response.state || "",
-            country: response.country || "",
-            geometry: response.geometry || {
+              ba.formatted_address || ba.address || "",
+            flat_house_number: ba.flat_house_number || "",
+            full_address: ba.full_address || "",
+            address_components: ba.address_components || [],
+            city: ba.city || "",
+            postal_code: ba.postal_code || ba.pincode || "",
+            locality: ba.locality || "",
+            state: ba.state || "",
+            country: ba.country || "",
+            geometry: ba.geometry || {
               location: {
                 lat: 0,
                 lng: 0,
@@ -767,7 +776,7 @@ export default function Settings({user}) {
   const fetchGallery = () => {
     const url = `${
       process.env.NEXT_PUBLIC_API_URL
-    }/auth/vendor?searchFor=gallery&_=${Date.now()}`;
+    }/vendor/me?searchFor=gallery&_=${Date.now()}`;
     fetch(url, {
       method: "GET",
       cache: "no-store",
@@ -845,7 +854,7 @@ export default function Settings({user}) {
       });
   };
   const fetchPrices = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=prices`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=prices`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -872,7 +881,7 @@ export default function Settings({user}) {
 
   const fetchDocuments = () => {
     fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/vendor?searchFor=documents`,
+      `${process.env.NEXT_PUBLIC_API_URL}/vendor/me?searchFor=documents`,
       {
         method: "GET",
         headers: {
@@ -939,6 +948,9 @@ export default function Settings({user}) {
           ? {
               prices,
               profileCompleted: true,
+              // Required by backend when setting profileCompleted=true
+              // (documents are fetched via fetchDocuments on mount)
+              documents: documents || [],
             }
           : {
               prices,
@@ -948,7 +960,9 @@ export default function Settings({user}) {
       .then((response) => response.json())
       .then((response) => {
         if (response.message !== "success") {
-          toast.error("Error updating photo details.");
+          toast.error(
+            response.message || "Error updating price details."
+          );
           // Only refetch data if there was an error
           fetchPrices();
         } else {

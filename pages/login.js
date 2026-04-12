@@ -84,13 +84,14 @@ export default function Login({}) {
       otpMessage: "",
     });
     
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         phone: processMobileNumber(data.phone),
+        purpose: "login",
       }),
     })
       .then((response) => response.json())
@@ -139,13 +140,14 @@ export default function Login({}) {
     });
     
     // Send OTP directly without calling SendOTP (to bypass otpSent check)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         phone: processMobileNumber(data.phone),
+        purpose: "login",
       }),
     })
       .then((response) => response.json())
@@ -178,15 +180,15 @@ export default function Login({}) {
       ...data,
     });
     
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/vendor`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         phone: processMobileNumber(data.phone),
-        Otp: data.Otp,
-        ReferenceId: data.ReferenceId,
+        otp: data.Otp,
+        referenceId: data.ReferenceId,
       }),
     })
       .then((response) => response.json())

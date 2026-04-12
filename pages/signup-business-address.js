@@ -14,6 +14,7 @@ export default function SignupBusinessAddress({}) {
     address: "",
     googleMaps: "",
     pincode: "",
+    businessAddress: null, // structured Google-place-like payload for backend Vendor.businessAddress
     loading: false,
     success: false,
     message: "",
@@ -111,6 +112,8 @@ export default function SignupBusinessAddress({}) {
           let city = "";
           let area = "";
           let pincode = "";
+          let country = "";
+          let locality = "";
           
           // Parse address components
           addressComponents.forEach(component => {
@@ -119,10 +122,14 @@ export default function SignupBusinessAddress({}) {
               state = component.long_name;
             } else if (types.includes("locality") || types.includes("administrative_area_level_2")) {
               city = component.long_name;
+              if (types.includes("locality")) locality = component.long_name;
             } else if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
               area = component.long_name;
+              if (!locality) locality = component.long_name;
             } else if (types.includes("postal_code") || types.includes("postal_code_prefix") || types.includes("postal_code_suffix")) {
               pincode = component.long_name;
+            } else if (types.includes("country")) {
+              country = component.long_name;
             }
           });
           
@@ -167,6 +174,27 @@ export default function SignupBusinessAddress({}) {
           }
           
           // Auto-fill all fields
+          const lat =
+            typeof place?.geometry?.location?.lat === "function"
+              ? place.geometry.location.lat()
+              : (place?.geometry?.location?.lat ?? 0);
+          const lng =
+            typeof place?.geometry?.location?.lng === "function"
+              ? place.geometry.location.lng()
+              : (place?.geometry?.location?.lng ?? 0);
+
+          const businessAddress = {
+            place_id: place.place_id || "",
+            formatted_address: formatted,
+            address_components: addressComponents || [],
+            city: city || "",
+            postal_code: pincode || "",
+            locality: locality || area || "",
+            state: state || "",
+            country: country || "",
+            geometry: { location: { lat: Number(lat) || 0, lng: Number(lng) || 0 } },
+          };
+
           setData(prev => ({ 
             ...prev, 
             googleMaps: formatted,
@@ -175,6 +203,7 @@ export default function SignupBusinessAddress({}) {
             area: area || prev.area,
             pincode: pincode || prev.pincode,
             address: formatted, // Use the full formatted address as house address
+            businessAddress,
             message: "" 
           }));
         });
@@ -230,6 +259,7 @@ export default function SignupBusinessAddress({}) {
       address: data.address,
       googleMaps: data.googleMaps,
       pincode: data.pincode,
+      businessAddress: data.businessAddress,
     };
     
     // Store step 2 data
@@ -238,18 +268,20 @@ export default function SignupBusinessAddress({}) {
     // Send OTP using the real API
     
     // Send OTP to mobile number using the same API structure as login
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vendor/auth/otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        phone: step1Data.mobileNo
+        phone: step1Data.mobileNo,
+        purpose: "signup",
       }),
     })
       .then((response) => response.json())
       .then((response) => {
-        if (response.ReferenceId) {
+        const referenceId = response.referenceId || response.ReferenceId;
+        if (referenceId) {
           setData(prev => ({ 
             ...prev, 
             success: true,
@@ -259,7 +291,7 @@ export default function SignupBusinessAddress({}) {
           setIsProcessing(false);
           
           // Store ReferenceId for OTP verification
-          localStorage.setItem("otpReferenceId", response.ReferenceId);
+          localStorage.setItem("otpReferenceId", referenceId);
           
           // Navigate to OTP verification page immediately with transition
           navigateWithTransition("/signup-otp-verification", 'left');
