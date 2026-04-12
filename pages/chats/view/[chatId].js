@@ -18,6 +18,10 @@ import { Avatar, Label, Select, TextInput } from "flowbite-react";
 import { formatMessageTime } from "@/utils/chat";
 import { VscSend } from "react-icons/vsc";
 import { toPriceString } from "@/utils/text";
+import {
+  collectPaidEventPricingByName,
+  sumEventPricingAmounts,
+} from "@/utils/eventPricing";
 import { RxDashboard } from "react-icons/rx";
 import { BiRupee } from "react-icons/bi";
 import { IoArrowUpCircle } from "react-icons/io5";
@@ -127,7 +131,13 @@ const getDummyChat = (chatId) => {
   return DUMMY_CHATS[chatId] || DUMMY_CHATS["dummy-1"]; // Fallback to dummy-1 if not found
 };
 
-function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }) {
+function BiddingRequirement({
+  chat,
+  fetchChatMessages,
+  hasVendorOffer,
+  onClose,
+  allMessages = [],
+}) {
   const inputRef = useRef(null);
   const [googleInstance, setGoogleInstance] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -138,6 +148,8 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
   const [events, setEvents] = useState(null);
   const [newPrice, setNewPrice] = useState(null);
   const [eventIndex, setEventIndex] = useState(0);
+  /** Per-event price (rupees) for unpaid lines; paid lines filled from history */
+  const [eventPriceInputs, setEventPriceInputs] = useState({});
   const [preferredLook, setPreferredLook] = useState([]);
   const [makeupStyle, setMakeupStyle] = useState([]);
   const [addOns, setAddOns] = useState([]);
@@ -331,12 +343,6 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
       });
   };
   const CreateBiddingOffer = (isEditMode = false) => {
-    // Validate price
-    if (!newPrice || newPrice <= 0) {
-      toast.error("Please enter a valid price.");
-      return;
-    }
-
     // Check if vendor has already made an offer (only for new offers, not edits)
     if (!isEditMode && hasVendorOffer) {
       toast.warning("You have already made an offer. You can only make one offer per chat.");
@@ -354,6 +360,67 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
       }
     }
 
+    const evs = events || chat?.other?.events || [];
+    const paidMap = collectPaidEventPricingByName(allMessages || []);
+    const needsLineItems =
+      Object.keys(paidMap).length > 0 || (Array.isArray(evs) && evs.length > 1);
+
+    let payloadContent = String(Number(newPrice) || "");
+    let eventPricing = null;
+
+    if (needsLineItems) {
+      eventPricing = [];
+      for (const ev of evs) {
+        const name = String(ev.eventName || "").trim();
+        if (!name) {
+          toast.error("Each event must have a name.");
+          return;
+        }
+        if (paidMap[name]) {
+          eventPricing.push({
+            eventName: name,
+            amount: Number(paidMap[name].amount),
+            paid: true,
+            ...(paidMap[name].orderId
+              ? { orderId: String(paidMap[name].orderId) }
+              : {}),
+          });
+        } else {
+          const raw =
+            eventPriceInputs[name] ??
+            (evs.length === 1 ? String(newPrice || "") : "");
+          const amt = Number(raw);
+          if (!amt || amt <= 0) {
+            toast.error(`Enter a valid price for “${name}”.`);
+            return;
+          }
+          eventPricing.push({ eventName: name, amount: amt, paid: false });
+        }
+      }
+      const unpaidSum = eventPricing
+        .filter((e) => !e.paid)
+        .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      if (unpaidSum <= 0) {
+        toast.error("Add at least one unpaid event with a price.");
+        return;
+      }
+      payloadContent = String(unpaidSum);
+    } else {
+      if (!newPrice || Number(newPrice) <= 0) {
+        toast.error("Please enter a valid price.");
+        return;
+      }
+      payloadContent = String(Number(newPrice));
+      if (evs.length === 1) {
+        const singleName = String(evs[0]?.eventName || "").trim() || "Event";
+        eventPricing = [
+          { eventName: singleName, amount: Number(newPrice), paid: false },
+        ];
+      } else {
+        eventPricing = null;
+      }
+    }
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
     fetch(`${apiUrl}/chat/${chat?.chat}/content`, {
       method: "POST",
@@ -362,12 +429,15 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
         authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({
-        content: newPrice,
+        content: payloadContent,
         contentType: "BiddingOffer",
         other: {
           bidding: chat?.other?.bidding,
           biddingBid: chat.other?.biddingBid,
-          events: events || chat?.other?.events,
+          events: evs,
+          ...(Array.isArray(eventPricing) && eventPricing.length
+          ? { eventPricing }
+          : {}),
         },
       }),
     })
@@ -452,7 +522,9 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
               Your offer
           <br />
           <span className="text-xs sm:text-base font-medium whitespace-nowrap">
-            {toPriceString(parseInt(chat?.content))}
+            {toPriceString(
+              sumEventPricingAmounts(chat?.other?.eventPricing, chat?.content)
+            )}
           </span>
         </div>
         <div className="w-px h-8 bg-white mx-1 sm:mx-2"></div>
@@ -497,9 +569,21 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
             console.log("setEditRequirements(true) called");
             
             if (eventsData && eventsData.length > 0) {
-              setEvents(JSON.parse(JSON.stringify(eventsData))); // Deep clone
-      setNewPrice(chat?.content);
+              const cloned = JSON.parse(JSON.stringify(eventsData));
+              setEvents(cloned);
+              setNewPrice(chat?.content);
               setEventIndex(0);
+              const pm = collectPaidEventPricingByName(allMessages || []);
+              const inputs = {};
+              cloned.forEach((ev) => {
+                const name = String(ev.eventName || "").trim();
+                if (!name) return;
+                if (pm[name]) inputs[name] = String(pm[name].amount);
+                else
+                  inputs[name] =
+                    cloned.length === 1 ? String(chat?.content || "") : "";
+              });
+              setEventPriceInputs(inputs);
             } else {
               // Show alert but keep edit mode active so debug message shows
               console.log("No event data found!");
@@ -834,15 +918,61 @@ function BiddingRequirement({ chat, fetchChatMessages, hasVendorOffer, onClose }
               + Add Notes
           </button>
 
-            <div>
-              <Label value="Enter new Price" className="text-xs sm:text-sm" />
-              <TextInput
-                icon={MdCurrencyRupee}
-                value={newPrice || ""}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="text-sm sm:text-base"
-              />
-          </div>
+            {(() => {
+              const pm = collectPaidEventPricingByName(allMessages || []);
+              const perEvent =
+                Object.keys(pm).length > 0 || (events && events.length > 1);
+              if (!perEvent) {
+                return (
+                  <div>
+                    <Label value="Enter new Price" className="text-xs sm:text-sm" />
+                    <TextInput
+                      icon={MdCurrencyRupee}
+                      value={newPrice || ""}
+                      onChange={(e) => setNewPrice(e.target.value)}
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[#2B3F6C]">
+                    Price per event (paid events are locked)
+                  </p>
+                  {(events || []).map((ev, idx) => {
+                    const name =
+                      String(ev.eventName || "").trim() || `Event ${idx + 1}`;
+                    const locked = Boolean(pm[name]);
+                    return (
+                      <div key={`${name}-${idx}`}>
+                        <Label
+                          value={`${name}${locked ? " — paid" : ""}`}
+                          className="text-xs sm:text-sm"
+                        />
+                        {locked ? (
+                          <p className="text-sm font-semibold text-[#2B3F6C] bg-white rounded-lg px-3 py-2 border border-[#2B3F6C]">
+                            {toPriceString(pm[name].amount)}
+                          </p>
+                        ) : (
+                          <TextInput
+                            icon={MdCurrencyRupee}
+                            value={eventPriceInputs[name] ?? ""}
+                            onChange={(e) =>
+                              setEventPriceInputs((prev) => ({
+                                ...prev,
+                                [name]: e.target.value,
+                              }))
+                            }
+                            className="text-sm sm:text-base"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             <button
               onClick={() => {
@@ -1017,9 +1147,31 @@ function ChatMessage({ chat }) {
         </div>
         <div className="p-3 bg-[#F5F5F5] rounded-xl rounded-br-none shadow self-end px-4 sm:px-6 max-w-[85%] sm:max-w-full">
           <p className="text-xs sm:text-sm mb-1">Offer received</p>
-          <p className="text-xl sm:text-2xl font-semibold">
-            {toPriceString(parseInt(chat?.content))}
-          </p>
+          <div className="text-xl sm:text-2xl font-semibold space-y-1">
+            {Array.isArray(chat?.other?.eventPricing) &&
+            chat.other.eventPricing.length > 0 ? (
+              <>
+                {chat.other.eventPricing.map((row, i) => (
+                  <div key={i} className="text-base sm:text-lg text-left">
+                    <span className="text-[#2B3F6C]">{row.eventName}:</span>{" "}
+                    {toPriceString(Number(row.amount) || 0)}
+                    {row.paid ? " ✓" : ""}
+                  </div>
+                ))}
+                <p className="text-sm font-medium text-gray-700 pt-1">
+                  Total:{" "}
+                  {toPriceString(
+                    sumEventPricingAmounts(
+                      chat.other.eventPricing,
+                      chat?.content
+                    )
+                  )}
+                </p>
+              </>
+            ) : (
+              <p>{toPriceString(parseInt(chat?.content, 10))}</p>
+            )}
+          </div>
         </div>
         <div className="bg-gray-200 text-center py-2 text-sm sm:text-base">
           Here&apos;s your custom offer
@@ -1273,6 +1425,7 @@ export default function Home({}) {
             chat={displayRequirements}
             fetchChatMessages={fetchChatMessages}
             hasVendorOffer={hasVendorOffer}
+            allMessages={chat?.messages || []}
           />
         )}
         <div
@@ -1318,8 +1471,23 @@ export default function Home({}) {
                         toast.warning("You have already made an offer. You can only make one offer per chat.");
                         return;
                       }
-                      
+
+                      const evs = displayRequirements?.other?.events || [];
+                      const paidMap = collectPaidEventPricingByName(
+                        chat?.messages || []
+                      );
+                      const needsLineItems =
+                        Object.keys(paidMap).length > 0 || evs.length > 1;
+                      if (needsLineItems) {
+                        toast.error(
+                          "Use “Edit requirement” to set a price for each event."
+                        );
+                        return;
+                      }
+
                       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
+                      const singleName =
+                        String(evs[0]?.eventName || "").trim() || "Event";
                       fetch(`${apiUrl}/chat/${displayRequirements?.chat}/content`, {
                         method: "POST",
                         headers: {
@@ -1327,12 +1495,23 @@ export default function Home({}) {
                           authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                         body: JSON.stringify({
-                          content: newPrice,
+                          content: String(Number(newPrice)),
                           contentType: "BiddingOffer",
                           other: {
                             bidding: displayRequirements?.other?.bidding,
                             biddingBid: displayRequirements.other?.biddingBid,
-                            events: displayRequirements?.other?.events,
+                            events: evs,
+                            ...(evs.length === 1
+                              ? {
+                                  eventPricing: [
+                                    {
+                                      eventName: singleName,
+                                      amount: Number(newPrice),
+                                      paid: false,
+                                    },
+                                  ],
+                                }
+                              : {}),
                           },
                         }),
                       })
