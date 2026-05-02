@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { 
+import {
   MdArrowBackIos,
   MdChatBubbleOutline
 } from "react-icons/md";
 import SearchBox from "@/components/SearchBox";
 import { useNavigation } from "@/utils/navigation";
+import { connectSocket } from "@/lib/socket";
 
 export default function Chats() {
   const router = useRouter();
@@ -39,6 +40,41 @@ export default function Chats() {
 
   useEffect(() => {
     fetchChats();
+  }, []);
+
+  // Live updates: bump unread + lastMessage when a new message arrives.
+  useEffect(() => {
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const onNewMessage = (msg) => {
+      if (!msg || !msg.chat) return;
+      setChats((prev) => {
+        let found = false;
+        const updated = prev.map((c) => {
+          if (c._id !== msg.chat) return c;
+          found = true;
+          return {
+            ...c,
+            lastMessage: msg,
+            unreadCount: (c.unreadCount || 0) + 1,
+            updatedAt: msg.createdAt || new Date().toISOString(),
+          };
+        });
+        // If we receive a message for a chat we don't have yet, refetch.
+        if (!found) fetchChats();
+        // Sort newest first.
+        updated.sort((a, b) => {
+          const ta = new Date(a?.lastMessage?.createdAt || a?.updatedAt || 0).getTime();
+          const tb = new Date(b?.lastMessage?.createdAt || b?.updatedAt || 0).getTime();
+          return tb - ta;
+        });
+        return updated;
+      });
+    };
+
+    socket.on("message:new", onNewMessage);
+    return () => socket.off("message:new", onNewMessage);
   }, []);
 
   const handleBackClick = () => {
@@ -98,11 +134,18 @@ export default function Chats() {
                       <h3 className="text-base font-semibold truncate text-gray-700">
                         {chat?.user?.name || "Unknown User"}
                       </h3>
-                      {chat?.lastMessage && (
-                        <span className="text-xs text-gray-500">
-                          {new Date(chat.lastMessage.createdAt).toLocaleTimeString()}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {chat?.lastMessage && (
+                          <span className="text-xs text-gray-500">
+                            {new Date(chat.lastMessage.createdAt).toLocaleTimeString()}
+                          </span>
+                        )}
+                        {chat?.unreadCount > 0 && (
+                          <span className="bg-custom-dark-blue text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center">
+                            {chat.unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {chat?.lastMessage ? (
                       <p className="text-sm truncate text-gray-500">

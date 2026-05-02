@@ -18,6 +18,7 @@ import { Avatar, Label, Select, TextInput } from "flowbite-react";
 import { formatMessageTime } from "@/utils/chat";
 import { VscSend } from "react-icons/vsc";
 import { toPriceString } from "@/utils/text";
+import { connectSocket, disconnectSocket, getSocket } from "@/lib/socket";
 import {
   collectPaidEventPricingByName,
   sumEventPricingAmounts,
@@ -1192,11 +1193,14 @@ export default function Home({}) {
   const [newPrice, setNewPrice] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
   const router = useRouter();
   const { chatId } = router.query;
   const activeControllerRef = useRef(null);
   const requestIdRef = useRef(0);
   const lastFetchTimeRef = useRef(0);
+  const typingEmitTimerRef = useRef(null);
+  const typingHideTimerRef = useRef(null);
 
   useEffect(() => {
     if (
@@ -1380,6 +1384,61 @@ export default function Home({}) {
     };
   }, [chatId]);
 
+  // Real-time WebSocket: live message receive + typing indicators.
+  useEffect(() => {
+    if (!chatId) return;
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const onNewMessage = (msg) => {
+      if (!msg || msg.chat !== chatId) return;
+      setChat((prev) => {
+        const existing = prev?.messages || [];
+        if (existing.some((m) => m?._id === msg._id)) return prev;
+        // API returns messages newest-first, so prepend.
+        return { ...prev, messages: [msg, ...existing] };
+      });
+      // Mark as read since the chat is open.
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (apiUrl) {
+        fetch(`${apiUrl}/chat/${encodeURIComponent(chatId)}/mark-read`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }).catch(() => {});
+      }
+    };
+
+    const onTypingStart = (data) => {
+      if (!data || data.chatId !== chatId) return;
+      if (typingHideTimerRef.current) clearTimeout(typingHideTimerRef.current);
+      setIsOtherTyping(true);
+      typingHideTimerRef.current = setTimeout(() => setIsOtherTyping(false), 3000);
+    };
+
+    const onTypingStop = (data) => {
+      if (!data || data.chatId !== chatId) return;
+      if (typingHideTimerRef.current) clearTimeout(typingHideTimerRef.current);
+      setIsOtherTyping(false);
+    };
+
+    socket.on("message:new", onNewMessage);
+    socket.on("typing:start", onTypingStart);
+    socket.on("typing:stop", onTypingStop);
+
+    return () => {
+      socket.off("message:new", onNewMessage);
+      socket.off("typing:start", onTypingStart);
+      socket.off("typing:stop", onTypingStop);
+      // Best-effort emit so the other side stops showing the indicator.
+      try { socket.emit("typing:stop", { chatId }); } catch (_) {}
+      if (typingEmitTimerRef.current) clearTimeout(typingEmitTimerRef.current);
+      if (typingHideTimerRef.current) clearTimeout(typingHideTimerRef.current);
+    };
+  }, [chatId]);
+
   // Debug: Log the user name for visibility issues
   console.log("Chat user name:", chat?.user?.name);
 
@@ -1539,6 +1598,9 @@ export default function Home({}) {
             </div>
           )}
           <div className="p-2 sm:p-3">
+          {isOtherTyping && (
+            <div className="px-3 pb-1 text-xs text-gray-500 italic">typing…</div>
+          )}
           <input
             id="messageInput"
             type="text"
@@ -1547,6 +1609,14 @@ export default function Home({}) {
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
+              const sock = getSocket();
+              if (sock && chatId) {
+                sock.emit("typing:start", { chatId });
+                if (typingEmitTimerRef.current) clearTimeout(typingEmitTimerRef.current);
+                typingEmitTimerRef.current = setTimeout(() => {
+                  sock.emit("typing:stop", { chatId });
+                }, 2000);
+              }
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
